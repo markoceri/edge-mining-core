@@ -1,10 +1,8 @@
 """Start Edge Minig."""
 
 
-if __name__ == "__main__":
-
-    print("""
-                                                                              
+def welcome():
+    print("""                                                            
     .................................................... 
     .................................................... 
     .................................................... 
@@ -27,5 +25,10 @@ if __name__ == "__main__":
     .................................................... 
 
     """)
-
+    
     print("Hey! 👋 I'm Edge Mining. Let's put that wasted energy to good use and generate some satoshis ⚡⛏️")
+
+if __name__ == "__main__":
+    welcome()
+    
+    
