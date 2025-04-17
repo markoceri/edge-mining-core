@@ -62,7 +62,7 @@ def main():
         cli()
 
     elif mode == "api":
-        logger.info("Starting FastAPI server with Uvicorn...")
+        logger.debug("Starting FastAPI server with Uvicorn...")
         # Note: Uvicorn might reload and cause DI to run multiple times if --reload is used.
         # We should to consider more robust DI setup for production APIs.
         uvicorn.run(fastapi_app, host="0.0.0.0", port=settings.api_port, log_level=settings.log_level.lower())

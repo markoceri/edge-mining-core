@@ -57,7 +57,7 @@ app.include_router(policy.router, prefix="/api/v1", tags=["optimization_rules"])
 async def startup_event():
     # This is where we *should* initialize the services and adapters
     # For this example, we assume they are set via set_api_services() beforehand
-    _logger.info("FastAPI application startup...")
+    _logger.debug("FastAPI application startup...")
     
     if _api_config_service is None or _api_orchestrator_service is None:
         _logger.error("API Services were not initialized before startup!")

@@ -37,7 +37,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     Returns the main application services.
     """
 
-    logger.info("Configuring dependencies...")
+    logger.debug("Configuring dependencies...")
 
     # --- Persistence ---
     if settings.persistence_adapter == "in_memory":
@@ -47,16 +47,16 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         settings_repo: SettingsRepository = InMemorySettingsRepository()
         home_profile_repo: HomeLoadsProfileRepository = InMemoryHomeLoadsProfileRepository()
 
-        logger.info("Using InMemory persistence adapters.")
+        logger.debug("Using InMemory persistence adapters.")
     elif settings.persistence_adapter == "sqlite":
         db_path = settings.sqlite_db_file
         
         db_dir = os.path.dirname(db_path)
         if db_dir and not os.path.exists(db_dir):
-            logger.info(f"Creating database directory: {db_dir}")
+            logger.debug(f"Creating database directory: {db_dir}")
             os.makedirs(db_dir, exist_ok=True)
 
-        logger.info(f"Using SQLite persistence adapter (DB: {db_path}).")
+        logger.debug(f"Using SQLite persistence adapter (DB: {db_path}).")
         
         # Instantiate all SQLite repositories passing the DB path
         miner_repo: MinerRepository = SqliteMinerRepository(db_path=db_path, logger=logger)
@@ -74,7 +74,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
             battery_capacity_wh=settings.dummy_battery_capacity_wh
         )
 
-        logger.info("Using Dummy Energy Monitor adapter.")
+        logger.debug("Using Dummy Energy Monitor adapter.")
     elif settings.energy_monitor_adapter == "home_assistant":
         try:
             energy_monitor: EnergyMonitorPort = HomeAssistantEnergyMonitor(
@@ -94,7 +94,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
                 battery_positive_charge=settings.ha_battery_positive_charge
             )
 
-            logger.info("Using Home Assistant Energy Monitor adapter.")
+            logger.debug("Using Home Assistant Energy Monitor adapter.")
         except (ValueError, ConnectionError, ImportError) as e:
              logger.error(f"Failed to initialize Home Assistant adapter: {e}")
              raise # Raise the exception to stop the execution
@@ -107,7 +107,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
              power_w=settings.dummy_miner_power_w
         )
 
-        logger.info("Using Dummy Miner Controller adapter.")
+        logger.debug("Using Dummy Miner Controller adapter.")
     else:
          raise ValueError(f"Unsupported miner_controller_adapter: {settings.miner_controller_adapter}")
 
@@ -115,7 +115,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     if settings.forecast_provider_adapter == "dummy":
         forecast_provider: ForecastProviderPort = DummyForecastProvider()
 
-        logger.info("Using Dummy Forecast Provider adapter.")
+        logger.debug("Using Dummy Forecast Provider adapter.")
     else:
         raise ValueError(f"Unsupported forecast_provider_adapter: {settings.forecast_provider_adapter}")
 
@@ -123,7 +123,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     if settings.home_forecast_adapter == "dummy":
         home_forecast_provider: HomeForecastProviderPort = DummyHomeForecastProvider()
 
-        logger.info("Using Dummy Home Forecast Provider adapter.")
+        logger.debug("Using Dummy Home Forecast Provider adapter.")
     else:
         raise ValueError(f"Unsupported home_forecast_adapter: {settings.home_forecast_adapter}")
 
@@ -131,7 +131,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     if settings.notification_adapter == "dummy":
         notifier: NotificationPort = DummyNotifier()
 
-        logger.info("Using Dummy Notifier adapter.")
+        logger.debug("Using Dummy Notifier adapter.")
     elif settings.notification_adapter == "telegram":
         if settings.telegram_bot_token and settings.telegram_chat_id:
             try:
@@ -140,27 +140,27 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
                     chat_id=settings.telegram_chat_id
                 )
 
-                logger.info("Using Telegram Notifier adapter.")
+                logger.debug("Using Telegram Notifier adapter.")
             except (ValueError, ConnectionError, ImportError) as e:
                 logger.error(f"Failed to initialize Telegram notifier: {e}. Falling back to no notifications.")
                 # We don't need to raise error, the application can run without notifier
     else:
         # Allow no notifier
         notifier = None
-        logger.info("No notification adapter configured.")
+        logger.debug("No notification adapter configured.")
         # raise ValueError(f"Unsupported notification_adapter: {settings.notification_adapter}")
 
     # --- Performance Tracker ---
     if settings.performance_tracker_adapter == "dummy":
         perf_tracker: MiningPerformanceTrackerPort = DummyPerformanceTracker()
         
-        logger.info("Using Dummy Performance Tracker adapter.")
+        logger.debug("Using Dummy Performance Tracker adapter.")
     else:
         perf_tracker = None # Or raise error
-        logger.info("No performance tracker configured.")
+        logger.debug("No performance tracker configured.")
 
     # Instantiate Application Services, injecting adapters (ports)
-    logger.info("Instantiating application services...")
+    logger.debug("Instantiating application services...")
     config_service = ConfigurationService(
         miner_repo=miner_repo,
         policy_repo=policy_repo,
@@ -180,5 +180,5 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         logger=logger
     )
 
-    logger.info("Dependency configuration complete.")
+    logger.debug("Dependency configuration complete.")
     return config_service, orchestrator_service
