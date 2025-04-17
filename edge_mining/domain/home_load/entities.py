@@ -8,6 +8,6 @@ from edge_mining.domain.common import EntityId
 @dataclass
 class LoadDevice:
     id: EntityId = field(default_factory=uuid.uuid4)
-    name: str # e.g., "Dishwasher", "EV Charger"
-    type: str # e.g., "Appliance", "Heating"
+    name: str = "" # e.g., "Dishwasher", "EV Charger"
+    type: str = "" # e.g., "Appliance", "Heating"
     # Could store typical consumption patterns here 📈​📉 but I'll think about it later

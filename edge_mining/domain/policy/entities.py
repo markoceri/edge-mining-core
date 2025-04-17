@@ -13,9 +13,9 @@ from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 @dataclass
 class AutomationRule:
     id: EntityId = field(default_factory=uuid.uuid4)
-    name: str
-    conditions: Dict[str, Any] # e.g., {"battery_soc_gt": 80, "solar_forecast_gt": 1000}
-    action: MiningDecision # e.g., MiningDecision.START_MINING
+    name: str = ""
+    conditions: Dict[str, Any] = field(default_factory=dict) # e.g., {"battery_soc_gt": 80, "solar_forecast_gt": 1000}
+    action: MiningDecision = field(default_factory=MiningDecision.STOP_MINING) # e.g., MiningDecision.START_MINING
 
     def evaluate(self, energy_state: EnergyStateSnapshot, forecast: Optional[ForecastData], home_load_forecast: Optional[Watts], current_miner_status: MinerStatus) -> bool:
         """Evaluates if the rule conditions are met."""

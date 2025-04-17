@@ -1,0 +1,13 @@
+# Core Dependencies
+pydantic==2.9
+pydantic-settings
+apscheduler # For the scheduler driving adapter
+click # For the CLI driving adapter
+
+# Optional - For API Driving Adapter
+fastapi
+uvicorn[standard]
+
+# Optional - For specific Driven Adapters (add as needed)
+homeassistant_api==4.2.2
+python-telegram-bot>=20.0

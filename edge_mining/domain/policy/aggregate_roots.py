@@ -14,7 +14,7 @@ from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 @dataclass
 class OptimizationPolicy:
     id: EntityId = field(default_factory=uuid.uuid4)
-    name: str
+    name: str = ""
     description: Optional[str] = None
     is_active: bool = False
     # Could have different types of rules or grouped rules, but for now I have to make it simple! 🙃​

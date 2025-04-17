@@ -5,13 +5,13 @@ from edge_mining.domain.common import EntityId
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.common import MinerId
 from edge_mining.domain.exceptions import PolicyError
+from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.miner.ports import MinerRepository
 from edge_mining.domain.user.entities import SystemSettings
 from edge_mining.domain.user.ports import SettingsRepository
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy, AutomationRule, MiningDecision
 
-logger = logging.getLogger(__name__)
 
 class ConfigurationService:
     """Handles configuration of miners, policies, and system settings."""
@@ -20,18 +20,27 @@ class ConfigurationService:
         self,
         miner_repo: MinerRepository,
         policy_repo: OptimizationPolicyRepository,
-        settings_repo: SettingsRepository
+        settings_repo: SettingsRepository,
+        logger: LoggerPort
     ):
+        # Domains
         self.miner_repo = miner_repo
         self.policy_repo = policy_repo
         self.settings_repo = settings_repo
+        
+        # Infrastructure
+        self.logger = logger
 
     # --- Miner Management ---
     def add_miner(self, miner_id: MinerId, name: str, ip_address: Optional[str] = None) -> Miner:
-        logger.info(f"Adding miner {miner_id} ({name})")
+        self.logger.info(f"Adding miner {miner_id} ({name})")
+        
         miner = Miner(id=miner_id, name=name, ip_address=ip_address)
+        
         # TODO: Add validation (e.g., check if ID already exists)
+        
         self.miner_repo.add(miner)
+        
         return miner
 
     def get_miner(self, miner_id: MinerId) -> Optional[Miner]:
@@ -41,18 +50,24 @@ class ConfigurationService:
         return self.miner_repo.get_all()
 
     def remove_miner(self, miner_id: MinerId) -> None:
-        logger.info(f"Removing miner {miner_id}")
+        self.logger.info(f"Removing miner {miner_id}")
+        
         # TODO: Check if miner exists before removing
+        
         self.miner_repo.remove(miner_id)
 
     # --- Policy Management ---
     def create_policy(self, name: str, description: str = "", target_miner_ids: List[MinerId] = None) -> OptimizationPolicy:
-        logger.info(f"Creating policy '{name}'")
+        self.logger.info(f"Creating policy '{name}'")
+        
         if target_miner_ids is None:
             target_miner_ids = []
+            
         # Validate miner IDs exist?
         policy = OptimizationPolicy(name=name, description=description, target_miner_ids=target_miner_ids)
+        
         self.policy_repo.add(policy)
+        
         return policy
 
     def get_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
@@ -63,6 +78,7 @@ class ConfigurationService:
 
     def add_rule_to_policy(self, policy_id: EntityId, rule_type: str, name: str, conditions: Dict[str, Any], action: MiningDecision) -> AutomationRule:
         policy = self.policy_repo.get_by_id(policy_id)
+        
         if not policy:
             raise PolicyError(f"Policy with ID {policy_id} not found.")
 
@@ -75,14 +91,17 @@ class ConfigurationService:
             raise ValueError("Invalid rule_type. Must be 'start' or 'stop'.")
 
         self.policy_repo.update(policy)
-        logger.info(f"Added {rule_type} rule '{name}' to policy '{policy.name}'")
+        self.logger.info(f"Added {rule_type} rule '{name}' to policy '{policy.name}'")
+        
         return rule
     
-        # TODO: Add method to remove/update rules
+    # TODO: Add method to remove/update rules
 
     def set_active_policy(self, policy_id: EntityId) -> None:
-        logger.info(f"Setting policy {policy_id} as active.")
+        self.logger.info(f"Setting policy {policy_id} as active.")
+        
         policies = self.policy_repo.get_all()
+        
         found = False
         for p in policies:
             if p.id == policy_id:
@@ -105,9 +124,12 @@ class ConfigurationService:
 
     def update_setting(self, key: str, value: Any) -> None:
         settings = self.settings_repo.get_settings()
+        
         if not settings:
             settings = SystemSettings() # Create if doesn't exist
 
-        logger.info(f"Updating setting '{key}' to '{value}'")
+        self.logger.info(f"Updating setting '{key}' to '{value}'")
+        
         settings.set_setting(key, value)
+        
         self.settings_repo.save_settings(settings)
