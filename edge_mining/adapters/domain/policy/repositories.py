@@ -49,16 +49,16 @@ class InMemoryOptimizationPolicyRepository(OptimizationPolicyRepository):
 class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolicyRepository):
 
     def _dict_to_rule(self, data: Dict[str, Any]) -> AutomationRule:
-        # Deserializza un dizionario (da JSON) in un oggetto AutomationRule
+        # Deserialize a dictionary (from JSON) into an AutomationRule object
         return AutomationRule(
-            id=uuid.UUID(data['id']), # Converte stringa UUID
+            id=uuid.UUID(data['id']), # Convert UUID string
             name=data['name'],
             conditions=data['conditions'],
-            action=MiningDecision(data['action']) # Converte valore Enum
+            action=MiningDecision(data['action']) # Convert Enum value
         )
 
     def _rule_to_dict(self, rule: AutomationRule) -> Dict[str, Any]:
-         # Serializza un oggetto AutomationRule in un dizionario per JSON
+         # Serializes an AutomationRule object into a dictionary for JSON
          return {
              'id': str(rule.id),
              'name': rule.name,
@@ -70,7 +70,7 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
         if not row:
             return None
         try:
-            # Deserializza le liste JSON di regole e target IDs
+            # Deserialize JSON lists of rules and target IDs
             start_rules_data = json.loads(row["start_rules"] or '[]')
             stop_rules_data = json.loads(row["stop_rules"] or '[]')
             target_ids_data = json.loads(row["target_miner_ids"] or '[]')
@@ -80,7 +80,7 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
             target_ids = [MinerId(tid) for tid in target_ids_data]
 
             return OptimizationPolicy(
-                id=row["id"], # UUID è già convertito da detect_types
+                id=row["id"], # UUID is already converted by detect_types
                 name=row["name"],
                 description=row["description"],
                 is_active=bool(row["is_active"]),
@@ -89,7 +89,7 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
                 target_miner_ids=target_ids
             )
         except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
-            self.logger.error(f"Errore nel deserializzare Policy dalla riga DB: {dict(row)}. Errore: {e}", exc_info=True)
+            self.logger.error(f"Error deserializing Policy from DB line: {dict(row)}. Error: {e}", exc_info=True)
             return None
 
     def add(self, policy: OptimizationPolicy) -> None:
@@ -100,7 +100,7 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
         """
         conn = self._get_connection()
         try:
-            # Serializza le regole e i target IDs in JSON
+            # Serialize rules and target IDs to JSON
             start_rules_json = json.dumps([self._rule_to_dict(r) for r in policy.start_rules])
             stop_rules_json = json.dumps([self._rule_to_dict(r) for r in policy.stop_rules])
             target_ids_json = json.dumps([str(tid) for tid in policy.target_miner_ids])
@@ -116,11 +116,11 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
                     target_ids_json
                 ))
         except sqlite3.IntegrityError as e:
-            self.logger.error(f"Errore di integrità aggiungendo policy '{policy.name}': {e}")
-            raise PolicyError(f"Policy con ID {policy.id} o nome '{policy.name}' esiste già: {e}") from e
+            self.logger.error(f"Integrity error adding policy '{policy.name}': {e}")
+            raise PolicyError(f"Policy with ID {policy.id} or name '{policy.name}' already exists: {e}") from e
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite aggiungendo policy '{policy.name}': {e}")
-            raise PolicyError(f"Errore DB aggiungendo policy: {e}") from e
+            self.logger.error(f"SQLite error adding policy '{policy.name}': {e}")
+            raise PolicyError(f"DB error adding policy: {e}") from e
         finally:
             if conn: conn.close()
 
@@ -130,11 +130,11 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute(sql, (policy_id,)) # Passa UUID direttamente
+            cursor.execute(sql, (policy_id,)) # Pass UUID directly
             row = cursor.fetchone()
             return self._row_to_policy(row)
         except sqlite3.Error as e:
-            self.logger.exception(f"Errore SQLite ottenendo policy {policy_id}: {e}")
+            self.logger.error(f"SQLite error getting policy {policy_id}: {e}")
             return None
         finally:
             if conn: conn.close()
@@ -149,7 +149,7 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
             row = cursor.fetchone()
             return self._row_to_policy(row)
         except sqlite3.Error as e:
-            self.logger.exception(f"Errore SQLite ottenendo policy attiva: {e}")
+            self.logger.error(f"SQLite error getting active policy: {e}")
             return None
         finally:
             if conn: conn.close()
@@ -169,23 +169,23 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
                      policies.append(policy)
             return policies
         except sqlite3.Error as e:
-            self.logger.exception(f"Errore SQLite ottenendo tutte le policy: {e}")
+            self.logger.error(f"SQLite error getting all policies: {e}")
             return []
         finally:
             if conn: conn.close()
 
     def update(self, policy: OptimizationPolicy) -> None:
         self.logger.debug(f"Updating policy '{policy.name}' ({policy.id}) in SQLite.")
-        # Gestione attivazione: se questa policy diventa attiva, disattiva le altre
+        # Activation Management: If this policy becomes active, deactivates the others
         conn = self._get_connection()
         try:
-            with conn: # Transazione
+            with conn: # Transaction
                 cursor = conn.cursor()
                 if policy.is_active:
                     self.logger.debug(f"Deactivating other policies as '{policy.name}' becomes active.")
                     cursor.execute("UPDATE policies SET is_active = 0 WHERE id != ?", (policy.id,))
 
-                # Ora aggiorna la policy corrente
+                # Now update the current policy
                 sql_update = """
                     UPDATE policies
                     SET name = ?, description = ?, is_active = ?, start_rules = ?, stop_rules = ?, target_miner_ids = ?
@@ -206,14 +206,14 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
                 ))
 
                 if cursor.rowcount == 0:
-                    raise PolicyError(f"Nessuna policy trovata con ID {policy.id} per aggiornare.")
+                    raise PolicyError(f"No policies found with ID {policy.id}.")
 
         except sqlite3.IntegrityError as e:
-            self.logger.error(f"Errore di integrità aggiornando policy '{policy.name}': {e}")
-            # Potrebbe essere un conflitto sul nome UNIQUE
-            raise PolicyError(f"Errore di constraint aggiornando policy (nome duplicato?): {e}") from e
+            self.logger.error(f"Integrity error updating policy '{policy.name}': {e}")
+            # There might be a conflict over the name UNIQUE
+            raise PolicyError(f"Constraint error updating policy (duplicate name?): {e}") from e
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite aggiornando policy '{policy.name}': {e}")
-            raise PolicyError(f"Errore DB aggiornando policy: {e}") from e
+            self.logger.error(f"SQLite error updating policy '{policy.name}': {e}")
+            raise PolicyError(f"EDB error updating policy: {e}") from e
         finally:
             if conn: conn.close()
