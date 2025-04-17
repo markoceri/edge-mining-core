@@ -14,6 +14,10 @@ class PolicyError(DomainError):
     """Errors related to optimization policies."""
     pass
 
+class PolicyNotFoundError(PolicyError):
+    """Optimization policy not found."""
+    pass
+
 class InvalidRuleError(PolicyError):
     """Invalid automation rule."""
     pass

@@ -1,6 +1,6 @@
-import logging
 from typing import Optional
 
+from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.domain.policy.entities import MiningDecision
 from edge_mining.domain.miner.common import MinerStatus, MinerId
@@ -10,8 +10,6 @@ from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.home_load.ports import HomeForecastProviderPort
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.miner.ports import MinerControlPort, MinerRepository
-
-logger = logging.getLogger(__name__)
 
 class MiningOrchestratorService:
     """Orchestrates the mining process based on energy, forecasts, and policies."""
@@ -24,8 +22,10 @@ class MiningOrchestratorService:
         home_forecast_provider: HomeForecastProviderPort,
         policy_repo: OptimizationPolicyRepository,
         miner_repo: MinerRepository,
-        notifier: Optional[NotificationPort] = None
+        notifier: Optional[NotificationPort] = None,
+        logger: Optional[LoggerPort] = None,
     ):
+        # Domains
         self.energy_monitor = energy_monitor
         self.miner_controller = miner_controller
         self.forecast_provider = forecast_provider
@@ -33,6 +33,9 @@ class MiningOrchestratorService:
         self.policy_repo = policy_repo
         self.miner_repo = miner_repo
         self.notifier = notifier
+        
+        # Infrastructure
+        self.logger = logger
 
     def _notify(self, title: str, message: str):
         """Sends a notification using the configured notifier."""
@@ -40,32 +43,38 @@ class MiningOrchestratorService:
             try:
                 self.notifier.send_notification(title, message)
             except Exception as e:
-                logger.error(f"Failed to send notification: {e}")
+                if self.logger:
+                    self.logger.error(f"Failed to send notification: {e}")
 
     def evaluate_and_control_miners(self):
         """The main control loop evaluation triggered periodically."""
-        logger.info("Starting evaluation cycle...")
+        if self.logger:
+            self.logger.info("Starting evaluation cycle...")
 
         active_policy = self.policy_repo.get_active_policy()
         if not active_policy:
-            logger.warning("No active optimization policy found. Skipping evaluation.")
+            if self.logger:
+                self.logger.warning("No active optimization policy found. Skipping evaluation.")
             return
 
         energy_state = self.energy_monitor.get_current_energy_state()
         if not energy_state:
-            logger.error("Could not retrieve current energy state. Skipping evaluation.")
+            if self.logger:
+                self.logger.error("Could not retrieve current energy state. Skipping evaluation.")
             self._notify("Edge Mining Error", "Failed to retrieve energy state.")
             return
 
         # Provide here latitude, longitude and pv_capacity_kwp if the user has set them
         solar_forecast = self.forecast_provider.get_solar_forecast()
         if not solar_forecast:
-            logger.warning("Could not retrieve solar forecast. Proceeding without it.")
+            if self.logger:
+                self.logger.warning("Could not retrieve solar forecast. Proceeding without it.")
             # Decide if this is critical or not - maybe policy needs forecast?
 
         home_load_forecast = self.home_forecast_provider.get_home_consumption_forecast()
         if not home_load_forecast:
-            logger.warning("Could not retrieve home load forecast. Proceeding without it.")
+            if self.logger:
+                self.logger.warning("Could not retrieve home load forecast. Proceeding without it.")
 
 
         # Apply policy to each targeted miner
@@ -73,7 +82,8 @@ class MiningOrchestratorService:
             try:
                 miner = self.miner_repo.get_by_id(miner_id)
                 if not miner:
-                    logger.error(f"Miner {miner_id} targeted by policy not found in repository.")
+                    if self.logger:
+                        self.logger.error(f"Miner {miner_id} targeted by policy not found in repository.")
                     continue
 
                 # Get current *actual* status from controller, not just repo's last known state
@@ -95,18 +105,22 @@ class MiningOrchestratorService:
                 self._execute_decision(miner_id, decision, current_status)
 
             except (PolicyError, MinerError, Exception) as e:
-                logger.error(f"Error processing miner {miner_id}: {e}", exc_info=True)
+                if self.logger:
+                    self.logger.error(f"Error processing miner {miner_id}: {e}", exc_info=True)
                 self._notify("Edge Miner Error", f"Error processing miner {miner_id}: {e}")
 
 
-        logger.info("Evaluation cycle finished.")
+        if self.logger:
+            self.logger.info("Evaluation cycle finished.")
 
     def _execute_decision(self, miner_id: MinerId, decision: MiningDecision, current_status: MinerStatus):
         """Executes the start/stop command based on the policy decision."""
-        logger.info(f"Miner {miner_id}: Current Status={current_status}, Decision={decision.name}")
+        if self.logger:
+            self.logger.info(f"Miner {miner_id}: Current Status={current_status}, Decision={decision.name}")
 
         if decision == MiningDecision.START_MINING and current_status != MinerStatus.ON:
-            logger.info(f"Executing START command for miner {miner_id}")
+            if self.logger:
+                self.logger.info(f"Executing START command for miner {miner_id}")
             success = self.miner_controller.start_miner(miner_id)
             if success:
                  # Optimistically update status, will be confirmed next cycle
@@ -116,11 +130,13 @@ class MiningOrchestratorService:
                     self.miner_repo.update(miner)
                 self._notify("Edge Mining Info", f"Miner {miner_id} started.")
             else:
-                logger.error(f"Failed to send START command to miner {miner_id}")
+                if self.logger:
+                    self.logger.error(f"Failed to send START command to miner {miner_id}")
                 self._notify("Edge Mining Error", f"Failed START command for miner {miner_id}.")
 
         elif decision == MiningDecision.STOP_MINING and current_status == MinerStatus.ON:
-            logger.info(f"Executing STOP command for miner {miner_id}")
+            if self.logger:
+                self.logger.info(f"Executing STOP command for miner {miner_id}")
             success = self.miner_controller.stop_miner(miner_id)
             if success:
                 miner = self.miner_repo.get_by_id(miner_id)
@@ -129,11 +145,14 @@ class MiningOrchestratorService:
                     self.miner_repo.update(miner)
                 self._notify("Edge Miner Info", f"Miner {miner_id} stopped.")
             else:
-                logger.error(f"Failed to send STOP command to miner {miner_id}")
+                if self.logger:
+                    self.logger.error(f"Failed to send STOP command to miner {miner_id}")
                 self._notify("Edge Miner Error", f"Failed STOP command for miner {miner_id}.")
 
         elif decision == MiningDecision.MAINTAIN_STATE:
-            logger.debug(f"Miner {miner_id}: Maintaining current state ({current_status.name}).")
+            if self.logger:
+                self.logger.debug(f"Miner {miner_id}: Maintaining current state ({current_status.name}).")
 
         else:
-             logger.warning(f"Unhandled decision '{decision.name}' for miner {miner_id}")
+             if self.logger:
+                self.logger.warning(f"Unhandled decision '{decision.name}' for miner {miner_id}")

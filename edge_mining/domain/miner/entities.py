@@ -12,7 +12,7 @@ class Miner:
     name: str
     status: MinerStatus = MinerStatus.UNKNOWN
     power_consumption: Optional[Watts] = None # Can be dynamic or fixed
-    # ip_address: Optional[str] = None # 🤷​ Will need it for some control methods ?
+    ip_address: Optional[str] = None # 🤷​ Will need it for some control methods ?
     # Potentially add more details: model, location, etc. but for now, I think this is enough
 
     def turn_on(self):
