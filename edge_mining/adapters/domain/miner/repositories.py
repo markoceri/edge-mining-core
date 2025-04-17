@@ -52,7 +52,7 @@ class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
                 power_consumption=Watts(row["power_consumption"]) if row["power_consumption"] is not None else None
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(f"Errore nel deserializzare Miner dalla riga DB: {row}. Errore: {e}")
+            self.logger.error(f"Error deserializing Miner from DB row: {row}. Errorr: {e}")
             return None
 
     def add(self, miner: Miner) -> None:
@@ -73,12 +73,12 @@ class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
                     float(miner.power_consumption) if miner.power_consumption is not None else None
                 ))
         except sqlite3.IntegrityError as e:
-             self.logger.error(f"Errore di integrità aggiungendo miner {miner.id}: {e}")
+             self.logger.error(f"Integrity error adding miner {miner.id}: {e}")
              # Potrebbe significare che l'ID esiste già
-             raise MinerError(f"Miner con ID {miner.id} esiste già o violazione constraint: {e}") from e
+             raise MinerError(f"Miner with ID {miner.id} already exists or constraint violation: {e}") from e
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite aggiungendo miner {miner.id}: {e}")
-            raise MinerError(f"Errore DB aggiungendo miner: {e}") from e
+            self.logger.error(f"SQLite error adding miner {miner.id}: {e}")
+            raise MinerError(f"DB error adding miner: {e}") from e
         finally:
             if conn: conn.close()
 
@@ -93,8 +93,8 @@ class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
             row = cursor.fetchone()
             return self._row_to_miner(row)
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite ottenendo miner {miner_id}: {e}")
-            return None # O sollevare eccezione? Restituire None è più tollerante
+            self.logger.error(f"SQLite error getting miner {miner_id}: {e}")
+            return None # Or raise exception? Returning None is more forgiving
         finally:
              if conn: conn.close()
 
@@ -114,7 +114,7 @@ class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
                      miners.append(miner)
             return miners
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite ottenendo tutti i miner: {e}")
+            self.logger.error(f"SQLite error getting all miners: {e}")
             return []
         finally:
             if conn: conn.close()
@@ -139,10 +139,10 @@ class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
                     miner.id
                 ))
                 if cursor.rowcount == 0:
-                     raise MinerError(f"Nessun miner trovato con ID {miner.id} per aggiornare.")
+                     raise MinerError(f"No miner found with ID {miner.id} for update.")
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite aggiornando miner {miner.id}: {e}")
-            raise MinerError(f"Errore DB aggiornando miner: {e}") from e
+            self.logger.error(f"SQLite error updating miner {miner.id}: {e}")
+            raise MinerError(f"DB error updating miner: {e}") from e
         finally:
             if conn: conn.close()
 
@@ -156,10 +156,10 @@ class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
                  cursor = conn.cursor()
                  cursor.execute(sql, (miner_id,))
                  if cursor.rowcount == 0:
-                      self.logger.warning(f"Tentativo di rimuovere miner inesistente con ID {miner_id}.")
-                      # Non c'è bisogno di sollevare eccezione qui, la rimozione di un non esistente è idempotente
+                      self.logger.warning(f"Attempt to remove non-existent miner with ID {miner_id}.")
+                      # There is no need to raise an exception here, removing a non-existent is idempotent.
         except sqlite3.Error as e:
-            self.logger.error(f"Errore SQLite rimuovendo miner {miner_id}: {e}")
-            raise MinerError(f"Errore DB rimuovendo miner: {e}") from e
+            self.logger.error(f"SQLite error removing miner {miner_id}: {e}")
+            raise MinerError(f"DB error removing miner: {e}") from e
         finally:
             if conn: conn.close()
