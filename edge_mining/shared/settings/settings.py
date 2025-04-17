@@ -24,7 +24,7 @@ class AppSettings(BaseSettings):
 
     sqlite_db_file: str = DEFAULT_SQLITE_DB_PATH # SQLite file path
 
-    api_port: int = 8000
+    api_port: int = 8001
 
     # Dummy Adapter Settings (if used)
     dummy_miner_power_w: float = 1500.0
