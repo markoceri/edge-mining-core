@@ -105,6 +105,20 @@ class TerminalLogger(LoggerPort):
         print("Hey! 👋 I'm Edge Mining. Let's put that wasted energy to good use and generate some satoshis ⚡⛏️")
         print("\n\n")
 
+    def shutdown(self):
+        """Sure that log are written to the file before exiting."""
+
+        # Flush the logger
+        for handler in self.logger.handlers:
+            handler.flush()
+
+        # Close the logger
+        for handler in self.logger.handlers:
+            handler.close()
+
+        # Print a goodbye message
+        print("Shutting down...")
+        print("Goodbye! 👋​")
 
     def log_examples(self):
         """Log examples for the log engine."""

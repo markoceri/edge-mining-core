@@ -89,5 +89,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Unhandled exception during main execution: {e}")
     finally:
-    main()
+        # Sure to flush logs before exiting
+        logger.shutdown()
         sys.exit(1)

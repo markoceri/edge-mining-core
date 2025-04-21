@@ -49,6 +49,11 @@ class LoggerPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def shutdown(self):
+        """Sure that log are written to the file before exiting."""
+        raise NotImplementedError
+    
+    @abstractmethod
     def log_examples(self):
         """Log examples for the log engine."""
         raise NotImplementedError
