@@ -12,6 +12,8 @@ DEFAULT_SQLITE_DB_PATH = os.path.join(os.path.dirname(
 class AppSettings(BaseSettings):
     # Application settings
     log_level: str = "INFO"
+    
+    timezome: str = "Europe/Rome" # Default timezone
 
     # Adapters Configuration (select which ones to use)
     energy_monitor_adapter: str = "dummy" # Options: "dummy", "home_assistant"

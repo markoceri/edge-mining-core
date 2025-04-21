@@ -3,6 +3,7 @@
 import sys
 import os
 import uvicorn
+import asyncio
 
 # Ensure the src directory is in the Python path
 # This is often needed when running directly with `python -m edge_mining`
@@ -22,7 +23,7 @@ from edge_mining.bootstrap import configure_dependencies
 logger = TerminalLogger()
 settings = AppSettings()
 
-def main():
+async def main_async():
     logger.welcome()
     
     # --- Dependency Injection ---
@@ -43,35 +44,50 @@ def main():
         # Remove mode argument so Click/FastAPI don't see it
         sys.argv.pop(1)
     else:
-        mode = "scheduler" # Default mode
+        mode = "standard" # Default mode
 
     logger.info(f"Running in '{mode}' mode.")
     
-    if mode == "scheduler":
-        # Run the main automation loop
+    if mode == "standard":
+        # --- Run the FastAPI server ---
+        logger.debug("Starting FastAPI server with Uvicorn...")
+        # Note: Uvicorn might reload and cause DI to run multiple times if --reload is used.
+        # We should to consider more robust DI setup for production APIs.
+        api_config = uvicorn.Config(
+            fastapi_app,
+            host="0.0.0.0",
+            port=settings.api_port,
+            log_level=settings.log_level.lower()
+        )
+        api_server = uvicorn.Server(api_config)
+        
+        # --- Run the main automation loop ---
         scheduler = AutomationScheduler(
             orchestrator=orchestrator_service,
             logger=logger,
             settings=settings
         )
-
-        scheduler.start() # This blocks until interrupted
+        
+        await asyncio.gather(
+            api_server.serve(), # Run the FastAPI server
+            scheduler.start()   # Run the automation scheduler
+        )
     
     elif mode == "cli":
         # Run Click CLI
         cli()
 
-    elif mode == "api":
-        logger.debug("Starting FastAPI server with Uvicorn...")
-        # Note: Uvicorn might reload and cause DI to run multiple times if --reload is used.
-        # We should to consider more robust DI setup for production APIs.
-        uvicorn.run(fastapi_app, host="0.0.0.0", port=settings.api_port, log_level=settings.log_level.lower())
-
     else:
-        logger.error(f"Unknown run mode: '{mode}'. Use 'scheduler', 'cli', or 'api'.")
+        logger.error(f"Unknown run mode: '{mode}'. Use 'standard', or 'cli'.")
         sys.exit(1)
-    
-    logger.info("Edge Mining is closing, bye! 🫶​")
 
 if __name__ == "__main__":
+    try:
+        asyncio.run(main_async())
+    except KeyboardInterrupt:
+        logger.info("Application interrupted by user.")
+    except Exception as e:
+        logger.error(f"Unhandled exception during main execution: {e}")
+    finally:
     main()
+        sys.exit(1)

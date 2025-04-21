@@ -1,4 +1,4 @@
-from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from edge_mining.shared.scheduler.port import SchedulerPort
 from edge_mining.shared.logging.port import LoggerPort
@@ -15,36 +15,35 @@ class AutomationScheduler(SchedulerPort):
         self.orchestrator = orchestrator
         self.logger = logger
         self.settings = settings
-        self.scheduler = BlockingScheduler(timezone="UTC")
+        self.scheduler = AsyncIOScheduler(timezone=self.settings.timezome)
+        
+        self._job_id = "evaluate_mining"
 
     def _run_evaluation_job(self):
         """Wrapper to call the orchestrator's evaluation method."""
-        self.logger.info("Scheduler triggered: Running evaluation job.")
+        self.logger.info(f"Scheduler triggered. Running job: {self._job_id}.")
         try:
             self.orchestrator.evaluate_and_control_miners()
         except Exception as e:
-            self.logger.exception("Error during scheduled evaluation job:")
+            self.logger.error(f"Error during scheduled job: {self._job_id}")
             # Consider sending a critical notification here
 
-    def start(self):
+    async def start(self):
         """Adds the job and starts the scheduler."""
         interval = self.settings.scheduler_interval_seconds
-        self.logger.info(f"Starting scheduler. Evaluation job will run every {interval} seconds.")
+        self.logger.info(f"Starting scheduler. job |{self._job_id}| will run every {interval} seconds.")
 
         self.scheduler.add_job(
             self._run_evaluation_job,
             'interval',
             seconds=interval,
-            id='evaluate_mining_job',
+            id=self._job_id,
             replace_existing=True
         )
 
-        try:
-            self.scheduler.start()
-        except (KeyboardInterrupt, SystemExit):
-            self.logger.info("Scheduler stopped.")
-            self.scheduler.shutdown()
+        self.logger.info("Scheduler started.")
+        self.scheduler.start()
 
     def stop(self):
-        self.logger.info("Shutting down scheduler...")
+        self.logger.info(f"Scheduler stopped. Job: {self._job_id}")
         self.scheduler.shutdown()
