@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from enum import Enum
 
 # Decision object
-@dataclass(frozen=True)
 class MiningDecision(Enum):
     START_MINING = "start_mining"
     STOP_MINING = "stop_mining"
