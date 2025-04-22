@@ -28,3 +28,8 @@ class OptimizationPolicyRepository(ABC):
     def update(self, policy: OptimizationPolicy) -> None:
         # Handles activating/deactivating policies as well
         raise NotImplementedError
+    
+    @abstractmethod
+    def remove(self, policy_id: EntityId) -> None:
+        """Removes a policy by its ID."""
+        raise NotImplementedError

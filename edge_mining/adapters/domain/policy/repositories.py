@@ -217,3 +217,19 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
             raise PolicyError(f"EDB error updating policy: {e}") from e
         finally:
             if conn: conn.close()
+    
+    def remove(self, policy_id: EntityId) -> None:
+        self.logger.debug(f"Removing policy {policy_id} from SQLite.")
+        sql = "DELETE FROM policies WHERE id = ?"
+        conn = self._get_connection()
+        try:
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute(sql, (policy_id,))
+                if cursor.rowcount == 0:
+                    raise PolicyError(f"No policies found with ID {policy_id}.")
+        except sqlite3.Error as e:
+            self.logger.error(f"SQLite error removing policy {policy_id}: {e}")
+            raise PolicyError(f"DB error removing policy: {e}") from e
+        finally:
+            if conn: conn.close()
