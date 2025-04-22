@@ -31,20 +31,25 @@ class MinerControlPort(ABC):
 class MinerRepository(ABC):
     @abstractmethod
     def add(self, miner: Miner) -> None:
+        """Adds a new miner to the repository."""
         raise NotImplementedError
 
     @abstractmethod
     def get_by_id(self, miner_id: MinerId) -> Optional[Miner]:
+        """Retrieves a miner by its ID."""
         raise NotImplementedError
 
     @abstractmethod
     def get_all(self) -> List[Miner]:
+        """Retrieves all miners in the repository."""
         raise NotImplementedError
 
     @abstractmethod
     def update(self, miner: Miner) -> None:
+        """Updates the state of an existing miner in the repository."""
         raise NotImplementedError
 
     @abstractmethod
     def remove(self, miner_id: MinerId) -> None:
+        """Removes a miner from the repository."""
         raise NotImplementedError
