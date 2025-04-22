@@ -109,7 +109,7 @@ class MiningOrchestratorService:
 
             except (PolicyError, MinerError, Exception) as e:
                 if self.logger:
-                    self.logger.error(f"Error processing miner {miner_id}: {e}", exc_info=True)
+                    self.logger.error(f"Error processing miner {miner_id}: {e}")
                 self._notify("Edge Miner Error", f"Error processing miner {miner_id}: {e}")
 
 
