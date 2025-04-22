@@ -1,5 +1,6 @@
 from typing import Optional
 
+from edge_mining.domain.common import Watts
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.domain.policy.entities import MiningDecision
@@ -7,8 +8,11 @@ from edge_mining.domain.miner.common import MinerStatus, MinerId
 from edge_mining.domain.exceptions import PolicyError, MinerError
 from edge_mining.domain.forecast.ports import ForecastProviderPort
 from edge_mining.domain.notification.ports import NotificationPort
+from edge_mining.domain.forecast.value_objects import ForecastData
 from edge_mining.domain.home_load.ports import HomeForecastProviderPort
+from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
+from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.miner.ports import MinerControlPort, MinerRepository
 
 class MiningOrchestratorService:
@@ -51,27 +55,26 @@ class MiningOrchestratorService:
         if self.logger:
             self.logger.info("Starting evaluation cycle...")
 
-        active_policy = self.policy_repo.get_active_policy()
+        active_policy: Optional[OptimizationPolicy] = self.policy_repo.get_active_policy()
         if not active_policy:
             if self.logger:
                 self.logger.warning("No active optimization policy found. Skipping evaluation.")
             return
 
-        energy_state = self.energy_monitor.get_current_energy_state()
+        energy_state: Optional[EnergyStateSnapshot] = self.energy_monitor.get_current_energy_state()
         if not energy_state:
             if self.logger:
                 self.logger.error("Could not retrieve current energy state. Skipping evaluation.")
             self._notify("Edge Mining Error", "Failed to retrieve energy state.")
             return
 
-        # Provide here latitude, longitude and pv_capacity_kwp if the user has set them
-        solar_forecast = self.forecast_provider.get_solar_forecast()
+        solar_forecast: Optional[ForecastData] = self.forecast_provider.get_solar_forecast()
         if not solar_forecast:
             if self.logger:
                 self.logger.warning("Could not retrieve solar forecast. Proceeding without it.")
             # Decide if this is critical or not - maybe policy needs forecast?
 
-        home_load_forecast = self.home_forecast_provider.get_home_consumption_forecast()
+        home_load_forecast: Optional[Watts] = self.home_forecast_provider.get_home_consumption_forecast()
         if not home_load_forecast:
             if self.logger:
                 self.logger.warning("Could not retrieve home load forecast. Proceeding without it.")
