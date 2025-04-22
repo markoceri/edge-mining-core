@@ -2,6 +2,7 @@
 import os
 
 from edge_mining.domain.energy.ports import EnergyMonitorPort
+from edge_mining.domain.miner.common import MinerId, MinerStatus
 from edge_mining.domain.miner.ports import MinerControlPort, MinerRepository
 from edge_mining.domain.forecast.ports import ForecastProviderPort
 from edge_mining.domain.home_load.ports import HomeForecastProviderPort, HomeLoadsProfileRepository
@@ -104,7 +105,11 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     # --- Miner Controller ---
     if settings.miner_controller_adapter == "dummy":
         miner_controller: MinerControlPort = DummyMinerController(
-             power_w=settings.dummy_miner_power_w
+            initial_status={
+                MinerId("001"): MinerStatus.OFF,
+                MinerId("002"): MinerStatus.ON
+            },
+            power_w=settings.dummy_miner_power_w
         )
 
         logger.debug("Using Dummy Miner Controller adapter.")
