@@ -113,7 +113,11 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
 
     # --- Forecast Provider ---
     if settings.forecast_provider_adapter == "dummy":
-        forecast_provider: ForecastProviderPort = DummyForecastProvider()
+        forecast_provider: ForecastProviderPort = DummyForecastProvider(
+            latitude=settings.latitude,
+            longitude=settings.longitude,
+            capacity_kwp=settings.pv_capacity_kwp
+        )
 
         logger.debug("Using Dummy Forecast Provider adapter.")
     else:
