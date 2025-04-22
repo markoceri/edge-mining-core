@@ -34,7 +34,7 @@ class OptimizationPolicy:
         Applies the policy rules to determine the next action.
         This is the core decision-making logic.
         """
-        print(f"Policy '{self.name}': Evaluating state for miner status {current_miner_status}")
+        print(f"Policy '{self.name}': Evaluating state for miner status {current_miner_status.name}")
 
         # Logic:
         # 1. If miner is OFF, check START rules. If any match -> START_MINING
