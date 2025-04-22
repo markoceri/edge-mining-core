@@ -65,7 +65,7 @@ class DummyEnergyMonitor(EnergyMonitorPort):
             production=production,
             consumption=consumption,
             battery=battery_state,
-            grid_power=grid_power,
+            grid=grid_power,
             timestamp=now
         )
         print(f"DummyMonitor: Generated state: Prod={production:.0f}W, Cons={consumption:.0f}W, Grid={grid_power:.0f}W, SOC={self.current_soc:.1f}%")
