@@ -1,4 +1,4 @@
-"""Start Edge Minig."""
+"""Start Edge Mining."""
 
 import sys
 import os
