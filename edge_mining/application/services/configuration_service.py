@@ -9,9 +9,9 @@ from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.miner.ports import MinerRepository
 from edge_mining.domain.user.entities import SystemSettings
 from edge_mining.domain.user.ports import SettingsRepository
+from edge_mining.domain.exceptions import PolicyError, MinerError
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy, AutomationRule, MiningDecision
-
 
 class ConfigurationService:
     """Handles configuration of miners, policies, and system settings."""
@@ -52,7 +52,10 @@ class ConfigurationService:
     def remove_miner(self, miner_id: MinerId) -> None:
         self.logger.info(f"Removing miner {miner_id}")
         
-        # TODO: Check if miner exists before removing
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerError(f"Policy with ID {miner.id} not found.")
         
         self.miner_repo.remove(miner_id)
 
@@ -95,7 +98,68 @@ class ConfigurationService:
         
         return rule
     
-    # TODO: Add method to remove/update rules
+    def get_policy_rules(self, policy_id: EntityId, rule_type: RuleType) -> List[AutomationRule]:
+        policy = self.policy_repo.get_by_id(policy_id)
+        
+        if not policy:
+            raise PolicyError(f"Policy with ID {policy_id} not found.")
+        
+        if rule_type == RuleType.START:
+            return policy.start_rules
+        elif rule_type == RuleType.STOP:
+            return policy.stop_rules
+        else:
+            raise ValueError(f"Invalid rule_type. Must be {RuleType.START} or {RuleType.STOP}.")
+    
+    def get_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> Optional[AutomationRule]:
+        policy = self.policy_repo.get_by_id(policy_id)
+        
+        if not policy:
+            raise PolicyError(f"Policy with ID {policy_id} not found.")
+        
+        for rule in policy.start_rules + policy.stop_rules:
+            if rule.id == rule_id:
+                return rule
+        
+        raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+    
+    def update_policy_rule(self, policy_id: EntityId, rule_id: EntityId, name: str, conditions: Dict[str, Any], action: MiningDecision) -> AutomationRule:
+        policy = self.policy_repo.get_by_id(policy_id)
+        
+        if not policy:
+            raise PolicyError(f"Policy with ID {policy_id} not found.")
+        
+        for rule in policy.start_rules + policy.stop_rules:
+            if rule.id == rule_id:
+                rule.name = name
+                rule.conditions = conditions
+                rule.action = action
+                self.policy_repo.update(policy)
+                self.logger.info(f"Updated rule '{name}' in policy '{policy.name}'")
+                
+                return rule
+        
+        raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+    
+    def delete_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
+        policy = self.policy_repo.get_by_id(policy_id)
+        
+        if not policy:
+            raise PolicyError(f"Policy with ID {policy_id} not found.")
+        
+        for rule in policy.start_rules + policy.stop_rules:
+            if rule.id == rule_id:
+                if rule in policy.start_rules:
+                    policy.start_rules.remove(rule)
+                else:
+                    policy.stop_rules.remove(rule)
+                    
+                self.policy_repo.update(policy)
+                
+                self.logger.info(f"Deleted rule '{rule.name}' from policy '{policy.name}'")
+                
+                return rule
+        raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
 
     def set_active_policy(self, policy_id: EntityId) -> None:
         self.logger.info(f"Setting policy {policy_id} as active.")
@@ -104,7 +168,8 @@ class ConfigurationService:
         
         found = False
         for p in policies:
-            if p.id == policy_id:
+            if p.id == str(policy_id):
+                # Add checks for the presence and validation of rules before activating
                 p.is_active = True
                 found = True
             else:
@@ -117,6 +182,20 @@ class ConfigurationService:
     def get_active_policy(self) -> Optional[OptimizationPolicy]:
         return self.policy_repo.get_active_policy()
 
+    def delete_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
+        self.logger.info(f"Deleting policy {policy_id}")
+        
+        policy = self.policy_repo.get_by_id(policy_id)
+        
+        if not policy:
+            raise PolicyError(f"Policy with ID {policy_id} not found.")
+        
+        self.policy_repo.remove(policy_id)
+        
+        self.logger.info(f"Policy {policy_id} | {policy.name} deleted successfully.")
+
+        return policy
+        
     # --- Settings Management ---
     def get_all_settings(self) -> Dict[str, Any]:
         settings = self.settings_repo.get_settings()
