@@ -1,5 +1,6 @@
+"""API Router for miner domain"""
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from typing import List, Optional, Annotated
 
 from edge_mining.application.services.configuration_service import ConfigurationService
@@ -7,22 +8,15 @@ from edge_mining.application.services.configuration_service import Configuration
 from edge_mining.domain.miner.common import MinerId
 from edge_mining.domain.exceptions import MinerNotFoundError
 
+from edge_mining.adapters.domain.miner.fast_api.schemas import (
+    MinerResponseSchema, MinerCreateSchema
+)
+
 # Import the dependency injection function defined in main_api.py
 from edge_mining.adapters.infrastructure.api.main_api import get_config_service
 
 router = APIRouter()
 
-# We may use Pydantic models for request/response if needed
-class MinerCreateSchema(BaseModel):
-    miner_id: str
-    name: str
-    ip_address: Optional[str] = None
-
-class MinerResponseSchema(BaseModel):
-    id: str
-    name: str
-    ip_address: Optional[str] = None
-    status: str # Use enum name
 
 @router.get("/miners", response_model=List[MinerResponseSchema]) # Use DTOs directly or a Pydantic schema
 async def get_miners_list(
@@ -71,5 +65,40 @@ async def get_miner_details(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# TODO: Add POST endpoint to add miners (use request schema)
-# TODO: Add DELETE endpoint to remove miners
+@router.post("/miners", response_model=MinerResponseSchema)
+async def add_miner(
+    miner: MinerCreateSchema,
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+):
+    """Add a new miner."""
+    try:
+        new_miner = config_service.add_miner(
+            miner_id=miner.miner_id,
+            name=miner.name,
+            ip_address=miner.ip_address
+        )
+
+        response = MinerResponseSchema(
+            id=new_miner.id,
+            name=new_miner.name,
+            status=new_miner.status,
+            ip_address=new_miner.ip_address
+        )
+
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/miners/{miner_id}")
+async def remove_miner(
+    miner_id: MinerId,
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+):
+    """Remove a miner."""
+    try:
+        config_service.remove_miner(miner_id)
+        return {"detail": "Miner removed successfully"}
+    except MinerNotFoundError:
+        raise HTTPException(status_code=404, detail="Miner not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

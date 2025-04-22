@@ -40,7 +40,8 @@ def set_api_services(
 # --- End Placeholder ---
 
 # Import routers after DI setup functions are defined
-from .routers import mining, policy
+from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
+from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
 
 app = FastAPI(
     title="Edge Mining API",
@@ -49,8 +50,8 @@ app = FastAPI(
 )
 
 # Include routers
-app.include_router(mining.router, prefix="/api/v1", tags=["mining"])
-app.include_router(policy.router, prefix="/api/v1", tags=["optimization_rules"])
+app.include_router(miner_router, prefix="/api/v1", tags=["mining"])
+app.include_router(policy_router, prefix="/api/v1", tags=["optimization_rules"])
 # Add more routers here (e.g., for configuration)
 
 @app.on_event("startup")
