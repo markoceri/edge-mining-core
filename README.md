@@ -48,7 +48,7 @@ The project uses **Hexagonal Architecture (Ports and Adapters)** to clearly sepa
 
 You can run the application in different modes via the main entry point:
 
-1. **Standard Mode (Default):** Starts the main automation loop that checks miners at regular intervals and starts a REST API (FastAPI) server to interact with the system programmatically.
+1. **Standard Mode (Default):** Starts the main automation loop that checks available energy and controls miners at regular intervals. Starts a REST API (FastAPI) server also to interact with the system programmatically.
 ```bash
 python -m edge_mining
 # Or by explicitly specifying
