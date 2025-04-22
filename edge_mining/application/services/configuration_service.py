@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.common import MinerId
-from edge_mining.domain.exceptions import PolicyError
+from edge_mining.domain.policy.common import RuleType
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.miner.ports import MinerRepository
 from edge_mining.domain.user.entities import SystemSettings
@@ -76,19 +76,19 @@ class ConfigurationService:
     def list_policies(self) -> List[OptimizationPolicy]:
         return self.policy_repo.get_all()
 
-    def add_rule_to_policy(self, policy_id: EntityId, rule_type: str, name: str, conditions: Dict[str, Any], action: MiningDecision) -> AutomationRule:
+    def add_rule_to_policy(self, policy_id: EntityId, rule_type: RuleType, name: str, conditions: Dict[str, Any], action: MiningDecision) -> AutomationRule:
         policy = self.policy_repo.get_by_id(policy_id)
         
         if not policy:
             raise PolicyError(f"Policy with ID {policy_id} not found.")
 
         rule = AutomationRule(name=name, conditions=conditions, action=action)
-        if rule_type == "start": # I will make it enum, promise! 🤝
+        if rule_type == RuleType.START:
             policy.start_rules.append(rule)
-        elif rule_type == "stop":
+        elif rule_type == RuleType.STOP:
             policy.stop_rules.append(rule)
         else:
-            raise ValueError("Invalid rule_type. Must be 'start' or 'stop'.")
+            raise ValueError(f"Invalid rule_type. Must be {RuleType.START} or {RuleType.STOP}.")
 
         self.policy_repo.update(policy)
         self.logger.info(f"Added {rule_type} rule '{name}' to policy '{policy.name}'")
