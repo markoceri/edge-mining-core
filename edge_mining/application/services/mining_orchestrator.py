@@ -102,7 +102,11 @@ class MiningOrchestratorService:
                 # ... wait, wait, wait ... it will do so in the future! 🤩​
                 # At the moment, it's just a bunch of if elses. 😃
                 decision = active_policy.decide_next_action(
-                    energy_state, solar_forecast, home_load_forecast, current_status
+                    energy_state=energy_state,
+                    forecast=solar_forecast,
+                    home_load_forecast=home_load_forecast,
+                    current_miner_status=current_status,
+                    current_miner_power=None,  # Placeholder for actual power if needed
                 )
 
                 self._execute_decision(miner_id, decision, current_status)
