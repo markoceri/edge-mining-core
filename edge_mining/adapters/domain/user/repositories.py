@@ -43,7 +43,7 @@ class SqliteSettingsRepository(BaseSqliteRepository, SettingsRepository):
                 self.logger.info("No settings found in DB, returning None.")
                 return None # Nessuna impostazione ancora salvata
         except (sqlite3.Error, json.JSONDecodeError) as e:
-            self.logger.exception(f"Errore SQLite o JSON ottenendo settings: {e}")
+            self.logger.error(f"Errore SQLite o JSON ottenendo settings: {e}")
             return None
         finally:
             if conn: conn.close()
@@ -58,7 +58,7 @@ class SqliteSettingsRepository(BaseSqliteRepository, SettingsRepository):
             with conn:
                 conn.execute(sql, (self._SETTINGS_ID, settings_json))
         except sqlite3.Error as e:
-            self.logger.exception(f"Errore SQLite salvando settings: {e}")
+            self.logger.error(f"Errore SQLite salvando settings: {e}")
             raise ConfigurationError(f"Errore DB salvando settings: {e}") from e
         finally:
             if conn: conn.close()

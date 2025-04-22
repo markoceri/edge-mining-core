@@ -58,13 +58,13 @@ class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolic
         )
 
     def _rule_to_dict(self, rule: AutomationRule) -> Dict[str, Any]:
-         # Serializes an AutomationRule object into a dictionary for JSON
-         return {
-             'id': str(rule.id),
-             'name': rule.name,
-             'conditions': rule.conditions,
-             'action': rule.action.value
-         }
+        # Serializes an AutomationRule object into a dictionary for JSON
+        return {
+            'id': str(rule.id),
+            'name': rule.name,
+            'conditions': rule.conditions,
+            'action': rule.action.value
+        }
 
     def _row_to_policy(self, row: sqlite3.Row) -> Optional[OptimizationPolicy]:
         if not row:

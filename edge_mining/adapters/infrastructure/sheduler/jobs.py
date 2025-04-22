@@ -25,7 +25,7 @@ class AutomationScheduler(SchedulerPort):
         try:
             self.orchestrator.evaluate_and_control_miners()
         except Exception as e:
-            self.logger.error(f"Error during scheduled job: {self._job_id}")
+            self.logger.error(f"Error during scheduled job: {self._job_id}. {e}")
             # Consider sending a critical notification here
 
     async def start(self):
