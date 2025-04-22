@@ -10,7 +10,7 @@ The project uses **Hexagonal Architecture (Ports and Adapters)** to clearly sepa
 -   **`edge_mining/application`**: Contains the application services that orchestrate the use cases, utilizing the Domain's Ports.
 -   **`edge_mining/adapters`**: Contains the concrete implementations of Ports.
     -   **`domain`**: Adapters strictly used by domain elements.
-    -   **`infrastructure`**: Infrastructure adapters, used cross-domain (logger, persistence).
+    -   **`infrastructure`**: Infrastructure adapters, used cross-domain (logger, persistence, api).
 -   **`edge_mining/shared`**: Shared elements (and interfaces) used cross-domain.
 -   **`test`**: Contains application tests.
 -   **`edge_mining/__main__.py`**: Main entry point, responsible for "wiring" dependencies (Dependency Injection).
@@ -48,11 +48,11 @@ The project uses **Hexagonal Architecture (Ports and Adapters)** to clearly sepa
 
 You can run the application in different modes via the main entry point:
 
-1. **Scheduler Mode (Default):** Starts the main automation loop that checks miners at regular intervals.
+1. **Standard Mode (Default):** Starts the main automation loop that checks miners at regular intervals and starts a REST API (FastAPI) server to interact with the system programmatically.
 ```bash
 python -m edge_mining
 # Or by explicitly specifying
-python -m edge_mining scheduler
+python -m edge_mining standard
 ```
 2. **CLI Mode:** Access the command line interface to manage miners, policies, etc.
 ```bash
@@ -60,11 +60,7 @@ python -m edge_mining cli --help
 python -m edge_mining cli miner list
 # ...other CLI commands
 ```
-3. **API Mode:** Starts a REST API (FastAPI) server to interact with the system programmatically.
-```bash
-python -m edge_mining api
-```
-The API will be available at `http://localhost:8000` (or the configured address and port). You can access the interactive documentation (Swagger UI) at `http://localhost:8000/docs`.
+The API will be available at `http://localhost:8001` (or the configured address and port). You can access the interactive documentation (Swagger UI) at `http://localhost:8001/docs`.
 
 ### Available adapters
 
@@ -84,3 +80,4 @@ The API will be available at `http://localhost:8000` (or the configured address 
 - Develop a web UI (could be a separate driving adapter using the API, maybe in a different repository).
 - Implement more sophisticated home load forecasting logic.
 - Handle authentication and authorization (especially for the API).
+- Improve the rules engine.
