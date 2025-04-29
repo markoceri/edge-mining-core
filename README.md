@@ -1,3 +1,11 @@
+⚠️ **Disclaimer**: *This project is in a preliminary state and under active development. Features and functionality may change significantly.*
+
+➡️ **Development Note**:
+- This is the **Core repository**, which contains the main engine of the Edge Mining system.
+- The [Add-on repository](https://github.com/edge-mining/addon) contains the Home Assistant integration.
+- The [Docs repository](https://github.com/edge-mining/docs) contains documentation for the Home Assistant integration.
+
+
 # Edge Mining ⚡️🌞
 
 Software to optimize the use of excess energy, especially from renewable sources, through Bitcoin mining. This system automates the turning on and off of ASIC miner devices based on energy availability, production forecasts, and user-defined policies.
