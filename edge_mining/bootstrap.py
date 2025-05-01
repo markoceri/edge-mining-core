@@ -92,13 +92,14 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
                 unit_battery_power=settings.ha_unit_battery_power,
                 battery_capacity_wh=settings.ha_battery_nominal_capacity_wh,
                 grid_positive_export=settings.ha_grid_positive_export,
-                battery_positive_charge=settings.ha_battery_positive_charge
+                battery_positive_charge=settings.ha_battery_positive_charge,
+                logger=logger
             )
 
             logger.debug("Using Home Assistant Energy Monitor adapter.")
         except (ValueError, ConnectionError, ImportError) as e:
-             logger.error(f"Failed to initialize Home Assistant adapter: {e}")
-             raise # Raise the exception to stop the execution
+            logger.error(f"Failed to initialize Home Assistant adapter: {e}")
+            raise # Raise the exception to stop the execution
     else:
         raise ValueError(f"Unsupported energy_monitor_adapter: {settings.energy_monitor_adapter}")
 
