@@ -1,6 +1,6 @@
 # Edge Mining ⚡️🌞
 
-Software to optimize the use of excess energy, especially from renewable sources, through Bitcoin mining. This system automates the turning on and off of ASIC miner devices based on energy availability, solar forecasts, and user-defined policies.
+Software to optimize the use of excess energy, especially from renewable sources, through Bitcoin mining. This system automates the turning on and off of ASIC miner devices based on energy availability, production forecasts, and user-defined policies.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ The project uses **Hexagonal Architecture (Ports and Adapters)** to clearly sepa
     - Check the units (`HA_UNIT_*`) and conventions (`HA_GRID_POSITIVE_EXPORT`, `HA_BATTERY_POSITIVE_CHARGE`) of your sensors.
     ```bash
     cp .env.example .env
-    nano .env # Change th file .env
+    nano .env # Change the file .env
     ```
 
 ## Execution
