@@ -1,4 +1,4 @@
-"""The Home Assistant API Infrastructure adapter"""
+"""The Home Assistant API Infrastructure External Service Adapter"""
 
 """
 The REST API for Home Assistant has been superseded by the websocket API.
@@ -17,14 +17,14 @@ import math # For isnan
 from edge_mining.shared.external_service.port import ExternalServicePort
 from edge_mining.shared.logging.port import LoggerPort
 
-from edge_mining.domain.common import Watts, Percentage, Timestamp
+from edge_mining.domain.common import Watts, WattHours, Percentage, Timestamp
 
 try:
     from homeassistant_api import Client
 except ImportError:
     raise ImportError("Please install 'homeassistant_api' (`pip install homeassistant_api`) to use the Home Assistant API Infrastructure.")
 
-class BaseHomeAssistantAPI(ExternalServicePort):
+class ServiceHomeAssistantAPI(ExternalServicePort):
     """
     Use Home Assistant instance via its REST API as external service.
 
@@ -63,7 +63,7 @@ class BaseHomeAssistantAPI(ExternalServicePort):
         # The Client does not have a disconnect method, but we can clear the client
         self.client = None
 
-    def _get_entity_state(self, entity_id: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    def get_entity_state(self, entity_id: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
         """Safely retrieves the state and unit of an entity."""
         if not entity_id:
             return None, None
@@ -82,7 +82,7 @@ class BaseHomeAssistantAPI(ExternalServicePort):
             self.logger.error(f"Unexpected error getting Home Assistant entity '{entity_id}': {e}")
             return None, None
 
-    def _parse_power(self, state: Optional[str], configured_unit: str, entity_id_for_log: str) -> Optional[Watts]:
+    def parse_power(self, state: Optional[str], configured_unit: str, entity_id_for_log: str) -> Optional[Watts]:
         """Parses state string to Watts, handling units (W/kW) and errors."""
         if state is None:
             return None
@@ -100,8 +100,27 @@ class BaseHomeAssistantAPI(ExternalServicePort):
         except (ValueError, TypeError) as e:
             self.logger.error(f"Could not parse power value for entity '{entity_id_for_log}' from state='{state}': {e}")
             return None
+    
+    def parse_energy(self, state: Optional[str], configured_unit: str, entity_id_for_log: str) -> Optional[Watts]:
+        """Parses state string to Watt Hours, handling units (Wh/kWh) and errors."""
+        if state is None:
+            return None
+        try:
+            value = float(state)
+            if math.isnan(value):
+                self.logger.warning(f"Parsed NaN value for entity '{entity_id_for_log}', state='{state}'. Treating as missing.")
+                return None
+            if configured_unit == "kwh":
+                value *= 1000 # Convert kWh to Wh
+            elif configured_unit != "wh":
+                self.logger.warning(f"Unsupported unit '{configured_unit}' configured for entity '{entity_id_for_log}'. Assuming WattHours.")
 
-    def _parse_percentage(self, state: Optional[str], entity_id_for_log: str) -> Optional[Percentage]:
+            return WattHours(value)
+        except (ValueError, TypeError) as e:
+            self.logger.error(f"Could not parse energy value for entity '{entity_id_for_log}' from state='{state}': {e}")
+            return None
+
+    def parse_percentage(self, state: Optional[str], entity_id_for_log: str) -> Optional[Percentage]:
         """Parses state string to Percentage, handling errors."""
         if state is None:
             return None

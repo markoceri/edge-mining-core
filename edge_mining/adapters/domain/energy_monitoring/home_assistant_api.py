@@ -8,9 +8,9 @@ from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.common import Watts, WattHours, Timestamp
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot, BatteryState
 
-from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import BaseHomeAssistantAPI
+from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import ServiceHomeAssistantAPI
 
-class HomeAssistantEnergyMonitor(BaseHomeAssistantAPI, EnergyMonitorPort):
+class HomeAssistantEnergyMonitor(EnergyMonitorPort):
     """
     Fetches energy data from a Home Assistant instance via its REST API.
 
@@ -20,8 +20,7 @@ class HomeAssistantEnergyMonitor(BaseHomeAssistantAPI, EnergyMonitorPort):
     """
     def __init__(
         self,
-        api_url: str,
-        token: str,
+        home_assistant: ServiceHomeAssistantAPI,
         entity_solar: Optional[str],
         entity_consumption: Optional[str],
         entity_grid: Optional[str],
@@ -36,8 +35,9 @@ class HomeAssistantEnergyMonitor(BaseHomeAssistantAPI, EnergyMonitorPort):
         battery_positive_charge: bool = True, # True if positive battery = charge
         logger: LoggerPort = None
     ):
-        # Initialize the HomeAssistant API base class
-        super(HomeAssistantEnergyMonitor, self).__init__(api_url, token, logger)
+        # Initialize the HomeAssistant API Service
+        self.home_assistant = home_assistant
+        self.logger = logger
 
         self.entity_solar = entity_solar
         self.entity_consumption = entity_consumption
@@ -68,18 +68,18 @@ class HomeAssistantEnergyMonitor(BaseHomeAssistantAPI, EnergyMonitorPort):
         has_critical_error = False
 
         # Fetch states from Home Assistant
-        state_solar, _ = self._get_entity_state(self.entity_solar)
-        state_consumption, _ = self._get_entity_state(self.entity_consumption)
-        state_grid, _ = self._get_entity_state(self.entity_grid)
-        state_battery_soc, _ = self._get_entity_state(self.entity_battery_soc)
-        state_battery_power, _ = self._get_entity_state(self.entity_battery_power)
+        state_solar, _ = self.home_assistant.get_entity_state(self.entity_solar)
+        state_consumption, _ = self.home_assistant.get_entity_state(self.entity_consumption)
+        state_grid, _ = self.home_assistant.get_entity_state(self.entity_grid)
+        state_battery_soc, _ = self.home_assistant.get_entity_state(self.entity_battery_soc)
+        state_battery_power, _ = self.home_assistant.get_entity_state(self.entity_battery_power)
 
         # Parse values, converting units and handling errors
-        production_watts = self._parse_power(state_solar, self.unit_solar, self.entity_solar or "N/A")
-        consumption_watts = self._parse_power(state_consumption, self.unit_consumption, self.entity_consumption or "N/A")
-        grid_watts_raw = self._parse_power(state_grid, self.unit_grid, self.entity_grid or "N/A")
-        battery_soc = self._parse_percentage(state_battery_soc, self.entity_battery_soc or "N/A")
-        battery_power_raw = self._parse_power(state_battery_power, self.unit_battery_power, self.entity_battery_power or "N/A")
+        production_watts = self.home_assistant.parse_power(state_solar, self.unit_solar, self.entity_solar or "N/A")
+        consumption_watts = self.home_assistant.parse_power(state_consumption, self.unit_consumption, self.entity_consumption or "N/A")
+        grid_watts_raw = self.home_assistant.parse_power(state_grid, self.unit_grid, self.entity_grid or "N/A")
+        battery_soc = self.home_assistant.parse_percentage(state_battery_soc, self.entity_battery_soc or "N/A")
+        battery_power_raw = self.home_assistant.parse_power(state_battery_power, self.unit_battery_power, self.entity_battery_power or "N/A")
 
         # --- Apply Conventions ---
         # Grid: We want positive for IMPORTING, negative for EXPORTING
@@ -135,7 +135,7 @@ class HomeAssistantEnergyMonitor(BaseHomeAssistantAPI, EnergyMonitorPort):
             timestamp=now
         )
 
-        self.logger.info(f"HA Monitor: State fetched: Prod={snapshot.production:.0f}W, "
+        self.logger.info(f"HA Monitor: Energy State fetched: Prod={snapshot.production:.0f}W, "
                     f"Cons={snapshot.consumption:.0f}W, Grid={snapshot.grid:.0f}W, "
                     f"SOC={snapshot.battery.state_of_charge if snapshot.battery else 'N/A'}%, "
                     f"BattPwr={snapshot.battery.current_power if snapshot.battery else 'N/A'}W")

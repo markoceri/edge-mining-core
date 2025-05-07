@@ -18,7 +18,10 @@ from edge_mining.adapters.domain.home_load.dummy import DummyHomeForecastProvide
 from edge_mining.adapters.domain.notification.dummy import DummyNotifier
 from edge_mining.adapters.domain.performance.dummy import DummyPerformanceTracker
 
+from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import ServiceHomeAssistantAPI
+
 from edge_mining.adapters.domain.energy_monitoring.home_assistant_api import HomeAssistantEnergyMonitor
+from edge_mining.adapters.domain.forecast.home_assistant_api import HomeAssistantForecastProvider
 from edge_mining.adapters.domain.notification.telegram import TelegramNotifier
 
 from edge_mining.adapters.domain.miner.repositories import InMemoryMinerRepository, SqliteMinerRepository
@@ -67,7 +70,21 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         # user_repo: UserRepository = SqliteUserRepository(db_path=db_path, logger=logger) # If implemented
     else:
         raise ValueError(f"Unsupported persistence_adapter: {settings.persistence_adapter}")
-
+    
+    # --- External Services ---
+    if "home_assistant" in [settings.energy_monitor_adapter, settings.forecast_provider_adapter]:
+        # Initialize Home Assistant API service
+        try:
+            home_assistant_api = ServiceHomeAssistantAPI(
+                api_url=settings.home_assistant_url,
+                token=settings.home_assistant_token,
+                logger=logger
+            )
+        except (ValueError, ConnectionError, ImportError) as e:
+            logger.error(f"Failed to initialize Home Assistant API: {e}")
+            raise
+    
+    
     # --- Energy Monitor ---
     if settings.energy_monitor_adapter == "dummy":
         energy_monitor: EnergyMonitorPort = DummyEnergyMonitor(
@@ -79,8 +96,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     elif settings.energy_monitor_adapter == "home_assistant":
         try:
             energy_monitor: EnergyMonitorPort = HomeAssistantEnergyMonitor(
-                api_url=settings.home_assistant_url,
-                token=settings.home_assistant_token,
+                home_assistant=home_assistant_api,
                 entity_solar=settings.ha_entity_solar_production,
                 entity_consumption=settings.ha_entity_house_consumption,
                 entity_grid=settings.ha_entity_grid_power,
@@ -96,9 +112,9 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
                 logger=logger
             )
 
-            logger.debug("Using Home Assistant Energy Monitor adapter.")
+            logger.debug("Using Home Assistant Energy Monitor Adapter.")
         except (ValueError, ConnectionError, ImportError) as e:
-            logger.error(f"Failed to initialize Home Assistant adapter: {e}")
+            logger.error(f"Failed to initialize Home Assistant Energy Monitor Adapter: {e}")
             raise # Raise the exception to stop the execution
     else:
         raise ValueError(f"Unsupported energy_monitor_adapter: {settings.energy_monitor_adapter}")
@@ -125,7 +141,34 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
             capacity_kwp=settings.pv_capacity_kwp
         )
 
-        logger.debug("Using Dummy Forecast Provider adapter.")
+        logger.debug("Using Dummy Forecast Provider Adapter.")
+    elif settings.forecast_provider_adapter == "home_assistant":
+        try:
+            forecast_provider: ForecastProviderPort = HomeAssistantForecastProvider(
+                home_assistant=home_assistant_api,
+                entity_solar_forecast_power_actual_h=settings.ha_entity_solar_forecast_power_actual_h,
+                entity_solar_forecast_power_next_1h=settings.ha_entity_solar_forecast_power_next_1h,
+                entity_solar_forecast_power_next_12h=settings.ha_entity_solar_forecast_power_next_12h,
+                entity_solar_forecast_power_next_24h=settings.ha_entity_solar_forecast_power_next_24h,
+                entity_solar_forecast_energy_actual_h=settings.ha_entity_solar_forecast_energy_actual_h,
+                entity_solar_forecast_energy_next_1h=settings.ha_entity_solar_forecast_energy_next_1h,
+                entity_solar_forecast_energy_next_24h=settings.ha_entity_solar_forecast_energy_next_24h,
+                entity_solar_forecast_energy_remaining_today=settings.ha_entity_solar_forecast_energy_remaining_today,
+                unit_solar_forecast_power_actual_h=settings.ha_unit_solar_forecast_power_actual_h,
+                unit_solar_forecast_power_next_1h=settings.ha_unit_solar_forecast_power_next_1h,
+                unit_solar_forecast_power_next_12h=settings.ha_unit_solar_forecast_power_next_12h,
+                unit_solar_forecast_power_next_24h=settings.ha_unit_solar_forecast_power_next_24h,
+                unit_solar_forecast_energy_actual_h=settings.ha_unit_solar_forecast_energy_actual_h,
+                unit_solar_forecast_energy_next_1h=settings.ha_unit_solar_forecast_energy_next_1h,
+                unit_solar_forecast_energy_next_24h=settings.ha_unit_solar_forecast_energy_next_24h,
+                unit_solar_forecast_energy_remaining_today=settings.ha_unit_solar_forecast_energy_remaining_today,
+                logger=logger
+            )
+
+            logger.debug("Using Home Assistant Forecast Provider adapter.")
+        except (ValueError, ConnectionError, ImportError) as e:
+            logger.error(f"Failed to initialize Home Assistant Forecast Provider Adapter: {e}")
+            raise # Raise the exception to stop the execution
     else:
         raise ValueError(f"Unsupported forecast_provider_adapter: {settings.forecast_provider_adapter}")
 
