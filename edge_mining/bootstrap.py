@@ -49,7 +49,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     logger.debug("Configuring dependencies...")
 
     # --- Persistence ---
-    if settings.persistence_adapter == PersistenceAdapter.IN_MEMORY:
+    if PersistenceAdapter(settings.persistence_adapter) == PersistenceAdapter.IN_MEMORY:
         # Pre-populate in-memory repos with some test data (used for debug or development)
         miner_repo: MinerRepository = InMemoryMinerRepository()
         policy_repo: OptimizationPolicyRepository = InMemoryOptimizationPolicyRepository()
@@ -57,7 +57,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         home_profile_repo: HomeLoadsProfileRepository = InMemoryHomeLoadsProfileRepository()
 
         logger.debug("Using InMemory persistence adapters.")
-    elif settings.persistence_adapter == PersistenceAdapter.SQLITE:
+    elif PersistenceAdapter(settings.persistence_adapter) == PersistenceAdapter.SQLITE:
         db_path = settings.sqlite_db_file
         
         db_dir = os.path.dirname(db_path)
@@ -77,7 +77,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         raise ValueError(f"Unsupported persistence_adapter: {settings.persistence_adapter}")
     
     # --- External Services ---
-    if ExternalServiceAdapter.HOME_ASSISTANT in [settings.energy_monitor_adapter, settings.forecast_provider_adapter]:
+    if ExternalServiceAdapter.HOME_ASSISTANT in [ExternalServiceAdapter(settings.energy_monitor_adapter), ExternalServiceAdapter(settings.forecast_provider_adapter)]:
         # Initialize Home Assistant API service
         try:
             home_assistant_api = ServiceHomeAssistantAPI(
@@ -91,14 +91,14 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     
     
     # --- Energy Monitor ---
-    if settings.energy_monitor_adapter == EnergyMonitorAdapter.DUMMY:
+    if EnergyMonitorAdapter(settings.energy_monitor_adapter) == EnergyMonitorAdapter.DUMMY:
         energy_monitor: EnergyMonitorPort = DummyEnergyMonitor(
             has_battery=settings.dummy_battery_present,
             battery_capacity_wh=settings.dummy_battery_capacity_wh
         )
 
         logger.debug("Using Dummy Energy Monitor adapter.")
-    elif settings.energy_monitor_adapter == EnergyMonitorAdapter.HOME_ASSISTANT:
+    elif EnergyMonitorAdapter(settings.energy_monitor_adapter) == EnergyMonitorAdapter.HOME_ASSISTANT:
         try:
             energy_monitor: EnergyMonitorPort = HomeAssistantEnergyMonitor(
                 home_assistant=home_assistant_api,
@@ -125,7 +125,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         raise ValueError(f"Unsupported energy_monitor_adapter: {settings.energy_monitor_adapter}")
 
     # --- Miner Controller ---
-    if settings.miner_controller_adapter == MinerControllerAdapter.DUMMY:
+    if MinerControllerAdapter(settings.miner_controller_adapter) == MinerControllerAdapter.DUMMY:
         miner_controller: MinerControlPort = DummyMinerController(
             initial_status={
                 MinerId("001"): MinerStatus.OFF,
@@ -139,7 +139,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
          raise ValueError(f"Unsupported miner_controller_adapter: {settings.miner_controller_adapter}")
 
     # --- Forecast Provider ---
-    if settings.forecast_provider_adapter == ForecastProviderAdapter.DUMMY:
+    if ForecastProviderAdapter(settings.forecast_provider_adapter) == ForecastProviderAdapter.DUMMY:
         forecast_provider: ForecastProviderPort = DummyForecastProvider(
             latitude=settings.latitude,
             longitude=settings.longitude,
@@ -147,7 +147,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         )
 
         logger.debug("Using Dummy Forecast Provider Adapter.")
-    elif settings.forecast_provider_adapter == ForecastProviderAdapter.HOME_ASSISTANT:
+    elif ForecastProviderAdapter(settings.forecast_provider_adapter) == ForecastProviderAdapter.HOME_ASSISTANT:
         try:
             forecast_provider: ForecastProviderPort = HomeAssistantForecastProvider(
                 home_assistant=home_assistant_api,
@@ -178,7 +178,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         raise ValueError(f"Unsupported forecast_provider_adapter: {settings.forecast_provider_adapter}")
 
     # --- Home Forecast Provider ---
-    if settings.home_forecast_adapter == HomeForecastProviderAdapter.DUMMY:
+    if HomeForecastProviderAdapter(settings.home_forecast_adapter) == HomeForecastProviderAdapter.DUMMY:
         home_forecast_provider: HomeForecastProviderPort = DummyHomeForecastProvider()
 
         logger.debug("Using Dummy Home Forecast Provider adapter.")
@@ -186,11 +186,11 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         raise ValueError(f"Unsupported home_forecast_adapter: {settings.home_forecast_adapter}")
 
     # --- Notification ---
-    if settings.notification_adapter == NotificationAdapter.DUMMY:
+    if NotificationAdapter(settings.notification_adapter) == NotificationAdapter.DUMMY:
         notifier: NotificationPort = DummyNotifier()
 
         logger.debug("Using Dummy Notifier adapter.")
-    elif settings.notification_adapter == NotificationAdapter.TELEGRAM:
+    elif NotificationAdapter(settings.notification_adapter) == NotificationAdapter.TELEGRAM:
         if settings.telegram_bot_token and settings.telegram_chat_id:
             try:
                 notifier: NotificationPort = TelegramNotifier(
@@ -209,7 +209,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         # raise ValueError(f"Unsupported notification_adapter: {settings.notification_adapter}")
 
     # --- Performance Tracker ---
-    if settings.performance_tracker_adapter == PerformaceTrackerAdapter.DUMMY:
+    if PerformaceTrackerAdapter(settings.performance_tracker_adapter) == PerformaceTrackerAdapter.DUMMY:
         perf_tracker: MiningPerformanceTrackerPort = DummyPerformanceTracker()
         
         logger.debug("Using Dummy Performance Tracker adapter.")
