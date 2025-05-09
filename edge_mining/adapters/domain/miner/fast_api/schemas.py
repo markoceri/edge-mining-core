@@ -6,5 +6,6 @@ from typing import List, Optional, Annotated
 class MinerSchema(BaseModel):
     id: str
     name: str
+    status: str
     ip_address: Optional[str] = None
     power_consumption: Optional[str] = None
