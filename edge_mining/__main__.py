@@ -20,8 +20,8 @@ from edge_mining.adapters.infrastructure.api.main_api import app as fastapi_app,
 
 from edge_mining.bootstrap import configure_dependencies
 
-logger = TerminalLogger()
 settings = AppSettings()
+logger = TerminalLogger(LOG_LEVEL=settings.log_level)
 
 async def main_async():
     logger.welcome()
