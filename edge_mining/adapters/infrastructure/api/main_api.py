@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 
 from edge_mining.application.services.configuration_service import ConfigurationService
@@ -47,6 +48,18 @@ app = FastAPI(
     title="Edge Mining API",
     description="API for managing and monitoring the bitcoin mining energy optimization system.",
     version="0.1.0"
+)
+
+# TODO: set only localhost origins
+origins = ["*"]
+
+# User CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include routers
