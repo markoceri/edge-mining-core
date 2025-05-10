@@ -30,6 +30,11 @@ class MinerControlPort(ABC):
 
 class MinerRepository(ABC):
     @abstractmethod
+    def generate_id(self) -> MinerId:
+        """Generates a new unique ID for a miner."""
+        raise NotImplementedError
+    
+    @abstractmethod
     def add(self, miner: Miner) -> None:
         """Adds a new miner to the repository."""
         raise NotImplementedError

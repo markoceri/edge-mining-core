@@ -32,12 +32,12 @@ class ConfigurationService:
         self.logger = logger
 
     # --- Miner Management ---
-    def add_miner(self, miner_id: MinerId, name: str, ip_address: Optional[str] = None, power_consumption: Optional[Watts] = None) -> Miner:
+    def add_miner(self, name: str, ip_address: Optional[str] = None, power_consumption: Optional[Watts] = None) -> Miner:
+        miner_id: MinerId = self.miner_repo.generate_id()
+        
         self.logger.info(f"Adding miner {miner_id} ({name})")
         
         miner = Miner(id=miner_id, name=name, ip_address=ip_address, power_consumption=power_consumption)
-        
-        # TODO: Add validation (e.g., check if ID already exists)
         
         self.miner_repo.add(miner)
         

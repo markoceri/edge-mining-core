@@ -1,5 +1,6 @@
 import copy
 import sqlite3
+import uuid
 from typing import List, Optional, Dict
 
 from edge_mining.domain.common import Watts
@@ -16,6 +17,10 @@ from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRep
 class InMemoryMinerRepository(MinerRepository):
     def __init__(self, initial_miners: Optional[Dict[MinerId, Miner]] = None):
         self._miners: Dict[MinerId, Miner] = copy.deepcopy(initial_miners) if initial_miners else {}
+        
+    def generate_id(self) -> MinerId:
+        """Generates a new unique ID for a miner."""
+        return MinerId(str(uuid.uuid4()))
 
     def add(self, miner: Miner) -> None:
         if miner.id in self._miners:
@@ -39,6 +44,9 @@ class InMemoryMinerRepository(MinerRepository):
             del self._miners[miner_id]
 
 class SqliteMinerRepository(BaseSqliteRepository, MinerRepository):
+    def generate_id(self) -> MinerId:
+        """Generates a new unique ID for a miner."""
+        return MinerId(str(uuid.uuid4()))
 
     def _row_to_miner(self, row: sqlite3.Row) -> Optional[Miner]:
         if not row:
