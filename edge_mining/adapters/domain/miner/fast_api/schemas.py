@@ -20,3 +20,8 @@ class MinerUpdateSchema(BaseModel):
     status: str
     ip_address: Optional[str] = None
     power_consumption: Optional[str] = None
+
+class MinerStatusSchema(BaseModel):
+    id: str
+    status: str
+    power_consumption: Optional[str] = None

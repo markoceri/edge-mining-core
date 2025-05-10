@@ -4,19 +4,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional, Annotated
 
 from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.services.action_service import ActionService
 
 from edge_mining.domain.miner.common import MinerId
 from edge_mining.domain.exceptions import MinerNotFoundError
 
 from edge_mining.adapters.domain.miner.fast_api.schemas import (
-    MinerResponseSchema, MinerCreateSchema, MinerUpdateSchema
+    MinerResponseSchema, MinerCreateSchema, MinerUpdateSchema,
+    MinerStatusSchema
 )
 
 # Import the dependency injection function defined in main_api.py
 from edge_mining.adapters.infrastructure.api.main_api import get_config_service
+from edge_mining.adapters.infrastructure.api.main_api import get_action_service
 
 router = APIRouter()
-
 
 @router.get("/miners", response_model=List[MinerResponseSchema]) # Use DTOs directly or a Pydantic schema
 async def get_miners_list(
@@ -139,6 +141,82 @@ async def update_miner(
             power_consumption=miner_updated.power_consumption
         )
 
+        return response
+    except MinerNotFoundError:
+        raise HTTPException(status_code=404, detail="Miner not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/miners/{miner_id}/start", response_model=MinerStatusSchema)
+async def start_miner(
+    miner_id: MinerId,
+    action_service: Annotated[ActionService, Depends(get_action_service)],
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+):
+    """Start a miner."""
+    try:
+        success = action_service.start_miner(miner_id)
+        
+        if success:
+            miner = config_service.get_miner(miner_id)
+            
+            response = MinerStatusSchema(
+                id=miner.id,
+                status=miner.status,
+                power_consumption=miner.power_consumption
+            )
+            
+            return response
+        else:
+            raise HTTPException(status_code=500, detail="Failed to start miner")
+    except MinerNotFoundError:
+        raise HTTPException(status_code=404, detail="Miner not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/miners/{miner_id}/stop", response_model=MinerStatusSchema)
+async def stop_miner(
+    miner_id: MinerId,
+    action_service: Annotated[ActionService, Depends(get_action_service)],
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+):
+    """Stop a miner."""
+    try:
+        success = action_service.stop_miner(miner_id)
+        
+        if success:
+            miner = config_service.get_miner(miner_id)
+            
+            response = MinerStatusSchema(
+                id=miner.id,
+                status=miner.status,
+                power_consumption=miner.power_consumption
+            )
+            
+            return response
+        else:
+            raise HTTPException(status_code=500, detail="Failed to stop miner")
+    except MinerNotFoundError:
+        raise HTTPException(status_code=404, detail="Miner not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/miners/{miner_id}/status", response_model=MinerStatusSchema)
+async def get_miner_status(
+    miner_id: MinerId,
+    action_service: Annotated[ActionService, Depends(get_action_service)],
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+):
+    """Get the current status of a miner."""
+    try:
+        miner = config_service.get_miner(miner_id)
+        
+        response = MinerStatusSchema(
+            id=miner.id,
+            status=miner.status,
+            power_consumption=miner.power_consumption
+        )
+        
         return response
     except MinerNotFoundError:
         raise HTTPException(status_code=404, detail="Miner not found")
