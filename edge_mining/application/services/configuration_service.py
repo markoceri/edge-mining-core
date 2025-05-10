@@ -9,7 +9,7 @@ from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.miner.ports import MinerRepository
 from edge_mining.domain.user.entities import SystemSettings
 from edge_mining.domain.user.ports import SettingsRepository
-from edge_mining.domain.exceptions import PolicyError, MinerError
+from edge_mining.domain.exceptions import PolicyError, MinerError, MinerNotFoundError
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy, AutomationRule, MiningDecision
 
@@ -44,7 +44,12 @@ class ConfigurationService:
         return miner
 
     def get_miner(self, miner_id: MinerId) -> Optional[Miner]:
-        return self.miner_repo.get_by_id(miner_id)
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        return miner
 
     def list_miners(self) -> List[Miner]:
         return self.miner_repo.get_all()
@@ -55,7 +60,7 @@ class ConfigurationService:
         miner: Miner = self.miner_repo.get_by_id(miner_id)
         
         if not miner:
-            raise MinerError(f"Miner with ID {miner_id} not found.")
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
         
         self.miner_repo.remove(miner_id)
         
@@ -67,7 +72,7 @@ class ConfigurationService:
         miner: Miner = self.miner_repo.get_by_id(miner_id)
         
         if not miner:
-            raise MinerError(f"Miner with ID {miner_id} not found.")
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
         
         miner.name = name
         miner.ip_address = ip_address
