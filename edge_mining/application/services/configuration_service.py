@@ -1,4 +1,4 @@
-import logging
+"""Configuration service for managing miners, policies, and system settings."""
 from typing import List, Optional, Dict, Any
 
 from edge_mining.domain.common import EntityId, Watts

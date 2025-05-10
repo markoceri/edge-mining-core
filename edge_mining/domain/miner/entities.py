@@ -25,8 +25,8 @@ class Miner:
     def turn_off(self):
         # Domain logic: update status if applicable
         if self.status in [MinerStatus.ON, MinerStatus.ERROR]:
-             self.status = MinerStatus.STOPPING
-             print(f"Domain: Miner {self.id} requested to turn OFF") # Placeholder
+            self.status = MinerStatus.STOPPING
+            print(f"Domain: Miner {self.id} requested to turn OFF") # Placeholder
         # Else: Already off or transitioning
 
     def update_status(self, new_status: MinerStatus, power: Optional[Watts] = None):

@@ -36,9 +36,9 @@ class MiningOrchestratorService:
         self.home_forecast_provider = home_forecast_provider
         self.policy_repo = policy_repo
         self.miner_repo = miner_repo
-        self.notifier = notifier
         
         # Infrastructure
+        self.notifier = notifier
         self.logger = logger
 
     def _notify(self, title: str, message: str):
@@ -130,7 +130,7 @@ class MiningOrchestratorService:
                 self.logger.info(f"Executing START command for miner {miner_id}")
             success = self.miner_controller.start_miner(miner_id)
             if success:
-                 # Optimistically update status, will be confirmed next cycle
+                # Optimistically update status, will be confirmed next cycle
                 miner = self.miner_repo.get_by_id(miner_id)
                 if miner:
                     miner.turn_on() # Update domain state

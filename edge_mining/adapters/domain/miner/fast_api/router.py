@@ -51,8 +51,6 @@ async def get_miner_details(
     """Get details for a specific miner."""
     try:
         miner = config_service.get_miner(miner_id)
-        if miner is None:
-            raise HTTPException(status_code=404, detail="Miner not found")
 
         response = MinerResponseSchema(
             id=miner.id,
@@ -125,11 +123,9 @@ async def update_miner(
     """Update a miner's details."""
     try:
         miner = config_service.get_miner(miner_id)
-        if miner is None:
-            raise HTTPException(status_code=404, detail="Miner not found")
 
         miner_updated = config_service.update_miner(
-            miner_id=miner_id,
+            miner_id=miner.id,
             name=miner_update.name,
             ip_address=miner_update.ip_address,
             power_consumption=miner_update.power_consumption
