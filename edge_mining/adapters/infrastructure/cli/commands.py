@@ -39,16 +39,15 @@ def miner():
     pass
 
 @miner.command("add")
-@click.argument("miner_id")
 @click.argument("name")
 @click.option("--ip", help="IP Address of the miner")
-def add_miner(miner_id, name, ip):
+def add_miner(name, ip):
     """Add a new miner to the system."""
     if not _config_service:
         click.echo("Error: Services not initialized.", err=True)
         return
     try:
-        added = _config_service.add_miner(miner_id=miner_id, name=name, ip_address=ip)
+        added = _config_service.add_miner(name=name, ip_address=ip)
         click.echo(f"Miner '{added.name}' ({added.id}) added successfully.")
     except Exception as e:
         click.echo(f"Error adding miner: {e}", err=True)
@@ -68,7 +67,7 @@ def list_miners():
     click.echo("Configured Miners:")
     for m in miners:
         ip_str = f" (IP: {m.ip_address})" if m.ip_address else ""
-        click.echo(f"- ID: {m.id}, Name: {m.name}{ip_str}, Status: {m.status.name}")
+        click.echo(f"- ID: {m.id}, Name: {m.name}, IP: {ip_str}, Status: {m.status.name}, Power: {m.power_consumption}W")
 
 
 @miner.command("remove")
