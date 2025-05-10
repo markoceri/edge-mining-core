@@ -2,23 +2,27 @@
 
 import click
 
+from edge_mining.application.services.action_service import ActionService
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.application.services.mining_orchestrator import MiningOrchestratorService
 from edge_mining.shared.logging.port import LoggerPort
 
 # --- Simple way for Dependency Injection using global objects ---
+_action_service: ActionService = None
 _config_service: ConfigurationService = None
 _orchestrator_service: MiningOrchestratorService = None
 _logger: LoggerPort = None
 
 def set_cli_services(
-        config_service: ConfigurationService,
-        orchestrator_service: MiningOrchestratorService,
-        logger: LoggerPort
-    ):
-    
-    global _config_service, _orchestrator_service, _logger
-    
+    action_service: ActionService,
+    config_service: ConfigurationService,
+    orchestrator_service: MiningOrchestratorService,
+    logger: LoggerPort
+):
+
+    global _action_service, _config_service, _orchestrator_service, _logger
+
+    _action_service = action_service
     _config_service = config_service
     _orchestrator_service = orchestrator_service
     _logger = logger

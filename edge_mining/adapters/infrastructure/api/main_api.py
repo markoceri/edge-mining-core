@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 
 from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.services.action_service import ActionService
 from edge_mining.application.services.mining_orchestrator import MiningOrchestratorService
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -18,6 +19,11 @@ def get_config_service():
          raise RuntimeError("Config Service not initialized for API")
     return _api_config_service
 
+def get_action_service():
+    if _api_action_service is None:
+         raise RuntimeError("Action Service not initialized for API")
+    return _api_action_service
+
 def get_orchestrator_service():
     if _api_orchestrator_service is None:
          raise RuntimeError("Orchestrator Service not initialized for API")
@@ -25,15 +31,18 @@ def get_orchestrator_service():
 
 # Global placeholders - Set these during app startup
 _api_config_service: ConfigurationService = None
+_api_action_service: ActionService = None
 _api_orchestrator_service: MiningOrchestratorService = None
 
 def set_api_services(
+        action_service: ActionService,
         config_service: ConfigurationService,
         orchestrator_service: MiningOrchestratorService,
         logger: LoggerPort
     ):
-    global _api_config_service, _api_orchestrator_service, _logger
+    global _api_action_service, _api_config_service, _api_orchestrator_service, _logger
 
+    _api_action_service = action_service
     _api_config_service = config_service
     _api_orchestrator_service = orchestrator_service
     _logger = logger

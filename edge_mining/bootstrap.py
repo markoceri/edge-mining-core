@@ -37,6 +37,7 @@ from edge_mining.adapters.domain.user.repositories import InMemorySettingsReposi
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.shared.settings.settings import AppSettings
 
+from edge_mining.application.services.action_service import ActionService
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.application.services.mining_orchestrator import MiningOrchestratorService
 
@@ -219,6 +220,14 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
 
     # Instantiate Application Services, injecting adapters (ports)
     logger.debug("Instantiating application services...")
+    
+    action_service = ActionService(
+        miner_controller=miner_controller,
+        miner_repo=miner_repo,
+        notifier=notifier,
+        logger=logger
+    )
+    
     config_service = ConfigurationService(
         miner_repo=miner_repo,
         policy_repo=policy_repo,
@@ -239,4 +248,4 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
     )
 
     logger.debug("Dependency configuration complete.")
-    return config_service, orchestrator_service
+    return action_service, config_service, orchestrator_service

@@ -28,14 +28,14 @@ async def main_async():
     
     # --- Dependency Injection ---
     try:
-        config_service, orchestrator_service = configure_dependencies(logger, settings)
+        action_service, config_service, orchestrator_service = configure_dependencies(logger, settings)
     except Exception as e:
         logger.critical("Failed to configure dependencies. Exiting.")
         sys.exit(1)
         
     # Inject services into CLI and API
-    set_cli_services(config_service, orchestrator_service, logger)
-    set_api_services(config_service, orchestrator_service, logger)
+    set_cli_services(action_service, config_service, orchestrator_service, logger)
+    set_api_services(action_service, config_service, orchestrator_service, logger)
     
     # --- Determine Run Mode ---
     # Example: Use command-line argument to choose mode
