@@ -49,15 +49,33 @@ class ConfigurationService:
     def list_miners(self) -> List[Miner]:
         return self.miner_repo.get_all()
 
-    def remove_miner(self, miner_id: MinerId) -> None:
+    def remove_miner(self, miner_id: MinerId) -> Miner:
         self.logger.info(f"Removing miner {miner_id}")
         
         miner: Miner = self.miner_repo.get_by_id(miner_id)
         
         if not miner:
-            raise MinerError(f"Policy with ID {miner.id} not found.")
+            raise MinerError(f"Miner with ID {miner_id} not found.")
         
         self.miner_repo.remove(miner_id)
+        
+        return miner
+    
+    def update_miner(self, miner_id: MinerId, name: str, ip_address: Optional[str] = None, power_consumption: Optional[Watts] = None) -> Miner:
+        self.logger.info(f"Updating miner {miner_id} ({name})")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerError(f"Miner with ID {miner_id} not found.")
+        
+        miner.name = name
+        miner.ip_address = ip_address
+        miner.power_consumption = power_consumption
+        
+        self.miner_repo.update(miner)
+        
+        return miner
 
     # --- Policy Management ---
     def create_policy(self, name: str, description: str = "", target_miner_ids: List[MinerId] = None) -> OptimizationPolicy:
