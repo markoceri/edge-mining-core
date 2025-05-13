@@ -7,6 +7,7 @@ import random
 from edge_mining.domain.common import Watts
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.miner.common import MinerId, MinerStatus
+from edge_mining.domain.miner.value_objects import HashRate
 
 class DummyMinerController(MinerControlPort):
     """Simulates miner control without real hardware."""
@@ -16,7 +17,7 @@ class DummyMinerController(MinerControlPort):
 
     def _ensure_miner(self, miner_id: MinerId):
         if miner_id not in self._status:
-             self._status[miner_id] = MinerStatus.UNKNOWN # Default if never seen
+            self._status[miner_id] = MinerStatus.UNKNOWN # Default if never seen
 
     def start_miner(self, miner_id: MinerId) -> bool:
         self._ensure_miner(miner_id)
@@ -37,8 +38,8 @@ class DummyMinerController(MinerControlPort):
         if self._status[miner_id] == MinerStatus.ON:
             self._status[miner_id] = MinerStatus.STOPPING
             print(f"DummyController: Setting {miner_id} status to STOPPING")
-             # Simulate transition
-             # threading.Timer(3, self._set_status, args=(miner_id, MinerStatus.OFF)).start()
+            # Simulate transition
+            # threading.Timer(3, self._set_status, args=(miner_id, MinerStatus.OFF)).start()
         return True # Assume command sent successfully
 
     def get_miner_status(self, miner_id: MinerId) -> MinerStatus:
@@ -70,12 +71,24 @@ class DummyMinerController(MinerControlPort):
             print(f"DummyController: Reporting power {power:.0f}W for {miner_id}")
             return power
         elif status == MinerStatus.STARTING:
-             power = Watts(self._power * random.uniform(0.3, 0.7)) # Lower power during startup
-             print(f"DummyController: Reporting power {power:.0f}W for {miner_id}")
-             return power
+            power = Watts(self._power * random.uniform(0.3, 0.7)) # Lower power during startup
+            print(f"DummyController: Reporting power {power:.0f}W for {miner_id}")
+            return power
         else:
             print(f"DummyController: Reporting power 0W for {miner_id} (status: {status.name})")
             return Watts(0.0)
+    
+    def get_miner_hashrate(self, miner_id: MinerId) -> Optional[HashRate]:
+        self._ensure_miner(miner_id)
+        status = self._status.get(miner_id)
+        if status == MinerStatus.ON:
+            # Simulate hash rate
+            hash_rate = HashRate(value=random.uniform(20, 100), unit="TH/s")
+            print(f"DummyController: Reporting hash rate {hash_rate.value:.2f} {hash_rate.unit} for {miner_id}")
+            return hash_rate
+        else:
+            print(f"DummyController: Reporting hash rate 0 for {miner_id} (status: {status.name})")
+            return HashRate(value=0.0, unit="TH/s")
 
     # Helper for simulated transitions (if using timers)
     # def _set_status(self, miner_id: MinerId, status: MinerStatus):

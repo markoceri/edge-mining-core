@@ -46,7 +46,11 @@ class BaseSqliteRepository:
                 name TEXT NOT NULL,
                 ip_address TEXT,
                 status TEXT NOT NULL,
-                power_consumption REAL
+                active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+                hash_rate TEXT, -- JSON object of HashRate dict
+                hash_rate_max TEXT, -- JSON object of HashRate dict
+                power_consumption REAL,
+                power_consumption_max REAL
             );
             """,
             """

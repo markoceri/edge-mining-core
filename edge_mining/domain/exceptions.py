@@ -10,6 +10,10 @@ class MinerNotFoundError(MinerError):
     """Miner not found."""
     pass
 
+class MinerNotActiveError(MinerError):
+    """Miner not active."""
+    pass
+
 class PolicyError(DomainError):
     """Errors related to optimization policies."""
     pass

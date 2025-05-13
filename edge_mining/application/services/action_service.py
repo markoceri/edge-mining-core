@@ -4,6 +4,7 @@ from typing import Optional
 from edge_mining.domain.common import Watts
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.common import MinerId
+from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.exceptions import MinerError, MinerNotFoundError
 from edge_mining.domain.notification.ports import NotificationPort
@@ -49,8 +50,9 @@ class ActionService:
         
         # Update miner status from controller
         current_status = self.miner_controller.get_miner_status(miner_id)
+        current_hashrate = self.miner_controller.get_miner_hashrate(miner_id)
         current_power = self.miner_controller.get_miner_power(miner_id)
-        miner.update_status(current_status, current_power)
+        miner.update_status(current_status, current_hashrate, current_power)
         
         # Persist the observed state
         self.miner_repo.update(miner)
@@ -82,8 +84,9 @@ class ActionService:
         
         # Update miner status from controller
         current_status = self.miner_controller.get_miner_status(miner_id)
+        current_hashrate = self.miner_controller.get_miner_hashrate(miner_id)
         current_power = self.miner_controller.get_miner_power(miner_id)
-        miner.update_status(current_status, current_power)
+        miner.update_status(current_status, current_hashrate, current_power)
         
         # Persist the observed state
         self.miner_repo.update(miner)
@@ -122,3 +125,23 @@ class ActionService:
         self.miner_repo.update(miner)
         
         return current_power
+
+    def get_miner_hashrate(self, miner_id: MinerId) -> Optional[HashRate]:
+        """Gets the current hash rate of the specified miner."""
+        if self.logger:
+            self.logger.info(f"Getting hash rate for miner {miner_id}")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        # Update miner status from controller
+        current_status = self.miner_controller.get_miner_status(miner_id)
+        current_hashrate = self.miner_controller.get_miner_hashrate(miner_id)
+        miner.update_status(current_status, current_hashrate)
+        
+        # Persist the observed state
+        self.miner_repo.update(miner)
+        
+        return current_hashrate

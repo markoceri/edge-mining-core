@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.common import MinerId
+from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.miner.ports import MinerRepository
@@ -32,12 +33,18 @@ class ConfigurationService:
         self.logger = logger
 
     # --- Miner Management ---
-    def add_miner(self, name: str, ip_address: Optional[str] = None, power_consumption: Optional[Watts] = None) -> Miner:
+    def add_miner(self,
+            name: str,
+            ip_address: Optional[str] = None,
+            hash_rate_max: Optional[HashRate] = None,
+            power_consumption_max: Optional[Watts] = None,
+            active: Optional[bool] = True
+        ) -> Miner:
         miner_id: MinerId = self.miner_repo.generate_id()
         
-        self.logger.info(f"Adding miner {miner_id} ({name})")
+        self.logger.info(f"Adding miner {miner_id} ({name}), IP: {ip_address}, Max Hashrate: {hash_rate_max}, Max Power: {power_consumption_max}, Active: {active}")
         
-        miner = Miner(id=miner_id, name=name, ip_address=ip_address, power_consumption=power_consumption)
+        miner = Miner(id=miner_id, name=name, ip_address=ip_address, hash_rate_max=hash_rate_max, power_consumption_max=power_consumption_max, active=active)
         
         self.miner_repo.add(miner)
         
@@ -66,7 +73,14 @@ class ConfigurationService:
         
         return miner
     
-    def update_miner(self, miner_id: MinerId, name: str, ip_address: Optional[str] = None, power_consumption: Optional[Watts] = None) -> Miner:
+    def update_miner(self,
+            miner_id: MinerId,
+            name: str,
+            ip_address: Optional[str] = None,
+            hash_rate_max: Optional[HashRate] = None,
+            power_consumption_max: Optional[Watts] = None,
+            active: Optional[bool] = True
+        ) -> Miner:
         self.logger.info(f"Updating miner {miner_id} ({name})")
         
         miner: Miner = self.miner_repo.get_by_id(miner_id)
@@ -76,7 +90,37 @@ class ConfigurationService:
         
         miner.name = name
         miner.ip_address = ip_address
-        miner.power_consumption = power_consumption
+        miner.hash_rate_max = hash_rate_max
+        miner.power_consumption_max = power_consumption_max
+        miner.active = active
+        
+        self.miner_repo.update(miner)
+        
+        return miner
+    
+    def activate_miner(self, miner_id: MinerId) -> Miner:
+        self.logger.info(f"Activating miner {miner_id}")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        miner.activate()
+        
+        self.miner_repo.update(miner)
+        
+        return miner
+    
+    def deactivate_miner(self, miner_id: MinerId) -> Miner:
+        self.logger.info(f"Deactivating miner {miner_id}")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        miner.deactivate()
         
         self.miner_repo.update(miner)
         

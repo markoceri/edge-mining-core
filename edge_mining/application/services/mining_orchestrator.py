@@ -91,10 +91,15 @@ class MiningOrchestratorService:
 
                 # Get current *actual* status from controller, not just repo's last known state
                 current_status = self.miner_controller.get_miner_status(miner_id)
-                miner.update_status(current_status) # Update domain model state
-                # Maybe fetch power too if needed by policy and it is provided by the miner
-                # current_power = self.miner_controller.get_miner_power(miner_id)
-                # miner.update_status(current_status, current_power)
+
+                # Maybe fetch power and hashrate too if needed by policy and they are provided by the miner
+                current_power = self.miner_controller.get_miner_power(miner_id)
+                hash_rate = self.miner_controller.get_miner_hashrate(miner_id)
+                miner.update_status(
+                    new_status=current_status,
+                    hash_rate=hash_rate,
+                    power=current_power
+                )
 
                 self.miner_repo.update(miner) # Persist the observed state
 
@@ -106,7 +111,7 @@ class MiningOrchestratorService:
                     forecast=solar_forecast,
                     home_load_forecast=home_load_forecast,
                     current_miner_status=current_status,
-                    current_miner_power=None,  # Placeholder for actual power if needed
+                    current_miner_power=current_power,
                 )
 
                 self._execute_decision(miner_id, decision, current_status)
