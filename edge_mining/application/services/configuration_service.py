@@ -1,15 +1,16 @@
-import logging
+"""Configuration service for managing miners, policies, and system settings."""
 from typing import List, Optional, Dict, Any
 
-from edge_mining.domain.common import EntityId
+from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.common import MinerId
+from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.miner.ports import MinerRepository
 from edge_mining.domain.user.entities import SystemSettings
 from edge_mining.domain.user.ports import SettingsRepository
-from edge_mining.domain.exceptions import PolicyError, MinerError
+from edge_mining.domain.exceptions import PolicyError, MinerError, MinerNotFoundError
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy, AutomationRule, MiningDecision
 
@@ -32,32 +33,98 @@ class ConfigurationService:
         self.logger = logger
 
     # --- Miner Management ---
-    def add_miner(self, miner_id: MinerId, name: str, ip_address: Optional[str] = None) -> Miner:
-        self.logger.info(f"Adding miner {miner_id} ({name})")
+    def add_miner(self,
+            name: str,
+            ip_address: Optional[str] = None,
+            hash_rate_max: Optional[HashRate] = None,
+            power_consumption_max: Optional[Watts] = None,
+            active: Optional[bool] = True
+        ) -> Miner:
+        miner_id: MinerId = self.miner_repo.generate_id()
         
-        miner = Miner(id=miner_id, name=name, ip_address=ip_address)
+        self.logger.info(f"Adding miner {miner_id} ({name}), IP: {ip_address}, Max Hashrate: {hash_rate_max}, Max Power: {power_consumption_max}, Active: {active}")
         
-        # TODO: Add validation (e.g., check if ID already exists)
+        miner = Miner(id=miner_id, name=name, ip_address=ip_address, hash_rate_max=hash_rate_max, power_consumption_max=power_consumption_max, active=active)
         
         self.miner_repo.add(miner)
         
         return miner
 
     def get_miner(self, miner_id: MinerId) -> Optional[Miner]:
-        return self.miner_repo.get_by_id(miner_id)
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        return miner
 
     def list_miners(self) -> List[Miner]:
         return self.miner_repo.get_all()
 
-    def remove_miner(self, miner_id: MinerId) -> None:
+    def remove_miner(self, miner_id: MinerId) -> Miner:
         self.logger.info(f"Removing miner {miner_id}")
         
         miner: Miner = self.miner_repo.get_by_id(miner_id)
         
         if not miner:
-            raise MinerError(f"Policy with ID {miner.id} not found.")
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
         
         self.miner_repo.remove(miner_id)
+        
+        return miner
+    
+    def update_miner(self,
+            miner_id: MinerId,
+            name: str,
+            ip_address: Optional[str] = None,
+            hash_rate_max: Optional[HashRate] = None,
+            power_consumption_max: Optional[Watts] = None,
+            active: Optional[bool] = True
+        ) -> Miner:
+        self.logger.info(f"Updating miner {miner_id} ({name})")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        miner.name = name
+        miner.ip_address = ip_address
+        miner.hash_rate_max = hash_rate_max
+        miner.power_consumption_max = power_consumption_max
+        miner.active = active
+        
+        self.miner_repo.update(miner)
+        
+        return miner
+    
+    def activate_miner(self, miner_id: MinerId) -> Miner:
+        self.logger.info(f"Activating miner {miner_id}")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        miner.activate()
+        
+        self.miner_repo.update(miner)
+        
+        return miner
+    
+    def deactivate_miner(self, miner_id: MinerId) -> Miner:
+        self.logger.info(f"Deactivating miner {miner_id}")
+        
+        miner: Miner = self.miner_repo.get_by_id(miner_id)
+        
+        if not miner:
+            raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
+        
+        miner.deactivate()
+        
+        self.miner_repo.update(miner)
+        
+        return miner
 
     # --- Policy Management ---
     def create_policy(self, name: str, description: str = "", target_miner_ids: List[MinerId] = None) -> OptimizationPolicy:

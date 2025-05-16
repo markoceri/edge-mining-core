@@ -2,23 +2,27 @@
 
 import click
 
+from edge_mining.application.services.action_service import ActionService
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.application.services.mining_orchestrator import MiningOrchestratorService
 from edge_mining.shared.logging.port import LoggerPort
 
 # --- Simple way for Dependency Injection using global objects ---
+_action_service: ActionService = None
 _config_service: ConfigurationService = None
 _orchestrator_service: MiningOrchestratorService = None
 _logger: LoggerPort = None
 
 def set_cli_services(
-        config_service: ConfigurationService,
-        orchestrator_service: MiningOrchestratorService,
-        logger: LoggerPort
-    ):
-    
-    global _config_service, _orchestrator_service, _logger
-    
+    action_service: ActionService,
+    config_service: ConfigurationService,
+    orchestrator_service: MiningOrchestratorService,
+    logger: LoggerPort
+):
+
+    global _action_service, _config_service, _orchestrator_service, _logger
+
+    _action_service = action_service
     _config_service = config_service
     _orchestrator_service = orchestrator_service
     _logger = logger
@@ -35,16 +39,15 @@ def miner():
     pass
 
 @miner.command("add")
-@click.argument("miner_id")
 @click.argument("name")
 @click.option("--ip", help="IP Address of the miner")
-def add_miner(miner_id, name, ip):
+def add_miner(name, ip):
     """Add a new miner to the system."""
     if not _config_service:
         click.echo("Error: Services not initialized.", err=True)
         return
     try:
-        added = _config_service.add_miner(miner_id=miner_id, name=name, ip_address=ip)
+        added = _config_service.add_miner(name=name, ip_address=ip)
         click.echo(f"Miner '{added.name}' ({added.id}) added successfully.")
     except Exception as e:
         click.echo(f"Error adding miner: {e}", err=True)
@@ -64,7 +67,7 @@ def list_miners():
     click.echo("Configured Miners:")
     for m in miners:
         ip_str = f" (IP: {m.ip_address})" if m.ip_address else ""
-        click.echo(f"- ID: {m.id}, Name: {m.name}{ip_str}, Status: {m.status.name}")
+        click.echo(f"- ID: {m.id}, Name: {m.name}, IP: {ip_str}, Status: {m.status.name}, Power: {m.power_consumption}W")
 
 
 @miner.command("remove")

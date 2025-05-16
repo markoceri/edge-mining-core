@@ -8,6 +8,7 @@ from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.miner.common import MinerStatus, MinerId
+from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.forecast.value_objects import ForecastData
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 
@@ -28,6 +29,7 @@ class OptimizationPolicy:
         forecast: Optional[ForecastData],
         home_load_forecast: Optional[Watts], # Added home load forecast
         current_miner_status: MinerStatus,
+        hash_rate: Optional[HashRate],
         current_miner_power: Optional[Watts],
     ) -> MiningDecision:
         """

@@ -6,6 +6,7 @@ from typing import Optional, List
 from edge_mining.domain.common import Watts
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.common import MinerId, MinerStatus
+from edge_mining.domain.miner.value_objects import HashRate
 
 class MinerControlPort(ABC):
     @abstractmethod
@@ -27,8 +28,18 @@ class MinerControlPort(ABC):
     def get_miner_power(self, miner_id: MinerId) -> Optional[Watts]:
         """Gets the current power consumption, if available."""
         raise NotImplementedError
+    
+    @abstractmethod
+    def get_miner_hashrate(self, miner_id: MinerId) -> Optional[HashRate]:
+        """Gets the current hash rate, if available."""
+        raise NotImplementedError
 
 class MinerRepository(ABC):
+    @abstractmethod
+    def generate_id(self) -> MinerId:
+        """Generates a new unique ID for a miner."""
+        raise NotImplementedError
+    
     @abstractmethod
     def add(self, miner: Miner) -> None:
         """Adds a new miner to the repository."""
