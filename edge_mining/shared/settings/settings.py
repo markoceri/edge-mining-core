@@ -10,6 +10,7 @@ DEFAULT_SQLITE_DB_PATH = os.path.join(os.path.dirname(
 ), 'edgemining.db')
 
 class AppSettings(BaseSettings):
+    """Settings for the Edge Mining application."""
     # Application settings
     log_level: str = "INFO"
     
