@@ -8,7 +8,6 @@ from edge_mining.domain.energy.common import EnergyMonitorAdapter
 
 class EnergyMonitorPort(ABC):
     """Port for the Energy Monitor."""
-    @abstractmethod
     def __init__(self, energy_monitor_type: EnergyMonitorAdapter):
         """Initialize the Energy Monitor."""
         self.energy_monitor_type = energy_monitor_type
