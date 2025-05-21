@@ -40,7 +40,7 @@ async def get_policies_list(
                     is_active=policy.is_active
                 )
             )
-        
+
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -164,7 +164,7 @@ async def get_policy_rules(
             rule_type = RuleType.START
         elif rule_type == RuleTypeSchema.stop:
             rule_type = RuleType.STOP
-        
+
         rules: List[AutomationRule] = config_service.get_policy_rules(policy_id, rule_type)
 
         response: List[AutomationRuleResponseSchema] = []
@@ -193,17 +193,17 @@ async def get_policy_rule(
     """Get a specific rule for a specific optimization policy."""
     try:
         rule: AutomationRule = config_service.get_policy_rule(policy_id, rule_id)
-        
+
         if rule is None:
             raise HTTPException(status_code=404, detail="Rule not found")
-        
+
         response = AutomationRuleResponseSchema(
             id=str(rule.id),
             name=rule.name,
             conditions=rule.conditions,
             action=rule.action
         )
-        
+
         return response
     except PolicyNotFoundError:
          raise HTTPException(status_code=404, detail="Policy not found")

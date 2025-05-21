@@ -8,7 +8,7 @@ from edge_mining.domain.home_load.ports import HomeForecastProviderPort
 
 class DummyHomeForecastProvider(HomeForecastProviderPort):
     """Generates a very basic fake home load forecast."""
-    
+
     def get_home_consumption_forecast(self, hours_ahead: int = 24) -> Optional[Watts]:
         """Get the home consumption forecast."""
         # Super simple: return a random average load expected soon

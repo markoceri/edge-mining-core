@@ -1,6 +1,5 @@
 """Dummy adapter (Implementation of Port) that simulates a miner control for Edge Mining Application"""
 
-from datetime import datetime
 from typing import Optional, Dict
 import random
 
@@ -61,11 +60,11 @@ class DummyMinerController(MinerControlPort):
                 print(f"DummyController: Simulating {miner_id} still STARTING")
 
         elif self._status[miner_id] == MinerStatus.STOPPING:
-             if random.random() < 0.9: # 90% chance it finished stopping
-                print(f"DummyController: Simulating {miner_id} finished stopping -> OFF")
-                self._status[miner_id] = MinerStatus.OFF
-             else:
-                print(f"DummyController: Simulating {miner_id} still STOPPING")
+            if random.random() < 0.9: # 90% chance it finished stopping
+               print(f"DummyController: Simulating {miner_id} finished stopping -> OFF")
+               self._status[miner_id] = MinerStatus.OFF
+            else:
+               print(f"DummyController: Simulating {miner_id} still STOPPING")
 
         status = self._status.get(miner_id, MinerStatus.UNKNOWN)
         print(f"DummyController: Reporting status {status.name} for {miner_id}")

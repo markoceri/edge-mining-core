@@ -49,7 +49,7 @@ class DummyEnergyMonitor(EnergyMonitorPort):
                 battery_power = -discharge_power
                 grid_power = net_power - battery_power # Import remaining deficit
             else: # Idle or full/empty
-                 grid_power = net_power # Import/export directly
+                grid_power = net_power # Import/export directly
 
             battery_state = BatteryState(
                 state_of_charge=Percentage(self.current_soc),

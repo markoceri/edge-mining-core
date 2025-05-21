@@ -35,4 +35,4 @@ class PerformaceTrackerAdapter(Enum):
     DUMMY = "dummy"
 
 class ExternalServiceAdapter(Enum):
-    HOME_ASSISTANT = "home_assistant"
+    """Types of external service adapter."""

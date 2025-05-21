@@ -87,7 +87,8 @@ class HomeAssistantEnergyMonitor(EnergyMonitorPort):
             grid_watts = -grid_watts_raw if self.grid_positive_export else grid_watts_raw
         else:
             grid_watts = None
-            if self.entity_grid: has_critical_error = True # Grid is usually important
+            if self.entity_grid:
+                has_critical_error = True # Grid is usually important
 
         # Battery: We want positive for CHARGING, negative for DISCHARGING
         if battery_power_raw is not None:
@@ -95,7 +96,8 @@ class HomeAssistantEnergyMonitor(EnergyMonitorPort):
         else:
             battery_power = None
             # Only critical if battery SOC is also configured
-            if self.entity_battery_soc and self.entity_battery_power: has_critical_error = True
+            if self.entity_battery_soc and self.entity_battery_power:
+                has_critical_error = True
 
         # Check if essential values are missing
         if production_watts is None and self.entity_solar:
@@ -103,7 +105,7 @@ class HomeAssistantEnergyMonitor(EnergyMonitorPort):
             has_critical_error = True
         if consumption_watts is None and self.entity_consumption:
             self.logger.error(f"Missing critical value: House Consumption (Entity: {self.entity_consumption})")
-            self.has_critical_error = True
+            has_critical_error = True
 
         if has_critical_error:
             self.logger.error("Failed to retrieve one or more critical energy values from Home Assistant. Cannot create snapshot.")
@@ -139,5 +141,5 @@ class HomeAssistantEnergyMonitor(EnergyMonitorPort):
                     f"Cons={snapshot.consumption:.0f}W, Grid={snapshot.grid:.0f}W, "
                     f"SOC={snapshot.battery.state_of_charge if snapshot.battery else 'N/A'}%, "
                     f"BattPwr={snapshot.battery.current_power if snapshot.battery else 'N/A'}W")
-        
+
         return snapshot

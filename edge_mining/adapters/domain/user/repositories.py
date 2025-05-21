@@ -13,16 +13,18 @@ from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRep
 # Simple In-Memory implementation for testing and basic use
 
 class InMemorySettingsRepository(SettingsRepository):
+    """In-Memory implementation of the SettingsRepository."""
     def __init__(self, initial_settings: Optional[SystemSettings] = None):
         self._settings: Optional[SystemSettings] = copy.deepcopy(initial_settings)
 
     def get_settings(self) -> Optional[SystemSettings]:
-         return copy.deepcopy(self._settings)
+        return copy.deepcopy(self._settings)
 
     def save_settings(self, settings: SystemSettings) -> None:
         self._settings = copy.deepcopy(settings)
 
 class SqliteSettingsRepository(BaseSqliteRepository, SettingsRepository):
+    """SQLite implementation of the SettingsRepository."""
     _SETTINGS_ID = "global_settings" # We dont have different users, so we use a single ID.
 
     def get_settings(self) -> Optional[SystemSettings]:
@@ -46,11 +48,12 @@ class SqliteSettingsRepository(BaseSqliteRepository, SettingsRepository):
             self.logger.error(f"Errore SQLite o JSON ottenendo settings: {e}")
             return None
         finally:
-            if conn: conn.close()
+            if conn:
+                conn.close()
 
     def save_settings(self, settings: SystemSettings) -> None:
         self.logger.debug("Saving settings to SQLite.")
-        
+
         sql = "INSERT OR REPLACE INTO settings (id, settings_json) VALUES (?, ?)"
         conn = self._get_connection()
         try:
@@ -61,4 +64,5 @@ class SqliteSettingsRepository(BaseSqliteRepository, SettingsRepository):
             self.logger.error(f"Errore SQLite salvando settings: {e}")
             raise ConfigurationError(f"Errore DB salvando settings: {e}") from e
         finally:
-            if conn: conn.close()
+            if conn:
+                conn.close()
