@@ -47,6 +47,11 @@ class InMemoryOptimizationPolicyRepository(OptimizationPolicyRepository):
                     p.is_active = False # Deactivate others
         self._policies[policy.id] = copy.deepcopy(policy)
 
+    def remove(self, policy_id: EntityId) -> None:
+        if policy_id not in self._policies:
+            raise ValueError(f"Policy {policy_id} not found for removal.")
+        del self._policies[policy_id]
+
 class SqliteOptimizationPolicyRepository(BaseSqliteRepository, OptimizationPolicyRepository):
     """SQLite implementation of the OptimizationPolicyRepository."""
 
