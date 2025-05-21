@@ -2,7 +2,6 @@
 
 from typing import List, Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Optional, Annotated
 
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.application.services.action_service import ActionService
