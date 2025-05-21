@@ -17,7 +17,7 @@ class User:
 @dataclass
 class SystemSettings:
     """Entity for the system settings."""
-    id: EntityId = field(default_factory=uuid.uuid4) # Or a fixed ID like 'global_settings'
+    id: UserId # Or a fixed ID like 'global_settings'
     settings: Dict[str, Any] = field(default_factory=dict)
     # e.g., {"notification_preferences": {"telegram_chat_id": "123"}, "default_pool": "..."}
 
