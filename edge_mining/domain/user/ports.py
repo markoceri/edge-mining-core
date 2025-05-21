@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from edge_mining.domain.user.common import UserId
-from edge_mining.domain.user.entities import User, SystemSettings
+from edge_mining.domain.user.entities import User
 
 class UserRepository(ABC):
     """Port for the User Repository."""
@@ -15,15 +15,3 @@ class UserRepository(ABC):
         raise NotImplementedError
     # ... other methods as needed
 
-class SettingsRepository(ABC):
-    """Port for the Settings Repository."""
-
-    @abstractmethod
-    def get_settings(self, user_id: Optional[UserId]) -> Optional[SystemSettings]: # Assuming single settings object
-        """Gets the settings."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def save_settings(self, settings: SystemSettings, user_id: Optional[UserId]) -> None:
-        """Saves the settings."""
-        raise NotImplementedError

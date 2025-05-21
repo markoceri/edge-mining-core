@@ -6,8 +6,8 @@ from typing import Optional, Dict
 from edge_mining.domain.exceptions import ConfigurationError
 
 from edge_mining.domain.user.common import UserId
-from edge_mining.domain.user.ports import SettingsRepository
 from edge_mining.domain.user.entities import SystemSettings
+from edge_mining.shared.settings.ports import SettingsRepository
 
 from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 
