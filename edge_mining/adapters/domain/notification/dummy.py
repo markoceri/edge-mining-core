@@ -11,5 +11,5 @@ class DummyNotifier(NotificationPort):
     def send_notification(self, title: str, message: str) -> bool:
         full_message = f"--- NOTIFICATION ---\nTitle: {title}\nMessage: {message}\n--------------------"
         print(full_message)
-        logger.info(f"Notification Sent: Title='{title}'")
+        logger.info("Notification Sent: Title='%s'", title)
         return True
