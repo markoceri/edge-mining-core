@@ -7,11 +7,6 @@ class PersistenceAdapter(Enum):
     IN_MEMORY = "in_memory"
     SQLITE = "sqlite"
 
-class EnergyMonitorAdapter(Enum):
-    """Types of energy monitor adapter."""
-    DUMMY = "dummy"
-    HOME_ASSISTANT = "home_assistant"
-
 class MinerControllerAdapter(Enum):
     """Types of miner controller adapter."""
     DUMMY = "dummy"

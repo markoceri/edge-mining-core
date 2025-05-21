@@ -7,7 +7,7 @@ from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.domain.common import Watts, WattHours, Timestamp
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot, BatteryState
-
+from edge_mining.domain.energy.common import EnergyMonitorAdapter
 from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import ServiceHomeAssistantAPI
 
 class HomeAssistantEnergyMonitor(EnergyMonitorPort):
@@ -35,6 +35,8 @@ class HomeAssistantEnergyMonitor(EnergyMonitorPort):
         battery_positive_charge: bool = True, # True if positive battery = charge
         logger: LoggerPort = None
     ):
+        super().__init__(energy_monitor_type=EnergyMonitorAdapter.HOME_ASSISTANT_API)
+
         # Initialize the HomeAssistant API Service
         self.home_assistant = home_assistant
         self.logger = logger
