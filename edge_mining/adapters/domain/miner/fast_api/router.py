@@ -49,7 +49,7 @@ async def get_miners_list(
 
         return response_miners
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.get("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def get_miner_details(
@@ -73,10 +73,10 @@ async def get_miner_details(
         )
 
         return response
-    except MinerNotFoundError: # Catch specific domain errors if needed
-         raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e: # Catch specific domain errors if needed
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/miners", response_model=MinerResponseSchema)
 async def add_miner(
@@ -107,7 +107,7 @@ async def add_miner(
 
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.delete("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def remove_miner(
@@ -131,10 +131,10 @@ async def remove_miner(
         )
 
         return response
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.put("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def update_miner(
@@ -168,10 +168,10 @@ async def update_miner(
         )
 
         return response
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/miners/{miner_id}/start", response_model=MinerStatusSchema)
 async def start_miner(
@@ -197,10 +197,10 @@ async def start_miner(
             return response
         else:
             raise HTTPException(status_code=500, detail="Failed to start miner")
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/miners/{miner_id}/stop", response_model=MinerStatusSchema)
 async def stop_miner(
@@ -226,10 +226,10 @@ async def stop_miner(
             return response
         else:
             raise HTTPException(status_code=500, detail="Failed to stop miner")
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.get("/miners/{miner_id}/status", response_model=MinerStatusSchema)
 async def get_miner_status(
@@ -249,10 +249,10 @@ async def get_miner_status(
         )
 
         return response
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/miners/{miner_id}/activate", response_model=MinerStatusSchema)
 async def activate_miner(
@@ -272,10 +272,10 @@ async def activate_miner(
         )
 
         return response
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/miners/{miner_id}/deactivate", response_model=MinerStatusSchema)
 async def deactivate_miner(
@@ -295,6 +295,7 @@ async def deactivate_miner(
         )
 
         return response
-    except MinerNotFoundError:
-        raise HTTPException(status_code=404, detail="Miner not found")
+    except MinerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
