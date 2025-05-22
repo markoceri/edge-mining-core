@@ -9,5 +9,5 @@ fastapi
 uvicorn[standard]
 
 # Optional - For specific Driven Adapters (add as needed)
-homeassistant_api==4.2.2
+homeassistant_api==5.0.0
 python-telegram-bot>=20.0
