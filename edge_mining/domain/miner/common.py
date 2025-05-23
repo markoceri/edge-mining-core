@@ -3,8 +3,9 @@
 from dataclasses import dataclass
 from typing import NewType
 from enum import Enum
+import uuid
 
-MinerId = NewType("MinerId", str) # Use specific ID format if available (e.g., MAC address)
+MinerId = NewType("MinerId", uuid.UUID)
 
 class MinerStatus(Enum):
     """Enum for the different miner statuses."""

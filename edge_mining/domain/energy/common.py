@@ -7,7 +7,7 @@ class EnergySourceType(Enum):
     SOLAR = "solar"
     WIND = "wind"
     GRID = "grid"
-    #IDROELECTRIC = "hydroelectric" # 😃 future use​
+    HYDROELECTRIC = "hydroelectric"
     OTHER = "other"
 
 class EnergyMonitorAdapter(Enum):
