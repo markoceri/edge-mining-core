@@ -1,6 +1,7 @@
 """Collection of Common Objects for the Edge Mining application domain."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import NewType
 from datetime import datetime
 import uuid
@@ -16,3 +17,17 @@ EntityId = NewType("EntityId", uuid.UUID)
 class ValueObject:
     """Base class for value objects."""
     pass # Base class for value objects if needed
+
+@dataclass
+class Entity:
+    """Base class for entities."""
+    id: EntityId = field(default_factory=uuid.uuid4)
+
+@dataclass
+class AggregateRoot:
+    """Base class for aggregate roots."""
+    id: EntityId = field(default_factory=uuid.uuid4)
+
+class AdapterType(Enum):
+    """Base class for adapter types."""
+    pass # Base class for adapter types if needed

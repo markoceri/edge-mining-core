@@ -19,11 +19,6 @@ class OptimizationPolicyRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_active_policy(self) -> Optional[OptimizationPolicy]:
-        """Gets the single currently active policy."""
-        raise NotImplementedError
-
-    @abstractmethod
     def get_all(self) -> List[OptimizationPolicy]:
         """Gets all policies from the repository."""
         raise NotImplementedError

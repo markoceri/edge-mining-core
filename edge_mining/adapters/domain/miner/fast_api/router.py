@@ -4,10 +4,10 @@ from typing import List, Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from edge_mining.application.services.configuration_service import ConfigurationService
-from edge_mining.application.services.action_service import ActionService
+from edge_mining.application.services.miner_action_service import MinerActionService
 
-from edge_mining.domain.miner.common import MinerId
-from edge_mining.domain.exceptions import MinerNotFoundError
+from edge_mining.domain.common import EntityId
+from edge_mining.domain.miner.exceptions import MinerNotFoundError
 
 from edge_mining.adapters.domain.miner.fast_api.schemas import (
     MinerResponseSchema, MinerCreateSchema, MinerUpdateSchema,
@@ -16,7 +16,7 @@ from edge_mining.adapters.domain.miner.fast_api.schemas import (
 
 # Import the dependency injection function defined in main_api.py
 from edge_mining.adapters.infrastructure.api.main_api import get_config_service
-from edge_mining.adapters.infrastructure.api.main_api import get_action_service
+from edge_mining.adapters.infrastructure.api.main_api import get_miner_action_service
 
 router = APIRouter()
 
@@ -52,7 +52,7 @@ async def get_miners_list(
 
 @router.get("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def get_miner_details(
-    miner_id: MinerId,
+    miner_id: EntityId,
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Get details for a specific miner."""
@@ -110,7 +110,7 @@ async def add_miner(
 
 @router.delete("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def remove_miner(
-    miner_id: MinerId,
+    miner_id: EntityId,
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Remove a miner."""
@@ -137,7 +137,7 @@ async def remove_miner(
 
 @router.put("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def update_miner(
-    miner_id: MinerId,
+    miner_id: EntityId,
     miner_update: MinerUpdateSchema,
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
@@ -174,8 +174,8 @@ async def update_miner(
 
 @router.post("/miners/{miner_id}/start", response_model=MinerStatusSchema)
 async def start_miner(
-    miner_id: MinerId,
-    action_service: Annotated[ActionService, Depends(get_action_service)],
+    miner_id: EntityId,
+    action_service: Annotated[MinerActionService, Depends(get_miner_action_service)],
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Start a miner."""
@@ -203,8 +203,8 @@ async def start_miner(
 
 @router.post("/miners/{miner_id}/stop", response_model=MinerStatusSchema)
 async def stop_miner(
-    miner_id: MinerId,
-    action_service: Annotated[ActionService, Depends(get_action_service)],
+    miner_id: EntityId,
+    action_service: Annotated[MinerActionService, Depends(get_miner_action_service)],
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Stop a miner."""
@@ -232,7 +232,7 @@ async def stop_miner(
 
 @router.get("/miners/{miner_id}/status", response_model=MinerStatusSchema)
 async def get_miner_status(
-    miner_id: MinerId,
+    miner_id: EntityId,
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Get the current status of a miner."""
@@ -255,7 +255,7 @@ async def get_miner_status(
 
 @router.post("/miners/{miner_id}/activate", response_model=MinerStatusSchema)
 async def activate_miner(
-    miner_id: MinerId,
+    miner_id: EntityId,
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Activate a miner."""
@@ -278,7 +278,7 @@ async def activate_miner(
 
 @router.post("/miners/{miner_id}/deactivate", response_model=MinerStatusSchema)
 async def deactivate_miner(
-    miner_id: MinerId,
+    miner_id: EntityId,
     config_service: Annotated[ConfigurationService, Depends(get_config_service)]
 ):
     """Deactivate a miner."""

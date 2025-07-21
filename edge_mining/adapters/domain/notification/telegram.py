@@ -1,4 +1,9 @@
-"""Telegram adapter (Implementation of Port) that uses telegram as notificator sender for Edge Mining Application"""
+"""
+Telegram adapter (Implementation of Port) that uses telegram
+as notificator sender for Edge Mining Application
+"""
+
+from typing import Dict, Any
 
 import re
 import telegram
@@ -7,7 +12,49 @@ from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
 from edge_mining.domain.notification.ports import NotificationPort
+from edge_mining.domain.notification.exceptions import (
+    NotifierConfigurationError
+)
+
 from edge_mining.adapters.infrastructure.logging.terminal_logging import TerminalLogger
+from edge_mining.shared.interfaces.factories import NotificationAdapterFactory
+from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.shared.external_services.ports import ExternalServicePort
+from edge_mining.shared.adapter_configs.notification import TelegramNotificationConfig
+
+class TelegramNotifierFactory(NotificationAdapterFactory):
+    """
+    Creates a factory for Telegram notification adapter.
+
+    This factory aims to simplifying the building of Telegram.
+    """
+    def create(self,
+        config: TelegramNotificationConfig,
+        logger: LoggerPort,
+        external_service: ExternalServicePort
+    ) -> NotificationPort:
+        """Create a notification adapter"""
+        
+        if not isinstance(config, TelegramNotificationConfig):
+            raise NotifierConfigurationError("Invalid configuration type for Telegram notifier. "
+                                    "Expected TelegramNotificationConfig.")
+        
+        # Get the config from the energy monitor config
+        notifier_config: TelegramNotificationConfig = config
+
+
+        if not notifier_config.bot_token:
+            raise NotifierConfigurationError("Bot Token is required for Telegram notifier.")
+
+        if not notifier_config.chat_id:
+            raise NotifierConfigurationError("Chat ID is required for Telegram notifier.")
+
+        return TelegramNotifier(
+            bot_token=notifier_config.bot_token,
+            chat_id=notifier_config.chat_id,
+            logger=logger
+        )
+
 
 # MarkdownV2 Special Characters That Need to Be Escaped
 # See: https://core.telegram.org/bots/api#markdownv2-style

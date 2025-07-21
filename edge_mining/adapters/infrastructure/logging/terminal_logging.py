@@ -1,6 +1,6 @@
 """The terminal log."""
 
-import logging
+from loguru import logger
 import sys
 import json
 import traceback
@@ -11,25 +11,37 @@ from edge_mining.shared.logging.port import LoggerPort
 class TerminalLogger(LoggerPort):
     """Terminal logger class."""
 
-    def __init__(self, name="", LOG_LEVEL="INFO"):
+    def __init__(self, name="", log_level="INFO"):
         self.name = name
-        self.LOG_LEVEL = LOG_LEVEL
+        self.log_level = log_level
         self.default_log()
 
     def show_log_level(self, record):
         """Allows to show stuff in the log based on the global setting."""
-        return record["level"].no >= self.logger.level(self.LOG_LEVEL).no
+        pass
 
     def default_log(self):
         """Set the same debug level to all the project dependencies."""
+        logger.remove()
 
-        logging.basicConfig(
-            level=self.LOG_LEVEL,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[logging.StreamHandler(sys.stdout)] # Log to console
+        logger.add(
+            sys.stdout,
+            level=self.log_level,
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+                   "<level>{level: <8}</level> | "
+                   "<level>{message}</level>",
+            colorize=True,
+            backtrace=False,
+            diagnose=True
         )
+
+        # logging.basicConfig(
+        #     level=self.log_level,
+        #     format='%(asctime)s - %(levelname)s - %(message)s',
+        #     handlers=[logging.StreamHandler(sys.stdout)] # Log to console
+        # )
         
-        self.logger = logging.getLogger(self.name)
+        # self.logger = logging.getLogger(self.name)
 
     def __call__(self, msg, level="DEBUG"):
         """Alias of self.log()"""
@@ -58,7 +70,7 @@ class TerminalLogger(LoggerPort):
     def critical(self, msg):
         """Logs a CRITICAL message"""
         self.log(msg, level="CRITICAL")
-        
+
         # Only print the traceback if an exception handler is being executed
         if sys.exc_info()[0] is not None:
             traceback.print_exc()
@@ -76,29 +88,16 @@ class TerminalLogger(LoggerPort):
                 pass
         else:
             msg = pformat(msg)
-            
-        # Convert level string to log level
-        if level == "DEBUG":
-            level = logging.DEBUG
-        elif level == "INFO":
-            level = logging.INFO
-        elif level == "WARNING":
-            level = logging.WARNING
-        elif level == "ERROR":
-            level = logging.ERROR
-        elif level == "CRITICAL":
-            level = logging.CRITICAL
 
-        # actual log
-        lines = msg.split("\n")
-        for line in lines:
-            self.logger.log(level=level, msg=line)
+        log_method = getattr(logger, level.lower(), logger.debug) # Default to debug if level is unknown
+
+        log_method(msg)
 
     def welcome(self):
         """Welcome message in the terminal."""
 
         print("\n\n")
-        with open("edge_mining/welcome.txt", "r") as f:
+        with open("edge_mining/welcome.txt", "r", encoding="utf-8") as f:
             print(f.read())
         print("\n\n")
 
@@ -108,13 +107,7 @@ class TerminalLogger(LoggerPort):
     def shutdown(self):
         """Sure that log are written to the file before exiting."""
 
-        # Flush the logger
-        for handler in self.logger.handlers:
-            handler.flush()
-
-        # Close the logger
-        for handler in self.logger.handlers:
-            handler.close()
+        logger.complete()
 
         # Print a goodbye message
         print("Shutting down...")

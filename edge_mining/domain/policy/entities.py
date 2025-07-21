@@ -2,18 +2,16 @@
 
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
-import uuid
 
+from edge_mining.domain.common import Entity, Watts, Percentage
 from edge_mining.domain.miner.common import MinerStatus
 from edge_mining.domain.policy.common import MiningDecision
-from edge_mining.domain.common import EntityId, Watts, Percentage
 from edge_mining.domain.forecast.value_objects import ForecastData
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 
 @dataclass
-class AutomationRule:
+class AutomationRule(Entity):
     """Entity for an automation rule."""
-    id: EntityId = field(default_factory=uuid.uuid4)
     name: str = ""
     conditions: Dict[str, Any] = field(default_factory=dict) # e.g., {"battery_soc_gt": 80, "solar_forecast_gt": 1000}
     action: MiningDecision = field(default_factory=MiningDecision.STOP_MINING) # e.g., MiningDecision.START_MINING

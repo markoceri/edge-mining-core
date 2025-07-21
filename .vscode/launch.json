@@ -18,7 +18,7 @@
             "request": "launch",
             "console": "integratedTerminal",
             "module": "edge_mining",
-            "args": "cli"
+            "args": "cli interactive"
         }
     ]
 }

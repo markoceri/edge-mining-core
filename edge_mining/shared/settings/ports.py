@@ -13,6 +13,6 @@ class SettingsRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_settings(self, settings: SystemSettings, user_id: Optional[UserId]) -> None:
+    def save_settings(self, user_id: Optional[UserId], settings: SystemSettings) -> None:
         """Saves the settings."""
         raise NotImplementedError

@@ -1,7 +1,8 @@
 """API Router for policy domain"""
 
+from typing import List, Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Optional, Annotated
 
 from edge_mining.application.services.configuration_service import ConfigurationService
 
@@ -9,7 +10,9 @@ from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
-from edge_mining.domain.exceptions import PolicyNotFoundError
+from edge_mining.domain.policy.exceptions import (
+    PolicyNotFoundError
+)
 
 from edge_mining.adapters.domain.policy.fast_api.schemas import (
     OptimizationPolicyResponseSchema, OptimizationPolicyCreateSchema,

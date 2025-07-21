@@ -2,7 +2,9 @@
 Common classes for the Notification domain of the Edge Mining application.
 """
 
-from typing import NewType
-import uuid
+from edge_mining.domain.common import AdapterType
 
-NotificationId = NewType("NotificationId", uuid.UUID)
+class NotificationAdapter(AdapterType):
+    """Types of notification adapter."""
+    DUMMY = "dummy"
+    TELEGRAM = "telegram"

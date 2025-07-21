@@ -1,10 +1,6 @@
 """Collection of Common Objects for the Energy Optimization domain of the Edge Mining application."""
 
 from enum import Enum
-from typing import NewType
-import uuid
-
-PolicyId = NewType("PolicyId", uuid.UUID)
 
 # Decision object
 class MiningDecision(Enum):

@@ -4,14 +4,13 @@ from dataclasses import dataclass, field
 from typing import Dict, Any
 import uuid
 
-from edge_mining.domain.common import EntityId
+from edge_mining.domain.common import Entity
 from edge_mining.domain.user.common import UserId
 
 @dataclass
-class User:
+class User(Entity):
     """Entity for a user."""
-    id: UserId
-    username: str
+    username: str = ""
     # Add password hash, roles etc. if needed
 
 @dataclass

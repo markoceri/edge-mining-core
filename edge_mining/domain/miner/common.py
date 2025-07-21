@@ -1,11 +1,8 @@
 """Collection of Common Objects for the Mining Device Management domain of the Edge Mining application."""
 
-from dataclasses import dataclass
-from typing import NewType
 from enum import Enum
-import uuid
 
-MinerId = NewType("MinerId", uuid.UUID)
+from edge_mining.domain.common import AdapterType
 
 class MinerStatus(Enum):
     """Enum for the different miner statuses."""
@@ -15,3 +12,7 @@ class MinerStatus(Enum):
     STARTING = "starting"
     STOPPING = "stopping"
     ERROR = "error"
+
+class MinerControllerAdapter(AdapterType):
+    """Types of miner controller adapter."""
+    DUMMY = "dummy"

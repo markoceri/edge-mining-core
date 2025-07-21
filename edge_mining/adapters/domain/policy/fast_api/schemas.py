@@ -20,9 +20,14 @@ class OptimizationPolicyResponseSchema(BaseModel):
 
 class RuleTypeSchema(str, Enum):
     """Schema for the type of rule"""
+    START = "start"
+    STOP = "stop"
 
 class MiningDecisionSchema(str, Enum):
     """Schema for the mining decision"""
+    START_MINING = "start_mining"
+    STOP_MINING = "stop_mining"
+    MAINTAIN_STATE = "maintain_state"
 
 class AutomationRuleResponseSchema(BaseModel):
     """Schema for returning an automation rule"""

@@ -2,20 +2,26 @@
 
 from dataclasses import dataclass, field
 from typing import Optional
-import uuid
+from datetime import datetime
 
-from edge_mining.domain.common import EntityId
-from edge_mining.domain.common import Timestamp
-from edge_mining.domain.miner.common import MinerId
-from edge_mining.domain.performance.common import Satoshi
+from edge_mining.domain.common import Entity, Timestamp
+from edge_mining.domain.performance.common import Satoshi, MiningPerformanceTrackerAdapter
 from edge_mining.domain.miner.value_objects import HashRate
 
+from edge_mining.shared.interfaces.config import MiningPerformanceTrackerConfig
+
 @dataclass
-class MiningSession:
+class MiningPerformanceTracker(Entity):
+    """Entity for tracking mining performance."""
+    name: str = ""
+    adapter_type: MiningPerformanceTrackerAdapter = MiningPerformanceTrackerAdapter.DUMMY
+    config: Optional[MiningPerformanceTrackerConfig] = None
+    external_service_id: Optional[str] = None
+
+@dataclass
+class MiningSession(Entity):
     """Entity for a mining session."""
-    id: EntityId = field(default_factory=uuid.uuid4)
-    miner_id: MinerId
-    start_time: Timestamp
+    start_time: Timestamp = field(default_factory=Timestamp(datetime.now()))
     end_time: Optional[Timestamp] = None
     total_reward: Optional[Satoshi] = None
     average_hashrate: Optional[HashRate] = None

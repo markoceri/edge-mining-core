@@ -2,27 +2,23 @@
 
 from dataclasses import dataclass, field
 from typing import List, Optional
-import uuid
 
-from edge_mining.domain.common import EntityId, Watts
+from edge_mining.domain.common import AggregateRoot, Watts
 from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.miner.common import MinerStatus, MinerId
+from edge_mining.domain.miner.common import MinerStatus
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.forecast.value_objects import ForecastData
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 
 @dataclass
-class OptimizationPolicy:
+class OptimizationPolicy(AggregateRoot):
     """Aggregate Root for the Optimization Policy."""
-    id: EntityId = field(default_factory=uuid.uuid4)
     name: str = ""
     description: Optional[str] = None
-    is_active: bool = False
-    # Could have different types of rules or grouped rules, but for now I have to make it simple! 🙃​
+
     start_rules: List[AutomationRule] = field(default_factory=list)
     stop_rules: List[AutomationRule] = field(default_factory=list)
-    target_miner_ids: List[MinerId] = field(default_factory=list) # Which miners this policy applies to, needed if we have multiple miners.
 
     def decide_next_action(
         self,
@@ -30,8 +26,9 @@ class OptimizationPolicy:
         forecast: Optional[ForecastData],
         home_load_forecast: Optional[Watts], # Added home load forecast
         current_miner_status: MinerStatus,
-        hash_rate: Optional[HashRate],
-        current_miner_power: Optional[Watts],
+        hash_rate: Optional[HashRate] = None,
+        current_miner_power: Optional[Watts] = None,
+        tracker_current_hashrate: Optional[HashRate] = None
     ) -> MiningDecision:
         """
         Applies the policy rules to determine the next action.
@@ -44,7 +41,7 @@ class OptimizationPolicy:
         # 2. If miner is ON, check STOP rules. If any match -> STOP_MINING
         # 3. Otherwise -> MAINTAIN_STATE
 
-        # This is the location where the magic happens! 🪄​🎩
+        # This is the location where the magic happens!
 
         if current_miner_status in [MinerStatus.OFF, MinerStatus.ERROR, MinerStatus.UNKNOWN]:
             for rule in self.start_rules:
