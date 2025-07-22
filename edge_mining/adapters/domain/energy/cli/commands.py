@@ -1058,7 +1058,9 @@ def handle_add_energy_monitor(
 
     new_energy_monitor.config = config
 
-    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(new_energy_monitor.adapter_type, None)
+    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
+        new_energy_monitor.adapter_type, None
+    )
     # If an external service is required for the selected adapter type
     if needed_external_service:
         # If external service is needed, check if some one is already configured
@@ -1209,7 +1211,9 @@ def update_single_energy_monitor(
         click.echo(click.style("Invalid configuration. Aborting.", fg="red"))
         return None
 
-    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(new_energy_monitor.adapter_type, None)
+    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
+        new_energy_monitor.adapter_type, None
+    )
 
     if new_energy_monitor.external_service_id:
         click.echo("\nCurrent external service: ")
@@ -1271,7 +1275,7 @@ def update_single_energy_monitor(
                             )
                             return None
                         new_energy_monitor.external_service_id = external_service.id
-                    
+
                     # Check if the current external service is still valid
                     if not current_external_service.config.is_valid():
                         click.echo(
@@ -1346,7 +1350,7 @@ def update_single_energy_monitor(
             else:
                 click.echo(click.style("Aborting energy monitor addition.", fg="red"))
                 return None
-    
+
     try:
         updated_monitor: EnergyMonitor = configuration_service.update_energy_monitor(
             monitor_id=new_energy_monitor.id,
