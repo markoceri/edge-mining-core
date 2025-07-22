@@ -6,6 +6,7 @@ from edge_mining.adapters.domain.energy.cli.commands import energy_menu
 from edge_mining.adapters.domain.forecast.cli.commands import forecast_menu
 from edge_mining.adapters.domain.optimization_unit.cli.commands import optimization_unit_menu
 from edge_mining.adapters.domain.miner.cli.commands import miner_menu
+from edge_mining.adapters.domain.notification.cli.commands import notifier_menu
 from edge_mining.adapters.infrastructure.external_services.cli.commands import external_services_menu
 
 from edge_mining.shared.logging.port import LoggerPort
@@ -196,12 +197,13 @@ def interactive(ctx: click.Context):
         click.echo("2. Manage Forecast")
         click.echo("3. Manage Miners")
         click.echo("4. Manage Policies")
+        click.echo("5. Manage Notifiers")
         click.echo("")
-        click.echo("5. Manage Energy Optimization Units")
+        click.echo("6. Manage Energy Optimization Units")
         click.echo("")
-        click.echo("6. Manage External Services")
+        click.echo("7. Manage External Services")
         click.echo("")
-        click.echo("6. Run all optimization units)")
+        click.echo("8. Run all optimization units)")
         click.echo("q. Close application")
         click.echo("--------------------------")
 
@@ -233,8 +235,13 @@ def interactive(ctx: click.Context):
 
             if sub_choice == 'q':
                 break
+        elif choice == '4':
+            #policies
+
+            if sub_choice == 'q':
+                break
         elif choice == '5':
-            sub_choice = optimization_unit_menu(
+            sub_choice = notifier_menu(
                 configuration_service=services.configuration_service,
                 logger=logger
             )
@@ -242,6 +249,14 @@ def interactive(ctx: click.Context):
             if sub_choice == 'q':
                 break
         elif choice == '6':
+            sub_choice = optimization_unit_menu(
+                configuration_service=services.configuration_service,
+                logger=logger
+            )
+
+            if sub_choice == 'q':
+                break
+        elif choice == '7':
             sub_choice = external_services_menu(
                 configuration_service=services.configuration_service,
                 logger=logger

@@ -62,9 +62,10 @@ from edge_mining.domain.optimization_unit.exceptions import (
 )
 
 from edge_mining.domain.notification.entities import Notifier
+from edge_mining.domain.notification.common import NotificationAdapter
 from edge_mining.domain.notification.ports import NotifierRepository
 from edge_mining.domain.notification.exceptions import (
-    NotifierNotFoundError
+    NotifierNotFoundError, NotifierConfigurationError
 )
 
 from edge_mining.domain.user.entities import SystemSettings
@@ -87,6 +88,7 @@ from edge_mining.shared.interfaces.config import (
     ExternalServiceConfig,
     EnergyMonitorConfig,
     ForecastProviderConfig,
+    NotificationConfig,
 )
 from edge_mining.shared.infrastructure import PersistenceSettings
 
@@ -97,7 +99,10 @@ from edge_mining.shared.adapter_maps.energy import (
 )
 from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
 from edge_mining.shared.adapter_maps.forecast import (
-    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP,
+    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP
+)
+from edge_mining.shared.adapter_maps.notification import (
+    NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP
 )
 
 class ConfigurationService:
@@ -1579,6 +1584,113 @@ class ConfigurationService:
 
         self.logger.debug(
             f"Miner controller {controller.id} ({controller.name}) is valid."
+        )
+        return True
+
+    # --- Notifier Management ---
+    def add_notifier(
+        self,
+        name: str,
+        adapter_type: NotificationAdapter,
+        config: NotificationConfig,
+        external_service_id: Optional[EntityId] = None,
+    ) -> Notifier:
+        """Add a new notifier."""
+        self.logger.debug(f"Adding notifier '{name}' with adapter {adapter_type}")
+
+        notifier = Notifier(
+            name=name,
+            adapter_type=adapter_type,
+            config=config,
+            external_service_id=external_service_id,
+        )
+
+        self.check_notifier(notifier)
+
+        self.notifier_repo.add(notifier)
+
+        return notifier
+
+    def get_notifier(self, notifier_id: EntityId) -> Optional[Notifier]:
+        """Get a notifier by its ID."""
+        notifier: Notifier = self.notifier_repo.get_by_id(notifier_id)
+        if not notifier:
+            raise NotifierNotFoundError(f"Notifier with ID {notifier_id} not found.")
+        return notifier
+
+    def list_notifiers(self) -> List[Notifier]:
+        """List all notifiers in the system."""
+        return self.notifier_repo.get_all()
+
+    def remove_notifier(self, notifier_id: EntityId) -> Notifier:
+        """Remove a notifier from the system."""
+        self.logger.debug(f"Removing notifier {notifier_id}")
+
+        notifier: Notifier = self.notifier_repo.get_by_id(notifier_id)
+        if not notifier:
+            raise NotifierNotFoundError(f"Notifier with ID {notifier_id} not found.")
+
+        self.notifier_repo.remove(notifier_id)
+        return notifier
+
+    def update_notifier(
+        self,
+        notifier_id: EntityId,
+        name: str,
+        adapter_type: str,  # Sostituisci con enum/adapter se esiste
+        config: Any,        # Sostituisci con NotifierConfig se esiste
+        external_service_id: Optional[EntityId] = None,
+    ) -> Notifier:
+        """Update a notifier in the system."""
+        self.logger.debug(f"Updating notifier {notifier_id} ({name})")
+
+        notifier: Notifier = self.notifier_repo.get_by_id(notifier_id)
+        if not notifier:
+            raise NotifierNotFoundError(f"Notifier with ID {notifier_id} not found.")
+
+        notifier.name = name
+        notifier.adapter_type = adapter_type
+        notifier.config = config
+        notifier.external_service_id = external_service_id
+
+        self.check_notifier(notifier)
+        self.notifier_repo.update(notifier)
+
+        return notifier
+
+    def check_notifier(self, notifier: Notifier) -> bool:
+        """Check if a notifier is valid and can be used."""
+        self.logger.debug(f"Checking notifier {notifier.id} ({notifier.name})")
+
+        if notifier.external_service_id:
+            external_service: ExternalService = self.external_service_repo.get_by_id(
+                notifier.external_service_id
+            )
+            if not external_service:
+                raise ExternalServiceNotFoundError(
+                    f"External Service with ID {notifier.external_service_id} not found."
+                )
+            
+            # Checks if the external service is compatible with the notifier's adapter type
+            requied_external_service_type = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(
+                notifier.adapter_type, None
+            )
+            if requied_external_service_type and external_service.type != requied_external_service_type:
+                raise NotifierConfigurationError(
+                    f"External Service {external_service.id} is not compatible with Notifier {notifier.name} "
+                    f"using adapter {notifier.adapter_type}. Expected type {requied_external_service_type}."
+                )
+
+        # Checks if the configuration is valid for the given adapter type
+        if notifier.config is None or not notifier.config.is_valid(
+            notifier.adapter_type
+        ):
+            raise NotifierNotFoundError(
+                f"Invalid configuration for Notifier {notifier.name} with adapter {notifier.adapter_type}."
+            )
+
+        self.logger.debug(
+            f"Notifier {notifier.id} ({notifier.name}) is valid."
         )
         return True
 
