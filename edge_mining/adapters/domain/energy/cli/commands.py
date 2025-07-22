@@ -1145,7 +1145,9 @@ def handle_list_energy_monitors(
     click.pause("Press any key to return to the menu...")
 
 def select_energy_monitor(
-        configuration_service: ConfigurationService, logger: LoggerPort
+        configuration_service: ConfigurationService,
+        logger: LoggerPort,
+        default_id: Optional[EntityId] = None
     ) -> Optional[EnergyMonitor]:
     """Select an energy monitor from the list."""
     click.echo(click.style("\n--- Select Energy Monitor ---", fg="yellow"))
@@ -1163,9 +1165,12 @@ def select_energy_monitor(
             "Type: " + click.style(f"{em.adapter_type.name}", fg="green")
         )
 
+        if default_id and em.id == default_id:
+            default_idx = str(idx)
+
     click.echo("\nb. Back to menu\n")
 
-    em_idx: str = click.prompt("Choose a Energy Monitor index", type=str)
+    em_idx: str = click.prompt("Choose a Energy Monitor index", type=str, default=default_idx)
     em_idx = em_idx.strip().lower()
     if em_idx == "b":
         return None
