@@ -1449,12 +1449,21 @@ class ConfigurationService:
         return True
 
     def add_miner_controller(
-        self, name: str, adapter: MinerControllerAdapter, config: MinerControllerConfig
+        self,
+        name: str,
+        adapter: MinerControllerAdapter,
+        config: MinerControllerConfig,
+        external_service_id: Optional[EntityId] = None
     ) -> MinerController:
         """Add a miner controller to the system."""
         self.logger.info(f"Adding miner controller '{name}' with adapter {adapter}")
 
-        controller = MinerController(name=name, adapter_type=adapter, config=config)
+        controller = MinerController(
+            name=name,
+            adapter_type=adapter,
+            config=config,
+            external_service_id=external_service_id
+        )
 
         self.miner_controller_repo.add(controller)
         self.check_miner_controller(controller)
