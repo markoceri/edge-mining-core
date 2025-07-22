@@ -1069,7 +1069,8 @@ def handle_add_energy_monitor(
                 logger=logger,
                 filter_type=[needed_external_service]
             )
-            new_energy_monitor.external_service_id = external_service.id if external_service else None
+            if external_service:
+                new_energy_monitor.external_service_id = external_service.id if external_service else None
         else:
             click.echo("")
             click.echo(
