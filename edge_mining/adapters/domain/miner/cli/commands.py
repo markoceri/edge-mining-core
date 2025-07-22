@@ -10,9 +10,18 @@ from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.value_objects import HashRate
 
 from edge_mining.application.services.configuration_service import ConfigurationService
+
+from edge_mining.shared.external_services.entities import ExternalService
+
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.shared.interfaces.config import MinerControllerConfig
 from edge_mining.shared.adapter_configs.miner import MinerControllerDummyConfig
+
+from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP
+
+from edge_mining.adapters.infrastructure.external_services.cli.commands import (
+    select_external_service, print_external_service_details, handle_add_external_service
+)
 
 def handle_add_miner(configuration_service: ConfigurationService, logger: LoggerPort) -> None:
     """Menu to add a new miner."""
@@ -377,13 +386,13 @@ def select_miner_controller_type() -> Optional[MinerControllerAdapter]:
         click.echo(f"{idx}. {controller_type.name}")
 
     click.echo("")
-    choice: str = click.prompt("Choose a controller", type=str, default="")
+    choice: str = click.prompt("Choose a controller", type=str)
     choice = choice.strip().lower()
 
     if not choice.isdigit() or int(choice) < 0 or int(choice) >= len(MinerControllerAdapter):
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
-    
+
     controller_type_values = [controller_type.value for controller_type in MinerControllerAdapter]
 
     selected_type = MinerControllerAdapter(controller_type_values[int(choice)])
@@ -397,16 +406,27 @@ def handle_miner_controller_dummy_config(miner: Miner) -> MinerControllerConfig:
     default_hash_rate = miner.hash_rate_max.value if miner and miner.hash_rate_max else 90.0
     default_hash_rate_unit = miner.hash_rate_max.unit if miner and miner.hash_rate_max else "TH/s"
 
-    power_max: float = click.prompt("Max power consumption (Watt, eg. 3200.0)", type=float, default=default_power)
-    hash_rate_max_value: float = click.prompt("Max HashRate value (eg. 90.0)", type=float, default=default_hash_rate)
-    hash_rate_max_unit: str = click.prompt("Max HashRate unit (eg. TH/s)", type=str, default=default_hash_rate_unit)
+    power_max: float = click.prompt(
+        "Max power consumption (Watt, eg. 3200.0)",
+        type=float,
+        default=default_power
+    )
+    hash_rate_max_value: float = click.prompt(
+        "Max HashRate value (eg. 90.0)", type=float, default=default_hash_rate
+    )
+    hash_rate_max_unit: str = click.prompt(
+        "Max HashRate unit (eg. TH/s)", type=str, default=default_hash_rate_unit
+    )
 
     return MinerControllerDummyConfig(
         power_max=power_max,
         hashrate_max=HashRate(value=hash_rate_max_value, unit=hash_rate_max_unit)
     )
 
-def handle_miner_controller_configuration(adapter_type: MinerControllerAdapter, miner: Miner) -> MinerControllerConfig:
+def handle_miner_controller_configuration(
+        adapter_type: MinerControllerAdapter,
+        miner: Miner
+    ) -> MinerControllerConfig:
     """Handle configuration for the selected Miner Controller type."""
     if adapter_type == MinerControllerAdapter.DUMMY:
         return handle_miner_controller_dummy_config(miner)
@@ -427,23 +447,84 @@ def handle_add_miner_controller(
     if adapter_type is None:
         click.echo(click.style("Invalid controller type selected. Aborting.", fg="red"))
         return None
+    
+    new_controller = MinerController()
+    new_controller.name = name
+    new_controller.adapter_type = adapter_type
+    new_controller.config = None
+    new_controller.external_service_id = None
 
     config: MinerControllerConfig = handle_miner_controller_configuration(
-        adapter_type=adapter_type,
+        adapter_type=new_controller.adapter_type,
         miner=miner
     )
 
     if config is None:
         click.echo(click.style("Invalid configuration. Aborting.", fg="red"))
         return None
+    
+    new_controller.config = config
+
+    needed_external_service = MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP.get(adapter_type, None)
+    # If an external service is required for the selected adapter type
+    if needed_external_service:
+        # If external service is needed, check if some one is already configured
+        external_services: List[ExternalService] = configuration_service.list_external_services()
+        if external_services:
+            external_service: Optional[ExternalService] = select_external_service(
+                configuration_service=configuration_service,
+                logger=logger,
+                filter_type=[needed_external_service]
+            )
+            if external_service:
+                new_controller.external_service_id = external_service.id if external_service else None
+        else:
+            click.echo("")
+            click.echo(
+                click.style(
+                    "No external services configured. Please configure an external service first "
+                    "and then add a miner controller.",
+                    fg="yellow"
+                )
+            )
+            add_external_service: bool = click.confirm(
+                "Do you want to add an external service now?",
+                default=True,
+                abort=False
+            )
+            if add_external_service:
+                external_service: Optional[ExternalService] = handle_add_external_service(
+                    configuration_service=configuration_service,
+                    logger=logger
+                )
+                if external_service:
+                    click.echo(
+                        click.style(
+                            f"External Service '{external_service.name}', "
+                            f"Type: {external_service.adapter_type.name} "
+                            f"(ID: {external_service.id}) successfully added to current miner controller.",
+                            fg="green",
+                        )
+                    )
+                    new_controller.external_service_id = external_service.id
+            else:
+                click.echo(click.style("Aborting miner controller addition.", fg="red"))
+                return None
 
     try:
         added_controller = configuration_service.add_miner_controller(
-            name=name,
-            adapter=adapter_type,
-            config=config
+            name=new_controller.name,
+            adapter=new_controller.adapter_type,
+            config=new_controller.config,
+            external_service_id=new_controller.external_service_id
         )
-        click.echo(click.style(f"Miner Controller '{added_controller.name}' (ID: {added_controller.id}) successfully added.", fg="green"))
+        click.echo(
+            click.style(
+                f"Miner Controller '{added_controller.name}' "
+                f"(ID: {added_controller.id}) successfully added.",
+                fg="green"
+            )
+        )
     except Exception as e:
         added_controller = None
         logger.error(f"Error adding miner controller: {e}")
@@ -451,7 +532,10 @@ def handle_add_miner_controller(
     click.pause("Press any key to return to the menu...")
     return added_controller
 
-def handle_list_miner_controllers(configuration_service: ConfigurationService, logger: LoggerPort) -> None:
+def handle_list_miner_controllers(
+        configuration_service: ConfigurationService,
+        logger: LoggerPort
+    ) -> None:
     """List all configured Miner Controllers."""
     click.echo(click.style("\n--- Configured Miner Controllers ---", fg="yellow"))
 
@@ -479,7 +563,14 @@ def print_miner_controller_details(
     click.echo("| Name: " + click.style(controller.name, fg="blue"))
     click.echo("| ID: " + click.style(controller.id, fg="yellow"))
     click.echo("| Adapter Type: " + controller.adapter_type.name)
-    click.echo("| External Service ID:" + (str(controller.external_service_id) if controller.external_service_id else "None"))
+    click.echo(
+        "| External Service ID:"
+        + (
+            str(controller.external_service_id)
+            if controller.external_service_id
+            else "None"
+        )
+    )
     print_miner_controller_config(controller)
     click.echo("")
 
