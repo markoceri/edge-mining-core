@@ -18,7 +18,7 @@ MINER_CONTROLLER_CONFIG_TYPE_MAP: Dict[
     MinerControllerAdapter.DUMMY: MinerControllerDummyConfig
 }
 
-MINER_CONTROLLER_EXTERNAL_SERVICE_MAP: Dict[
+MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP: Dict[
     MinerControllerAdapter, Optional[ExternalServiceAdapter]
 ] = {
     MinerControllerAdapter.DUMMY: None  # Dummy does not use an external service
