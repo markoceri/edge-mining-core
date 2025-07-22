@@ -245,13 +245,13 @@ class SqliteForecastProviderRepository(ForecastProviderRepository):
                 forecast_provider = self._row_to_forecast_provider(row)
                 if forecast_provider:
                     forecast_providers.append(forecast_provider)
-            return forecast_providers
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error retrieving all forecast providers: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return forecast_providers
 
     def update(self, forecast_provider: ForecastProvider) -> None:
         """Update an existing forecast provider in the repository."""

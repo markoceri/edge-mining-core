@@ -201,13 +201,13 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
                 energy_source = self._row_to_energy_source(row)
                 if energy_source:
                     energy_sources.append(energy_source)
-            return energy_sources
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all energy sources: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return energy_sources
 
     def update(self, energy_source: EnergySource) -> None:
         """Update an energy source in the SQLite database."""
@@ -448,13 +448,13 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 energy_monitor = self._row_to_energy_monitor(row)
                 if energy_monitor:
                     energy_monitors.append(energy_monitor)
-            return energy_monitors
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all energy monitors: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return energy_monitors
 
     def update(self, energy_monitor: EnergyMonitor) -> None:
         """Update an energy monitor in the SQLite database."""

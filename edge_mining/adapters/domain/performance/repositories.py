@@ -248,7 +248,6 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
                 tracker = self._row_to_tracker(row)
                 if tracker:
                     trackers.append(tracker)
-            return trackers
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error retrieving all mining performace trackers: {e}"
@@ -257,6 +256,7 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
         finally:
             if conn:
                 conn.close()
+        return trackers
 
     def update(self, tracker: MiningPerformanceTracker) -> None:
         """Update an existing mining performace tracker in the repository."""

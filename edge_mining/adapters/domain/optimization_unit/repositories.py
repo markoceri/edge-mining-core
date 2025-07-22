@@ -193,13 +193,13 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 optimization_unit = self._row_to_optimization_unit(row)
                 if optimization_unit:
                     optimization_units.append(optimization_unit)
-            return optimization_units
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all enabled optimization units: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return optimization_units
 
     def get_all(self) -> List[EnergyOptimizationUnit]:
         """Get all optimization units from the SQLite database."""
@@ -215,13 +215,13 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 optimization_unit = self._row_to_optimization_unit(row)
                 if optimization_unit:
                     optimization_units.append(optimization_unit)
-            return optimization_units
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all enabled optimization units: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return optimization_units
 
     def update(self, optimization_unit: EnergyOptimizationUnit) -> None:
         """Update an optimization unit in the SQLite database."""

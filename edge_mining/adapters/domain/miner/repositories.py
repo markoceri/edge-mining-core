@@ -219,13 +219,13 @@ class SqliteMinerRepository(MinerRepository):
                 miner = self._row_to_miner(row)
                 if miner:
                     miners.append(miner)
-            return miners
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all miners: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return miners
 
     def update(self, miner: Miner) -> None:
         """Update a miner in the SQLite database."""
@@ -495,13 +495,13 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                 miner_controller = self._row_to_miner_controller(row)
                 if miner_controller:
                     miner_controllers.append(miner_controller)
-            return miner_controllers
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all miner controllers: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return miner_controllers
 
     def update(self, miner_controller: MinerController) -> None:
         """Update a miner controller in the SQLite database."""

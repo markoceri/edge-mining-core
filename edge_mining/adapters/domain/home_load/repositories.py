@@ -349,6 +349,7 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
         finally:
             if conn:
                 conn.close()
+        return home_forecast_providers
 
     def update(self, home_forecast_provider: HomeForecastProvider) -> None:
         """Update an existing home forecast provider in the repository."""

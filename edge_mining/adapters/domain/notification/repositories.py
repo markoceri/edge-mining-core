@@ -206,6 +206,7 @@ class SqliteNotifierRepository(NotifierRepository):
         finally:
             if conn:
                 conn.close()
+        return notifiers
 
     def update(self, notifier: Notifier) -> None:
         """Update an existing notifier in the repository."""

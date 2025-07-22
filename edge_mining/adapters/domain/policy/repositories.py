@@ -186,13 +186,13 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
                 policy = self._row_to_policy(row)
                 if policy:
                     policies.append(policy)
-            return policies
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting all policies: {e}")
             return []
         finally:
             if conn:
                 conn.close()
+        return policies
 
     def update(self, policy: OptimizationPolicy) -> None:
         self.logger.debug(f"Updating policy '{policy.name}' ({policy.id}) in SQLite.")
