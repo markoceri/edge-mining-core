@@ -878,6 +878,44 @@ class ConfigurationService:
         """List all optimization units in the system."""
         return self.optimization_unit_repo.get_all()
 
+    def filter_optimization_units(
+            self,
+            filter_by_miners: Optional[List[EntityId]] = None,
+            filter_by_energy_source: Optional[EntityId] = None,
+            filter_by_policy: Optional[EntityId] = None,
+            filter_by_home_forecast_provider: Optional[EntityId] = None,
+            filter_by_performance_tracker: Optional[EntityId] = None,
+            filter_by_notifiers: Optional[List[EntityId]] = None
+        ) -> List[EnergyOptimizationUnit]:
+        """Filter optimization units based on various criteria."""
+        eous = self.list_optimization_units()
+
+        if filter_by_miners is not None:
+            eous = [
+                eou for eou in eous if set(eou.target_miner_ids).intersection(filter_by_miners)
+            ]
+        if filter_by_energy_source is not None:
+            eous = [
+                eou for eou in eous if eou.energy_source_id == filter_by_energy_source
+            ]
+        if filter_by_policy is not None:
+            eous = [
+                eou for eou in eous if eou.policy_id == filter_by_policy
+            ]
+        if filter_by_home_forecast_provider is not None:
+            eous = [
+                eou for eou in eous if eou.home_forecast_provider_id == filter_by_home_forecast_provider
+            ]
+        if filter_by_performance_tracker is not None:
+            eous = [
+                eou for eou in eous if eou.performance_tracker_id == filter_by_performance_tracker
+            ]
+        if filter_by_notifiers is not None:
+            eous = [
+                eou for eou in eous if set(eou.notifier_ids).intersection(filter_by_notifiers)
+            ]
+        return eous
+
     def remove_optimization_unit(self, unit_id: EntityId) -> EnergyOptimizationUnit:
         """Remove an optimization unit from the system."""
         self.logger.info(f"Removing optimization unit {unit_id}")
