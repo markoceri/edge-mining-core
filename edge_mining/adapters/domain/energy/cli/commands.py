@@ -1159,6 +1159,7 @@ def select_energy_monitor(
         click.echo(click.style("No energy monitors configured.", fg="yellow"))
         return None
 
+    default_idx: str = ""
     for idx, em in enumerate(energy_monitors):
         click.echo(
             f"{idx}. " +
