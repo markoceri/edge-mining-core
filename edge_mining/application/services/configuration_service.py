@@ -39,7 +39,9 @@ from edge_mining.domain.policy.common import RuleType, MiningDecision
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
-from edge_mining.domain.policy.exceptions import PolicyError, PolicyNotFoundError
+from edge_mining.domain.policy.exceptions import (
+    PolicyError, PolicyNotFoundError, PolicyConfigurationError
+)
 
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.home_load.entities import HomeForecastProvider
@@ -1705,15 +1707,11 @@ class ConfigurationService:
 
     # --- Policy Management ---
     def create_policy(
-        self, name: str, description: str = "", target_miner_ids: List[EntityId] = None
+        self, name: str, description: str = ""
     ) -> OptimizationPolicy:
         """Create a new policy."""
         self.logger.info(f"Creating policy '{name}'")
 
-        if target_miner_ids is None:
-            target_miner_ids = []
-
-        # Validate miner IDs exist?
         policy = OptimizationPolicy(name=name, description=description)
 
         self.policy_repo.add(policy)
@@ -1740,7 +1738,7 @@ class ConfigurationService:
         policy = self.policy_repo.get_by_id(policy_id)
 
         if not policy:
-            raise PolicyError(f"Policy with ID {policy_id} not found.")
+            raise PolicyNotFoundError(f"Policy with ID {policy_id} not found.")
 
         rule = AutomationRule(name=name, conditions=conditions, action=action)
         if rule_type == RuleType.START:
@@ -1748,12 +1746,12 @@ class ConfigurationService:
         elif rule_type == RuleType.STOP:
             policy.stop_rules.append(rule)
         else:
-            raise ValueError(
-                f"Invalid rule_type. Must be {RuleType.START} or {RuleType.STOP}."
+            raise PolicyConfigurationError(
+                f"Invalid Rule Type. Must be {RuleType.START} or {RuleType.STOP}."
             )
 
         self.policy_repo.update(policy)
-        self.logger.info(f"Added {rule_type} rule '{name}' to policy '{policy.name}'")
+        self.logger.debug(f"Added {rule_type.value} rule '{name}' to policy '{policy.name}'")
 
         return rule
 
@@ -1859,10 +1857,6 @@ class ConfigurationService:
 
         if not found:
             raise PolicyError(f"Policy with ID {policy_id} not found.")
-
-    def get_active_policy(self) -> Optional[OptimizationPolicy]:
-        """Get the active policy."""
-        return self.policy_repo.get_active_policy()
 
     def delete_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
         """Delete a policy from the system."""

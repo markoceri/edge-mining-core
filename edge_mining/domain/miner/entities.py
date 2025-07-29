@@ -20,7 +20,7 @@ class Miner(Entity):
     power_consumption: Optional[Watts] = None # Can be dynamic or fixed
     power_consumption_max: Optional[Watts] = None # Max power consumption for the miner
     active: bool = True # Is the miner active in the system?
-    
+
     controller_id: Optional[EntityId] = None # Controller for the miner
 
     def turn_on(self):
