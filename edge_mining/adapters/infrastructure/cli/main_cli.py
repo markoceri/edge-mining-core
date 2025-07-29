@@ -7,6 +7,7 @@ from edge_mining.adapters.domain.forecast.cli.commands import forecast_menu
 from edge_mining.adapters.domain.optimization_unit.cli.commands import optimization_unit_menu
 from edge_mining.adapters.domain.miner.cli.commands import miner_menu
 from edge_mining.adapters.domain.notification.cli.commands import notifier_menu
+from edge_mining.adapters.domain.policy.cli.commands import policy_menu
 from edge_mining.adapters.infrastructure.external_services.cli.commands import external_services_menu
 
 from edge_mining.shared.logging.port import LoggerPort
@@ -236,7 +237,10 @@ def interactive(ctx: click.Context):
             if sub_choice == 'q':
                 break
         elif choice == '4':
-            #policies
+            sub_choice = policy_menu(
+                configuration_service=services.configuration_service,
+                logger=logger
+            )
 
             if sub_choice == 'q':
                 break
