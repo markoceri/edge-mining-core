@@ -16,6 +16,7 @@ from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import MiningDecision
+from edge_mining.domain.policy.value_objects import DecisionalContext
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 from edge_mining.domain.forecast.value_objects import ForecastData
@@ -261,6 +262,7 @@ class OptimizationService:
                 self._process_single_miner_in_unit(
                     optimization_unit=optimization_unit,
                     policy=policy,
+                    energy_source=energy_source,
                     energy_state=energy_state,
                     solar_forecast=solar_forecast_data,
                     home_load_forecast=home_load_forecast,
@@ -278,13 +280,14 @@ class OptimizationService:
         self,
         optimization_unit: EnergyOptimizationUnit,
         policy: OptimizationPolicy,
+        energy_source: EnergySource,
         energy_state: EnergyStateSnapshot,
         solar_forecast: ForecastData,
         home_load_forecast: ConsumptionForecast,
         tracker_current_hashrate: Optional[HashRate],
         miner_id: EntityId,
         notifiers: List[NotificationPort]
-    ):
+    ):  
         # --- Miner ---
         miner: Optional[Miner] = None
         miner = self.miner_repo.get_by_id(miner_id)
@@ -334,19 +337,33 @@ class OptimizationService:
 
         # Get current status and make decision
         try:
-            current_status = miner_controller.get_miner_status()
-            miner.update_status(current_status) # Update the domain model
-            # We might want to persist this updated miner state
-            self.miner_repo.update(miner) # If the repo needs to track the state
+            # Update miner status using controller
+            current_status = miner_controller.get_miner_status(miner_id)
+            current_hashrate = miner_controller.get_miner_hashrate(miner_id)
+            current_power = miner_controller.get_miner_power(miner_id)
+            
+            # Update the domain model
+            miner.update_status(
+                new_status=current_status,
+                hash_rate=current_hashrate,
+                power=current_power
+            )
 
-            decision = policy.decide_next_action(
+            # Persist the observed state
+            self.miner_repo.update(miner)
+            
+            # Create the decisional context
+            decisional_context = DecisionalContext(
+                energy_source=energy_source,
                 energy_state=energy_state,
+                miner=miner,
                 forecast=solar_forecast,
                 home_load_forecast=home_load_forecast,
-                current_miner_status=current_status,
-                hash_rate=miner.hash_rate,
-                current_miner_power=miner.power_consumption,
                 tracker_current_hashrate=tracker_current_hashrate
+            )
+
+            decision = policy.decide_next_action(
+                decisional_context=decisional_context
             )
             if self.logger:
                 self.logger.info(f"Optimization unit '{optimization_unit.name}', Miner {miner_id}: Status={current_status.name}, Policy='{policy.name}', Decision={decision.name}")
