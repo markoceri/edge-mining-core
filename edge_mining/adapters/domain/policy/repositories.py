@@ -2,19 +2,32 @@
 This module contains the adapter classes implementing the OptimizationPolicyRepository interface.
 """
 
+import os
 import copy
 import uuid
 import json
 import sqlite3
-from typing import List, Optional, Dict, Any
+from datetime import datetime
+from pathlib import Path
+from typing import List, Optional, Dict, Any, Union, Tuple
+
+import yaml
+from pydantic import ValidationError
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.exceptions import (
-    PolicyError, PolicyConfigurationError
+    PolicyError, PolicyConfigurationError, PolicyNotFoundError
 )
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy, AutomationRule
 from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
+
+from edge_mining.shared.logging.port import LoggerPort
+
+from edge_mining.adapters.domain.policy.schemas import (
+    OptimizationPolicySchema, AutomationRuleSchema, MetadataSchema,
+    LogicalGroupSchema, RuleConditionSchema
+)
 
 from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 
@@ -249,3 +262,325 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
         finally:
             if conn:
                 conn.close()
+
+class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
+    """YAML file-based implementation of OptimizationPolicyRepository."""
+
+    def __init__(self, policies_directory: str, logger: Optional[LoggerPort] = None):
+        """
+        Initialize the YAML policy repository.
+        
+        Args:
+            policies_directory: Path to the directory containing policy YAML files
+            logger: Optional logger for debugging
+        """
+        self.policies_directory = Path(policies_directory)
+        self.logger = logger
+
+        # Create directory if it doesn't exist
+        self.policies_directory.mkdir(parents=True, exist_ok=True)
+
+        if self.logger:
+            self.logger.debug(f"Initialized YamlOptimizationPolicyRepository "
+                              f"with directory: {self.policies_directory}")
+
+    def _get_policy_file_path(self, policy_id: EntityId) -> Path:
+        """Get the file path for a policy based on its ID."""
+        return os.path.join(self.policies_directory, f"{policy_id}.yaml")
+
+    def _get_policy_file_path_by_name(self, name: str) -> Path:
+        """Get a potential file path for a policy based on its name (for searching)."""
+        # Sanitize name for filename
+        safe_name = "".join(c for c in name if c.isalnum() or c in (' ', '-', '_')).strip()
+        safe_name = safe_name.replace(' ', '_').lower()
+        return os.path.join(self.policies_directory, f"{safe_name}.yaml")
+
+    def _load_policy_from_file(
+            self,
+            file_path: Path
+        ) -> Tuple[Optional[OptimizationPolicy], Optional[MetadataSchema]]:
+        """Load a policy from a YAML file."""
+        try:
+            if not file_path.exists():
+                return None, None
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                yaml_content = yaml.safe_load(f)
+
+            if yaml_content is None:
+                if self.logger:
+                    self.logger.warning(f"Empty YAML file: {file_path}")
+                return None, None
+
+            # Parse and validate the YAML content
+            policy_schema = OptimizationPolicySchema(**yaml_content)
+
+            # Convert to domain objects
+            #policy_id = policy_schema.id
+            policy_id = EntityId(file_path.stem)  # Use filename as ID
+
+            # Convert AutomationRuleSchema to AutomationRule entities
+            start_rules = self._validate_and_sort_rules(policy_schema.start_rules)
+
+            if len(start_rules) > 0:
+                self.logger.debug(f"Successfully loaded {len(start_rules)} start rules "
+                                  f"from {file_path}")
+            else:
+                self.logger.warning(f"No start rules found in {file_path}")
+
+            stop_rules = self._validate_and_sort_rules(policy_schema.stop_rules)
+
+            if len(stop_rules) > 0:
+                self.logger.debug(f"Successfully loaded {len(start_rules)} stop rules "
+                                  f"from {file_path}")
+            else:
+                self.logger.warning(f"No stop rules found in {file_path}")
+
+            # Create the OptimizationPolicy domain object
+            policy = OptimizationPolicy(
+                id=policy_id,
+                name=policy_schema.name,
+                description=policy_schema.description,
+                start_rules=start_rules,
+                stop_rules=stop_rules
+            )
+
+            return policy, policy_schema.metadata
+
+        except yaml.YAMLError as e:
+            if self.logger:
+                self.logger.error(f"YAML parsing error in {file_path}: {e}")
+            raise PolicyError(f"Invalid YAML in policy file {file_path}: {e}") from e
+        except ValueError as e:
+            if self.logger:
+                self.logger.error(f"Validation error in {file_path}: {e}")
+            raise PolicyConfigurationError(f"Policy validation error in {file_path}: {e}") from e
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Unexpected error loading policy from {file_path}: {e}")
+            raise PolicyError(f"Failed to load policy from {file_path}: {e}") from e
+
+    def _validate_and_sort_rules(
+            self,
+            rule_schemas: List[AutomationRuleSchema]
+        ) -> List[AutomationRule]:
+        """Validate rule schemas and sort rules by priority."""
+        rules: List[AutomationRule] = []
+
+        if not rule_schemas:
+            return []
+
+        # Validate rules
+        for rule_schema in rule_schemas:
+            try:
+                rule_schema.model_validate()  # Validate the rule schema
+                rule = self._schema_to_automation_rule(rule_schema)
+                rules.append(rule)
+            except ValidationError as e:
+                if self.logger:
+                    self.logger.error(f"Validation error in rule schema {rule_schema.id} "
+                                      f"| {rule_schema.name}: {e}. Skipping rule...")
+
+        # Sort by priority (highest first)
+        return sorted(rules, key=lambda r: r.priority, reverse=True)
+
+    def _schema_to_automation_rule(self, rule_schema: AutomationRuleSchema) -> AutomationRule:
+        """Convert a rule schema to an AutomationRule entity."""
+
+        # Create AutomationRule with YAML rule support
+        return AutomationRule(
+            id=EntityId(str(uuid.uuid4())),
+            name=rule_schema.name,
+            priority=rule_schema.priority,
+            enabled=rule_schema.enabled,
+            action=rule_schema.action,
+            conditions=rule_schema.conditions.model_dump()
+        )
+
+    def _save_policy_to_file(
+            self,
+            policy: OptimizationPolicy,
+            metadata: Optional[MetadataSchema] = None
+        ) -> None:
+        """Save a policy to a YAML file."""
+        file_path = self._get_policy_file_path(policy.id)
+
+        # Sort rules by priority before saving
+        policy.sort_rules()
+
+        try:
+            # Convert OptimizationPolicy to OptimizationPolicySchema
+            policy_schema = self._policy_to_schema(policy)
+
+            if metadata:
+                # Add metadata if provided
+                policy_schema.metadata = metadata.model_dump()
+
+            # Convert schema to dict for YAML serialization
+            yaml_content = policy_schema.model_dump()
+
+            # Write to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                yaml.dump(yaml_content, f, default_flow_style=False, allow_unicode=True, indent=2)
+
+            if self.logger:
+                self.logger.debug(f"Saved policy '{policy.name}' to {file_path}")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to save policy '{policy.name}' to {file_path}: {e}")
+            raise PolicyError(f"Failed to save policy to file: {e}") from e
+
+    def _policy_to_schema(self, policy: OptimizationPolicy) -> OptimizationPolicySchema:
+        """Convert an OptimizationPolicy to OptimizationPolicySchema for YAML serialization."""
+        try:
+            # Convert start rules to schema format
+            start_rules_schema = []
+            for rule in policy.start_rules:
+                rule_schema = self._automation_rule_to_schema(rule)
+                start_rules_schema.append(rule_schema)
+            
+            # Convert stop rules to schema format
+            stop_rules_schema = []
+            for rule in policy.stop_rules:
+                rule_schema = self._automation_rule_to_schema(rule)
+                stop_rules_schema.append(rule_schema)
+            
+            # Create OptimizationPolicySchema instance
+            return OptimizationPolicySchema(
+                id=str(policy.id),  # Convert EntityId to string
+                name=policy.name,
+                description=policy.description,
+                start_rules=start_rules_schema,
+                stop_rules=stop_rules_schema
+            )
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error converting policy '{policy.name}' to schema: {e}")
+            raise PolicyError(f"Failed to convert policy to schema: {e}") from e
+
+    def _automation_rule_to_schema(self, rule: AutomationRule) -> AutomationRuleSchema:
+        """Convert an AutomationRule to a AutomationRuleSchema for YAML serialization."""
+        try:
+            return AutomationRuleSchema(
+                id=str(rule.id),  # Convert UUID to string for YAML
+                name=rule.name,
+                priority=rule.priority,
+                enabled=rule.enabled,
+                action=rule.action.value,  # Convert Enum to string
+                conditions=self._convert_conditions_to_schema(
+                    rule.conditions
+                )  # Convert conditions to schema
+            )
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error converting rule '{rule.name}' to schema: {e}")
+            raise PolicyError(f"Failed to convert rule to schema: {e}") from e
+
+    def _convert_conditions_to_schema(
+            self,
+            conditions: dict
+        ) -> Union[LogicalGroupSchema, RuleConditionSchema]:
+        try:
+            if isinstance(conditions, dict):
+
+                # Check if conditions are a logical group or a single rule condition
+                conditions_dict_keys = set(conditions.keys())
+
+                if conditions_dict_keys == LogicalGroupSchema.model_fields.keys():
+                    # It's a logical group
+                    return LogicalGroupSchema(**conditions)
+                elif conditions_dict_keys == RuleConditionSchema.model_fields.keys():
+                    # It's a single rule condition
+                    return RuleConditionSchema(**conditions)
+                else:
+                    # It's an unknown format, raise an error
+                    raise PolicyError(f"Invalid conditions format: {conditions}")
+            else:
+                # If conditions is not a dict, raise an error
+                raise PolicyError(f"Expected conditions to be a dict, got {type(conditions)}")
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error converting conditions to schema: {e}")
+            raise PolicyError(f"Failed to convert conditions to schema: {e}") from e
+
+    # Repository interface implementation
+
+    def add(self, policy: OptimizationPolicy) -> None:
+        """Add a policy to the YAML repository."""
+        if self.logger:
+            self.logger.debug(f"Adding policy '{policy.name}' ({policy.id})")
+
+        file_path = self._get_policy_file_path(policy.id)
+
+        if file_path.exists():
+            raise PolicyError(f"Policy with ID {policy.id} already exists")
+
+        self._save_policy_to_file(policy)
+
+    def get_by_id(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
+        """Get a policy by its ID."""
+        if self.logger:
+            self.logger.debug(f"Getting policy {policy_id}")
+
+        file_path = self._get_policy_file_path(policy_id)
+        policy, metadata = self._load_policy_from_file(file_path)
+        return policy
+
+    def get_all(self) -> List[OptimizationPolicy]:
+        """Get all policies from the YAML repository."""
+        if self.logger:
+            self.logger.debug("Getting all policies")
+
+        policies = []
+
+        try:
+            for yaml_file in self.policies_directory.glob("*.yaml"):
+                if yaml_file.is_file():
+                    policy, metadata = self._load_policy_from_file(yaml_file)
+                    if policy:
+                        policies.append(policy)
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error scanning policy directory: {e}")
+            raise PolicyError(f"Failed to scan policies directory: {e}") from e
+
+        return policies
+
+    def update(self, policy: OptimizationPolicy) -> None:
+        """Update a policy in the YAML repository."""
+        if self.logger:
+            self.logger.debug(f"Updating policy '{policy.name}' ({policy.id})")
+
+        file_path = self._get_policy_file_path(policy.id)
+
+        if not file_path.exists():
+            raise PolicyNotFoundError(f"Policy with ID {policy.id} not found")
+
+        # Get existing policy metadata and update last modified date and version
+        existing_policy, metadata = self._load_policy_from_file(file_path)
+        if metadata:
+            metadata = MetadataSchema(**metadata)
+            metadata.last_modified = datetime.now().strftime("%Y-%m-%d")
+            metadata.version = metadata.version + 1  # Increment version
+
+        self._save_policy_to_file(policy, metadata)
+
+    def remove(self, policy_id: EntityId) -> None:
+        """Remove a policy from the YAML repository."""
+        if self.logger:
+            self.logger.debug(f"Removing policy {policy_id}")
+
+        file_path = self._get_policy_file_path(policy_id)
+
+        if not file_path.exists():
+            raise PolicyNotFoundError(f"Policy with ID {policy_id} not found")
+
+        try:
+            file_path.unlink()
+            if self.logger:
+                self.logger.debug(f"Removed policy file: {file_path}")
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to remove policy file {file_path}: {e}")
+            raise PolicyError(f"Failed to remove policy file: {e}") from e

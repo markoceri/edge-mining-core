@@ -14,6 +14,7 @@ from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.forecast.ports import ForecastProviderPort
+from edge_mining.domain.policy.ports import RuleEngine
 from edge_mining.shared.external_services.ports import ExternalServicePort
 
 from edge_mining.domain.policy.aggregate_roots import (
@@ -67,6 +68,12 @@ class AdapterServiceInterface(ABC):
     @abstractmethod
     def get_external_service(self, external_service_id: EntityId) -> Optional[ExternalServicePort]:
         """Get a specific external service instance by ID."""
+        pass
+
+    @abstractmethod
+    def get_rule_engine(self) -> Optional[RuleEngine]:
+        """Get the rule engine instance."""
+        pass
 
     @abstractmethod
     def clear_all_adapters(self):

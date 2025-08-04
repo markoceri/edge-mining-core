@@ -254,20 +254,31 @@ class OptimizationService:
             if self.logger:
                 self.logger.info(f"No target miners configured for optimization unit '{optimization_unit.name}'.")
             return
+        
+        # Create the decisional context without the miner yet,
+        # as we will add it later after fetching the miner status.
+        # This allows us to have a single context for the unit.
+        # The context will be updated for each miner in the unit.
+        context = DecisionalContext(
+            energy_source=energy_source,
+            energy_state=energy_state,
+            forecast=solar_forecast_data,
+            home_load_forecast=home_load_forecast,
+            tracker_current_hashrate=tracker_current_hashrate
+        )
 
         # TODO: should we manage miners singularly or together?
+        # TODO: should we serialize the miner process or run them in parallel?
+        # For now, we will run them in parallel, but I imagine that is not the best approach
+        # for tracking the energy used for each miner.
         miner_processing_tasks = []
         for miner_id in optimization_unit.target_miner_ids:
             miner_processing_tasks.append(
                 self._process_single_miner_in_unit(
                     optimization_unit=optimization_unit,
                     policy=policy,
-                    energy_source=energy_source,
-                    energy_state=energy_state,
-                    solar_forecast=solar_forecast_data,
-                    home_load_forecast=home_load_forecast,
+                    context=context,
                     miner_id=miner_id,
-                    tracker_current_hashrate=tracker_current_hashrate,
                     notifiers=unit_notifiers
                 )
             )
@@ -280,11 +291,7 @@ class OptimizationService:
         self,
         optimization_unit: EnergyOptimizationUnit,
         policy: OptimizationPolicy,
-        energy_source: EnergySource,
-        energy_state: EnergyStateSnapshot,
-        solar_forecast: ForecastData,
-        home_load_forecast: ConsumptionForecast,
-        tracker_current_hashrate: Optional[HashRate],
+        context: DecisionalContext,
         miner_id: EntityId,
         notifiers: List[NotificationPort]
     ):  
@@ -319,10 +326,6 @@ class OptimizationService:
                     message
                 )
 
-        # Could we have a default controller for the miner?
-        # if not miner_controller: # If no specific controller or if the specific one fails
-        #     miner_controller = self.adapter_resolver.get_default_miner_controller()
-
         if not miner_controller:
             if self.logger:
                 self.logger.error(f"No miner controller (specific or default) available "
@@ -341,7 +344,7 @@ class OptimizationService:
             current_status = miner_controller.get_miner_status(miner_id)
             current_hashrate = miner_controller.get_miner_hashrate(miner_id)
             current_power = miner_controller.get_miner_power(miner_id)
-            
+
             # Update the domain model
             miner.update_status(
                 new_status=current_status,
@@ -351,19 +354,26 @@ class OptimizationService:
 
             # Persist the observed state
             self.miner_repo.update(miner)
-            
-            # Create the decisional context
+
+            # Creates a copy of the context with the miner included, so that the policy
+            # can access miner-specific data, without modifying the original context.
+            # This is important to keep the context consistent across all miners in the unit.
             decisional_context = DecisionalContext(
-                energy_source=energy_source,
-                energy_state=energy_state,
-                miner=miner,
-                forecast=solar_forecast,
-                home_load_forecast=home_load_forecast,
-                tracker_current_hashrate=tracker_current_hashrate
+                energy_source=context.energy_source,
+                energy_state=context.energy_state,
+                forecast=context.forecast,
+                home_load_forecast=context.home_load_forecast,
+                tracker_current_hashrate=context.tracker_current_hashrate,
+                miner=miner,  # Add the miner to the context
+                timestamp=context.timestamp
             )
 
+            # Create the rule engine instance
+            rule_engine = self.adapter_service.get_rule_engine()
+
             decision = policy.decide_next_action(
-                decisional_context=decisional_context
+                decisional_context=decisional_context,
+                rule_engine=rule_engine
             )
             if self.logger:
                 self.logger.info(f"Optimization unit '{optimization_unit.name}', Miner {miner_id}: Status={current_status.name}, Policy='{policy.name}', Decision={decision.name}")

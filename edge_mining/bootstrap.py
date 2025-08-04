@@ -56,6 +56,7 @@ from edge_mining.adapters.domain.optimization_unit.repositories import (
 from edge_mining.adapters.domain.policy.repositories import (
     InMemoryOptimizationPolicyRepository,
     SqliteOptimizationPolicyRepository,
+    YamlOptimizationPolicyRepository,
 )
 from edge_mining.adapters.domain.performance.repositories import (
     InMemoryMiningPerformanceTrackerRepository,
@@ -95,7 +96,24 @@ def configure_persistence(
     persistence_adapter: PersistenceAdapter = PersistenceAdapter(
         settings.persistence_adapter
     )
+    policies_persistence_adapter: PersistenceAdapter = PersistenceAdapter(
+        settings.policies_persistence_adapter
+    )
 
+    # Initialize SQLite DB base repository if needed
+    if PersistenceAdapter.SQLITE in [persistence_adapter, policies_persistence_adapter]:
+        db_path = settings.sqlite_db_file
+        db_dir = os.path.dirname(db_path)
+        if db_dir and not os.path.exists(db_dir):
+            logger.debug(f"Creating database directory: {db_dir}")
+            os.makedirs(db_dir, exist_ok=True)
+
+        logger.debug(f"Using SQLite persistence adapter (DB: {db_path}).")
+        sqlite_db: BaseSqliteRepository = BaseSqliteRepository(
+            db_path=db_path, logger=logger
+        )
+
+    # Initialize repositories based on the selected persistence adapter
     if persistence_adapter == PersistenceAdapter.IN_MEMORY:
         # Pre-populate in-memory repos with some test data (used for debug or development)
         energy_source_repo: EnergySourceRepository = InMemoryEnergySourceRepository()
@@ -108,9 +126,6 @@ def configure_persistence(
             InMemoryForecastProviderRepository()
         )
         notifier_repo: NotifierRepository = InMemoryNotifierRepository()
-        policy_repo: OptimizationPolicyRepository = (
-            InMemoryOptimizationPolicyRepository()
-        )
         mining_performance_tracker_repo: MiningPerformanceTrackerRepository = (
             InMemoryMiningPerformanceTrackerRepository()
         )
@@ -130,19 +145,6 @@ def configure_persistence(
 
         logger.debug("Using InMemory persistence adapters.")
     elif persistence_adapter == PersistenceAdapter.SQLITE:
-        db_path = settings.sqlite_db_file
-
-        db_dir = os.path.dirname(db_path)
-        if db_dir and not os.path.exists(db_dir):
-            logger.debug(f"Creating database directory: {db_dir}")
-            os.makedirs(db_dir, exist_ok=True)
-
-        logger.debug(f"Using SQLite persistence adapter (DB: {db_path}).")
-
-        sqlite_db: BaseSqliteRepository = BaseSqliteRepository(
-            db_path=db_path, logger=logger
-        )
-
         # Instantiate all SQLite repositories passing the DB base
         energy_source_repo: EnergySourceRepository = SqliteEnergySourceRepository(
             db=sqlite_db
@@ -158,9 +160,6 @@ def configure_persistence(
             SqliteForecastProviderRepository(db=sqlite_db)
         )
         notifier_repo: NotifierRepository = SqliteNotifierRepository(db=sqlite_db)
-        policy_repo: OptimizationPolicyRepository = SqliteOptimizationPolicyRepository(
-            db=sqlite_db
-        )
         mining_performance_tracker_repo: MiningPerformanceTrackerRepository = (
             SqliteMiningPerformanceTrackerRepository(db=sqlite_db)
         )
@@ -178,13 +177,31 @@ def configure_persistence(
             SqliteExternalServiceRepository(db=sqlite_db)
         )
 
-        # user_repo: UserRepository = SqliteUserRepository(db_path=db_path, logger=logger) # If implemented
+        # user_repo: UserRepository = SqliteUserRepository(
+        #   db_path=db_path, logger=logger
+        # ) # If implemented
     else:
         raise ValueError(
             f"Unsupported persistence_adapter: {settings.persistence_adapter}"
         )
 
-    persistence_rsettings: PersistenceSettings = PersistenceSettings(
+    # Initialize specific policies repositories based on the selected persistence adapter
+    if policies_persistence_adapter == PersistenceAdapter.IN_MEMORY:
+        policy_repo: OptimizationPolicyRepository = InMemoryOptimizationPolicyRepository()
+        logger.debug("Using InMemory policies persistence adapter.")
+    elif policies_persistence_adapter == PersistenceAdapter.SQLITE:
+        policy_repo: OptimizationPolicyRepository = SqliteOptimizationPolicyRepository(
+            db=sqlite_db
+        )
+        logger.debug("Using SQLite policies persistence adapter.")
+    elif policies_persistence_adapter == PersistenceAdapter.YAML:
+        policy_repo: OptimizationPolicyRepository = YamlOptimizationPolicyRepository(
+            policies_directory=settings.yaml_policies_dir,
+            logger=logger
+        )
+        logger.debug("Using YAML policies persistence adapter.")
+
+    persistence_settings: PersistenceSettings = PersistenceSettings(
         energy_source_repo=energy_source_repo,
         energy_monitor_repo=energy_monitor_repo,
         miner_repo=miner_repo,
@@ -200,7 +217,7 @@ def configure_persistence(
         settings_repo=settings_repo,
     )
 
-    return persistence_rsettings
+    return persistence_settings
 
 
 def configure_dependencies(logger: LoggerPort, settings: AppSettings) -> Services:

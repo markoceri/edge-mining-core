@@ -17,3 +17,15 @@ class InvalidRuleError(PolicyError):
 class PolicyConfigurationError(PolicyError):
     """Error in policy configuration."""
     pass
+
+class RuleEngineError(Exception):
+    """Base exception for rule engine errors."""
+    pass
+
+class RuleLoadError(RuleEngineError):
+    """Exception raised when rules fail to load."""
+    pass
+
+class RuleEvaluationError(RuleEngineError):
+    """Exception raised during rule evaluation."""
+    pass

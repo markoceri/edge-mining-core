@@ -34,6 +34,9 @@ from edge_mining.domain.notification.ports import NotificationPort, NotifierRepo
 from edge_mining.adapters.domain.notification.dummy import DummyNotifier
 from edge_mining.adapters.domain.notification.telegram import TelegramNotifierFactory
 
+from edge_mining.domain.policy.ports import RuleEngine
+from edge_mining.adapters.infrastructure.rule_engine.factory import RuleEngineFactory
+
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
 from edge_mining.domain.forecast.ports import (
@@ -590,6 +593,18 @@ class AdapterService(AdapterServiceInterface):
             )
             return None
         return self._initialize_external_service(external_service)
+
+    def get_rule_engine(self) -> Optional[RuleEngine]:
+        """Creates a new Rule Engine instance."""
+        try:
+            # For now, we default to the 'custom' engine.
+            # This could be driven by configuration in the future.
+            factory = RuleEngineFactory()
+            engine = factory.create(engine_type="custom", logger=self.logger)
+            return engine
+        except Exception as e:
+            self.logger.error(f"Failed to create RuleEngine instance: {e}")
+            return None
 
     def clear_all_adapters(self):
         """Clear adapter chache"""

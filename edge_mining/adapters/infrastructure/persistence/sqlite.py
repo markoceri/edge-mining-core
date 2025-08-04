@@ -6,7 +6,7 @@ It provides a base implementation for creating tables and getting connections to
 import sqlite3
 import uuid
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from edge_mining.shared.logging.port import LoggerPort
 
