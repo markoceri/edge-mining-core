@@ -1,6 +1,7 @@
+"""Settings module for Edge Mining application."""
+
 import os
 
-from typing import Optional, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Using pydantic-settings for easy environment variable loading
@@ -9,6 +10,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 DEFAULT_SQLITE_DB_PATH = os.path.join(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ), 'edgemining.db')
+DEFAULT_YAML_DIR_PATH = os.path.join(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+), 'optimization_policies')
 
 class AppSettings(BaseSettings):
     """Settings for the Edge Mining application."""
@@ -17,8 +21,11 @@ class AppSettings(BaseSettings):
     timezome: str = "Europe/Rome" # Default timezone
 
     # Adapters Configuration (select which ones to use)
-    persistence_adapter: str = "sqlite" # Options: "in_memory", "sqlite"
+    persistence_adapter: str = "sqlite" # Options: "in_memory", "sqlite", "yaml"
+    policies_persistence_adapter: str = "yaml" # Options: "in_memory", "sqlite", "yaml"
+
     sqlite_db_file: str = DEFAULT_SQLITE_DB_PATH # SQLite file path
+    yaml_policies_dir: str = DEFAULT_YAML_DIR_PATH # Directory for YAML policies
 
     # API Settings
     api_port: int = 8001

@@ -17,11 +17,10 @@ class DecisionalContext(ValueObject):
     energy_source: EnergySource
     energy_state: EnergyStateSnapshot
 
-    miner: Miner
-
     forecast: Optional[ForecastData]
     home_load_forecast: Optional[Watts]
 
     tracker_current_hashrate: Optional[HashRate]
 
+    miner: Optional[Miner] = field(default=None)
     timestamp: datetime = field(default_factory=datetime.now)

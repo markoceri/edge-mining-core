@@ -6,3 +6,4 @@ class PersistenceAdapter(Enum):
     """Types of persistence adapter."""
     IN_MEMORY = "in_memory"
     SQLITE = "sqlite"
+    YAML = "yaml"
