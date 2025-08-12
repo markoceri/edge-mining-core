@@ -30,11 +30,30 @@ class BatteryState(ValueObject):
     current_power: Watts # Positive when charging, negative when discharging
     timestamp: Timestamp = field(default_factory=datetime.now)
 
+    @property
+    def charging_power(self) -> Watts:
+        """Returns the power being used to charge the battery."""
+        return max(self.current_power, Watts(0.0))
+
+    @property
+    def discharging_power(self) -> Watts:
+        """Returns the power being used to discharge the battery."""
+        return max(-self.current_power, Watts(0.0))
+
 @dataclass(frozen=True)
 class GridState(ValueObject):
     """Value Object for a grid state."""
     current_power: Watts # Positive importing, negative exporting
     timestamp: Timestamp = field(default_factory=datetime.now)
+
+    @property
+    def importing_power(self) -> Watts:
+        """Returns the power being imported from the grid."""
+        return max(self.current_power, Watts(0.0))
+    @property
+    def exporting_power(self) -> Watts:
+        """Returns the power being exported to the grid."""
+        return max(-self.current_power, Watts(0.0))
 
 @dataclass(frozen=True)
 class EnergyStateSnapshot(ValueObject):
