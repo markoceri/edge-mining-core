@@ -43,7 +43,7 @@ def select_forecast_provider_adapter() -> Optional[ForecastProviderAdapter]:
     ):
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
-    
+
     adapter_type_values = [adapter.value for adapter in ForecastProviderAdapter]
 
     selected_adapter = ForecastProviderAdapter(
@@ -54,15 +54,27 @@ def select_forecast_provider_adapter() -> Optional[ForecastProviderAdapter]:
 def handle_forecast_provider_dummy_config() -> ForecastProviderConfig:
     """Handle the configuration for the dummy forecast provider."""
     click.echo(click.style("\n--- Dummy Forecast Configuration ---", fg="yellow"))
-    
+
     latitude: float = click.prompt("Latitude", type=float, default=41.90)
     longitude: float = click.prompt("Longitude", type=float, default=12.49)
     capacity_kwp: float = click.prompt("Capacity (kWp)", type=float, default=0.0)
-    
+    efficency_percent: float = click.prompt(
+        "Efficency (%)", type=float, default=80.0
+    )
+    production_start_hour: int = click.prompt(
+        "Production Start Hour (0-23)", type=int, default=6
+    )
+    production_end_hour: int = click.prompt(
+        "Production End Hour (0-23)", type=int, default=20
+    )
+
     return ForecastProviderDummySolarConfig(
         latitude=latitude,
         longitude=longitude,
-        capacity_kwp=capacity_kwp
+        capacity_kwp=capacity_kwp,
+        efficency_percent=efficency_percent,
+        production_start_hour=production_start_hour,
+        production_end_hour=production_end_hour
     )
 
 def handle_forecast_provider_home_assistant_api_config() -> ForecastProviderConfig:
@@ -87,8 +99,11 @@ def handle_forecast_provider_home_assistant_api_config() -> ForecastProviderConf
     entity_forecast_energy_next_1h: str = click.prompt(
         "Entity Forecast Energy Next 1h", type=str, default=""
     )
-    entity_forecast_energy_next_24h: str = click.prompt(
-        "Entity Forecast Energy Next 24h", type=str, default=""
+    entity_forecast_energy_today: str = click.prompt(
+        "Entity Forecast Energy Today", type=str, default=""
+    )
+    entity_forecast_energy_tomorrow: str = click.prompt(
+        "Entity Forecast Energy Tomorrow", type=str, default=""
     )
     entity_forecast_energy_remaining_today: str = click.prompt(
         "Entity Forecast Energy Remaining Today", type=str, default=""
@@ -112,8 +127,11 @@ def handle_forecast_provider_home_assistant_api_config() -> ForecastProviderConf
     unit_forecast_energy_next_1h: str = click.prompt(
         "Unit Forecast Energy Next 1h", type=str, default="kWh"
     )
-    unit_forecast_energy_next_24h: str = click.prompt(
-        "Unit Forecast Energy Next 24h", type=str, default="kWh"
+    unit_forecast_energy_today: str = click.prompt(
+        "Unit Forecast Energy Today", type=str, default="kWh"
+    )
+    unit_forecast_energy_tomorrow: str = click.prompt(
+        "Unit Forecast Energy Tomorrow", type=str, default="kWh"
     )
     unit_forecast_energy_remaining_today: str = click.prompt(
         "Unit Forecast Energy Remaining Today", type=str, default="kWh"
@@ -125,7 +143,8 @@ def handle_forecast_provider_home_assistant_api_config() -> ForecastProviderConf
         entity_forecast_power_next_24h=entity_forecast_power_next_24h,
         entity_forecast_energy_actual_h=entity_forecast_energy_actual_h,
         entity_forecast_energy_next_1h=entity_forecast_energy_next_1h,
-        entity_forecast_energy_next_24h=entity_forecast_energy_next_24h,
+        entity_forecast_energy_today=entity_forecast_energy_today,
+        entity_forecast_energy_tomorrow=entity_forecast_energy_tomorrow,
         entity_forecast_energy_remaining_today=entity_forecast_energy_remaining_today,
         unit_forecast_power_actual_h=unit_forecast_power_actual_h,
         unit_forecast_power_next_1h=unit_forecast_power_next_1h,
@@ -133,7 +152,8 @@ def handle_forecast_provider_home_assistant_api_config() -> ForecastProviderConf
         unit_forecast_power_next_24h=unit_forecast_power_next_24h,
         unit_forecast_energy_actual_h=unit_forecast_energy_actual_h,
         unit_forecast_energy_next_1h=unit_forecast_energy_next_1h,
-        unit_forecast_energy_next_24h=unit_forecast_energy_next_24h,
+        unit_forecast_energy_today=unit_forecast_energy_today,
+        unit_forecast_energy_tomorrow=unit_forecast_energy_tomorrow,
         unit_forecast_energy_remaining_today=unit_forecast_energy_remaining_today
     )
 
