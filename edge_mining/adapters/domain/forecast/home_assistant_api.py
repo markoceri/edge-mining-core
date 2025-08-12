@@ -341,9 +341,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
                     f"Tomorrow='{unit_forecast_energy_tomorrow}', "
                     f"Remaining='{unit_forecast_energy_remaining_today}'")
 
-    def get_forecast(self) -> Optional[ForecastData]:
-        """Fetches the solar energy production forecast."""
-        self.logger.debug("Fetching solar forecast energy state from Home Assistant...")
+    def get_forecast(self) -> Optional[Forecast]:
+        """Fetches the energy production forecast."""
+        self.logger.debug("Fetching forecast energy state from Home Assistant...")
         now = Timestamp(datetime.now())
         has_critical_error = False
 
