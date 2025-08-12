@@ -50,7 +50,8 @@ class ForecastProviderHomeAssistantConfig(ForecastProviderConfig):
     entity_forecast_power_next_24h: str = field(default="")
     entity_forecast_energy_actual_h: str = field(default="")
     entity_forecast_energy_next_1h: str = field(default="")
-    entity_forecast_energy_next_24h: str = field(default="")
+    entity_forecast_energy_today: str = field(default="")
+    entity_forecast_energy_tomorrow: str = field(default="")
     entity_forecast_energy_remaining_today: str = field(default="")
     unit_forecast_power_actual_h: str = field(default="W")
     unit_forecast_power_next_1h: str = field(default="W")
@@ -58,7 +59,8 @@ class ForecastProviderHomeAssistantConfig(ForecastProviderConfig):
     unit_forecast_power_next_24h: str = field(default="W")
     unit_forecast_energy_actual_h: str = field(default="kWh")
     unit_forecast_energy_next_1h: str = field(default="kWh")
-    unit_forecast_energy_next_24h: str = field(default="kWh")
+    unit_forecast_energy_today: str = field(default="kWh")
+    unit_forecast_energy_tomorrow: str = field(default="kWh")
     unit_forecast_energy_remaining_today: str = field(default="kWh")
 
     def is_valid(self, adapter_type: ForecastProviderAdapter) -> bool:
@@ -76,4 +78,3 @@ class ForecastProviderHomeAssistantConfig(ForecastProviderConfig):
     def from_dict(cls, data: dict):
         """Create a configuration object from a dictionary"""
         return cls(**data)
-
