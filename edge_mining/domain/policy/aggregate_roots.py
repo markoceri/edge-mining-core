@@ -1,4 +1,7 @@
-"""Collection of Aggregate Roots for the Energy Optimization domain of the Edge Mining application."""
+"""
+Collection of Aggregate Roots for the Energy Optimization domain
+of the Edge Mining application.
+"""
 
 from dataclasses import dataclass, field
 from typing import List, Optional
@@ -7,9 +10,10 @@ from edge_mining.domain.common import AggregateRoot
 from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.value_objects import DecisionalContext
-from edge_mining.domain.policy.ports import RuleEngine
 
 from edge_mining.domain.miner.common import MinerStatus
+
+from edge_mining.domain.policy.services import RuleEngine
 
 @dataclass
 class OptimizationPolicy(AggregateRoot):

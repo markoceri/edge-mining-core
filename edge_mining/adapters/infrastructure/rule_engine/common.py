@@ -1,5 +1,6 @@
 """Common objects for rule engine."""
 
+from typing import Dict
 from enum import Enum
 
 class OperatorType(Enum):
@@ -17,7 +18,24 @@ class OperatorType(Enum):
     ENDS_WITH = "ends_with"    # string ends with
     REGEX = "regex"     # regex match
 
+# Mapping of operators to their symbolic representation
+OPERATOR_SYMBOLS: Dict[
+    OperatorType, str
+] = {
+    OperatorType.EQ: "==",
+    OperatorType.NE: "!=",
+    OperatorType.GT: ">",
+    OperatorType.GTE: ">=",
+    OperatorType.LT: "<",
+    OperatorType.LTE: "<=",
+    OperatorType.IN: "∈",
+    OperatorType.NOT_IN: "∉",
+    OperatorType.CONTAINS: "⊃",
+    OperatorType.STARTS_WITH: "^",
+    OperatorType.ENDS_WITH: "$",
+    OperatorType.REGEX: "~"
+}
+
 class RuleEngineType(Enum):
     """Types of rule engines."""
     CUSTOM = "custom"  # Custom rule engine
-

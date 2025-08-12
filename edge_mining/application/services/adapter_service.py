@@ -34,7 +34,7 @@ from edge_mining.domain.notification.ports import NotificationPort, NotifierRepo
 from edge_mining.adapters.domain.notification.dummy import DummyNotifier
 from edge_mining.adapters.domain.notification.telegram import TelegramNotifierFactory
 
-from edge_mining.domain.policy.ports import RuleEngine
+from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.adapters.infrastructure.rule_engine.factory import RuleEngineFactory
 
 from edge_mining.domain.forecast.common import ForecastProviderAdapter

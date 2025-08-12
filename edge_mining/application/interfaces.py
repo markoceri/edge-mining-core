@@ -2,10 +2,12 @@
 
 from abc import ABC, abstractmethod
 from typing import Optional, List
+from datetime import datetime
 
 from edge_mining.domain.common import EntityId, Watts
 
 from edge_mining.domain.miner.value_objects import HashRate
+from edge_mining.domain.policy.value_objects import Sun
 
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.miner.entities import Miner
@@ -14,7 +16,7 @@ from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.forecast.ports import ForecastProviderPort
-from edge_mining.domain.policy.ports import RuleEngine
+from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.shared.external_services.ports import ExternalServicePort
 
 from edge_mining.domain.policy.aggregate_roots import (
@@ -262,4 +264,12 @@ class ConfigurationServiceInterface(ABC):
     @abstractmethod
     def update_setting(self, key: str, value: any) -> None:
         """Update a setting."""
+        pass
+
+class SunFactoryInterface(ABC):
+    """Base interface for Sun factories in the Edge Mining application."""
+
+    @abstractmethod
+    def create_sun_for_date(self, for_date: datetime = datetime.now) -> Sun:
+        """Create a Sun object for a specific date."""
         pass

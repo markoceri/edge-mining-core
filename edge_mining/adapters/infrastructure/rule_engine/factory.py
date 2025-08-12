@@ -1,9 +1,8 @@
 """Factory for creating RuleEngine instances."""
 
 from typing import Optional
-import uuid
 
-from edge_mining.domain.policy.ports import RuleEngine
+from edge_mining.domain.policy.services import RuleEngine
 
 from edge_mining.adapters.infrastructure.rule_engine.common import RuleEngineType
 from edge_mining.adapters.infrastructure.rule_engine.engine import (
@@ -30,3 +29,4 @@ class RuleEngineFactory:
             return CustomRuleEngine(logger=logger)
         else:
             raise ValueError(f"Unsupported rule engine type: {engine_type}")
+        # Future extensions can include more complex rule engines

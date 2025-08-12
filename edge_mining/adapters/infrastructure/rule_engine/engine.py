@@ -1,22 +1,12 @@
 """Rule engine infrastructure adapter for automation rules."""
 
-from typing import List, Dict, Any, Union, Optional
-
-import durable
+from typing import List
 
 from edge_mining.shared.logging.port import LoggerPort
 
-from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.value_objects import DecisionalContext
-from edge_mining.domain.policy.ports import RuleEngine
-
-from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
-
-from edge_mining.adapters.domain.policy.schemas import (
-    OptimizationPolicySchema, AutomationRuleSchema,
-    LogicalGroupSchema, RuleConditionSchema
-)
+from edge_mining.domain.policy.services import RuleEngine
 
 from edge_mining.adapters.infrastructure.rule_engine.custom.helpers import RuleEvaluator
 

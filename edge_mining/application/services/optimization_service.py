@@ -9,6 +9,7 @@ It is responsible for:
 
 from typing import Optional, List
 import asyncio
+import copy
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.miner.common import MinerStatus
@@ -16,10 +17,10 @@ from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import MiningDecision
-from edge_mining.domain.policy.value_objects import DecisionalContext
+from edge_mining.domain.policy.value_objects import Sun, DecisionalContext
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
-from edge_mining.domain.forecast.value_objects import ForecastData
+from edge_mining.domain.forecast.aggregate_root import Forecast
 from edge_mining.domain.home_load.value_objects import ConsumptionForecast
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
 from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
@@ -35,7 +36,7 @@ from edge_mining.domain.miner.exceptions import MinerError
 from edge_mining.domain.policy.exceptions import PolicyError
 from edge_mining.domain.notification.ports import NotificationPort
 
-from edge_mining.application.interfaces import AdapterServiceInterface
+from edge_mining.application.interfaces import AdapterServiceInterface, SunFactoryInterface
 
 class OptimizationService:
     """Service for the optimization process."""
@@ -47,6 +48,7 @@ class OptimizationService:
         policy_repo: OptimizationPolicyRepository,
         miner_repo: MinerRepository,
         adapter_service: AdapterServiceInterface,
+        sun_factory: SunFactoryInterface,
         logger: Optional[LoggerPort] = None
     ):
         # Domains
@@ -56,9 +58,10 @@ class OptimizationService:
         self.energy_source_repo = energy_source_repo
         self.policy_repo = policy_repo
         self.miner_repo = miner_repo
-        self.adapter_service = adapter_service
 
         # Infrastructure
+        self.sun_factory = sun_factory
+        self.adapter_service = adapter_service
         self.logger = logger
 
     async def _notify_unit(self, notifiers: List[NotificationPort], title: str, message: str):
@@ -206,7 +209,7 @@ class OptimizationService:
             return
 
         # --- Solar Forecast ---
-        solar_forecast_data: Optional[ForecastData] = None
+        forecast_data: Optional[Forecast] = None
         if forecast_provider:
             try:
                 # Assuming the forecast provider needs parameters from its config,
@@ -216,7 +219,7 @@ class OptimizationService:
                 # For now, assuming the resolver provides a ready-to-use adapter.
                 # (the configuration has already done outside of the edge mining application)
 
-                solar_forecast_data = forecast_provider.get_solar_forecast()
+                forecast_data = forecast_provider.get_forecast()
             except Exception as e:
                 if self.logger:
                     self.logger.warning(f"Error getting solar forecast for optimization unit '{optimization_unit.name}': {e}")
@@ -254,7 +257,10 @@ class OptimizationService:
             if self.logger:
                 self.logger.info(f"No target miners configured for optimization unit '{optimization_unit.name}'.")
             return
-        
+
+        # Creates the Sun object for the current date.
+        sun: Sun = self.sun_factory.create_sun_for_date()
+
         # Create the decisional context without the miner yet,
         # as we will add it later after fetching the miner status.
         # This allows us to have a single context for the unit.
@@ -262,9 +268,10 @@ class OptimizationService:
         context = DecisionalContext(
             energy_source=energy_source,
             energy_state=energy_state,
-            forecast=solar_forecast_data,
+            forecast=forecast_data,
             home_load_forecast=home_load_forecast,
-            tracker_current_hashrate=tracker_current_hashrate
+            tracker_current_hashrate=tracker_current_hashrate,
+            sun=sun,
         )
 
         # TODO: should we manage miners singularly or together?
@@ -358,15 +365,8 @@ class OptimizationService:
             # Creates a copy of the context with the miner included, so that the policy
             # can access miner-specific data, without modifying the original context.
             # This is important to keep the context consistent across all miners in the unit.
-            decisional_context = DecisionalContext(
-                energy_source=context.energy_source,
-                energy_state=context.energy_state,
-                forecast=context.forecast,
-                home_load_forecast=context.home_load_forecast,
-                tracker_current_hashrate=context.tracker_current_hashrate,
-                miner=miner,  # Add the miner to the context
-                timestamp=context.timestamp
-            )
+            decisional_context = copy.deepcopy(context)
+            decisional_context.miner = miner  # Add the miner to the context
 
             # Create the rule engine instance
             rule_engine = self.adapter_service.get_rule_engine()

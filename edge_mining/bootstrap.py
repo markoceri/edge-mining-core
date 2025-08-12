@@ -71,6 +71,9 @@ from edge_mining.adapters.infrastructure.external_services.repositories import (
     SqliteExternalServiceRepository,
 )
 
+from edge_mining.application.interfaces import SunFactoryInterface
+from edge_mining.adapters.infrastructure.sun.factories import AstralSunFactory
+
 from edge_mining.shared.settings.common import PersistenceAdapter
 
 from edge_mining.shared.logging.port import LoggerPort
@@ -228,6 +231,13 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings) -> Service
 
     logger.debug("Configuring dependencies...")
 
+    # --- Factories ---
+    sun_factory: SunFactoryInterface = AstralSunFactory(
+        latitude=settings.latitude,
+        longitude=settings.longitude,
+        timezone=settings.timezone
+    )
+
     # --- Persistence ---
     persistence_settings: PersistenceSettings = configure_persistence(logger, settings)
 
@@ -250,6 +260,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings) -> Service
         policy_repo=persistence_settings.policy_repo,
         miner_repo=persistence_settings.miner_repo,
         adapter_service=adapter_service,
+        sun_factory=sun_factory,
         logger=logger,
     )
 
