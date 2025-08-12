@@ -18,6 +18,9 @@ class ForecastProviderDummySolarConfig(ForecastProviderConfig):
     latitude: float = field(default=41.90)
     longitude: float = field(default=12.49)
     capacity_kwp: float = field(default=0.0)
+    efficency_percent: float = field(default=80.0)
+    production_start_hour: int = field(default=6)
+    production_end_hour: int = field(default=20)
 
     def is_valid(self, adapter_type: ForecastProviderAdapter) -> bool:
         """

@@ -57,6 +57,9 @@ class DummyForecastProviderFactory(ForecastAdapterFactory):
             latitude=forecast_provider_config.latitude,
             longitude=forecast_provider_config.longitude,
             capacity_kwp=forecast_provider_config.capacity_kwp,
+            efficency_percent=forecast_provider_config.efficency_percent,
+            production_start_hour=forecast_provider_config.production_start_hour,
+            production_end_hour=forecast_provider_config.production_end_hour,
             logger=logger
         )
 
@@ -66,7 +69,10 @@ class DummySolarForecastProvider(ForecastProviderPort):
         self,
         latitude: float = None,
         longitude: float = None,
-        capacity_kwp: float = 0.0,
+        capacity_kwp: float = 5.0,
+        efficency_percent: float = 80.0,
+        production_start_hour: int = 6,
+        production_end_hour: int = 20,
         logger: LoggerPort = None
     ):
         """Initializes the DummySolarForecastProvider."""
@@ -76,6 +82,9 @@ class DummySolarForecastProvider(ForecastProviderPort):
         self.latitude = latitude
         self.longitude = longitude
         self.capacity_kwp = capacity_kwp
+        self.efficency_percent = efficency_percent
+        self.production_start_hour = production_start_hour
+        self.production_end_hour = production_end_hour
         # You can set default values or use the ones from settings if needed
 
     def get_solar_forecast(self) -> Optional[ForecastData]:
@@ -85,16 +94,18 @@ class DummySolarForecastProvider(ForecastProviderPort):
                             f"Generating forecast for {self.latitude},{self.longitude} "
                             f"({self.capacity_kwp} kWp)")
         now = datetime.now()
-        predictions: Dict[Timestamp, Watts] = {}
-        base_max_watts = self.capacity_kwp * 1000 * 0.8 # Assume 80% peak efficiency
+        base_max_watts = self.capacity_kwp * 1000 * (self.efficency_percent/100)
+
+        peak_hour = 13
+        total_production_hours = self.production_end_hour - self.production_start_hour
 
         for i in range(24): # Forecast for next 24 hours
             future_time = now + timedelta(hours=i)
             hour = future_time.hour
 
-            if 6 < hour < 20:
+            if self.production_start_hour < hour < self.production_end_hour:
                 # Simple sinusoidal based on hour
-                solar_factor = max(0, 1 - abs(hour - 13) / 7)
+                solar_factor = max(0, 1 - abs(hour - peak_hour) / (total_production_hours/2))
                 # Add some randomness
                 noise = random.uniform(0.7, 1.0)
                 predicted_power = Watts(base_max_watts * solar_factor * noise)
