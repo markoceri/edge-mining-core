@@ -27,16 +27,16 @@ start_rules:
           value: [5, 6]  # Saturday, Sunday
         - any_of:
             - all_of:  # Scenario 1: High solar + good battery
-                - field: "forecast.predicted_power.avg_next_4_hours"
+                - field: "forecast.predicted_power.avg_next_4_hours_power"
                   operator: "gt"
                   value: 2000
                 - field: "energy_state.battery.state_of_charge"
                   operator: "gt"
                   value: 70
             - all_of:  # Scenario 2: Exporting to grid
-                - field: "energy_state.grid.current_power"
+                - field: "energy_state.grid.exporting_power"
                   operator: "lt"
-                  value: -800  # Exporting at least 800W
+                  value: 800  # Exporting at least 800W
                 - field: "energy_state.battery.state_of_charge"
                   operator: "gt"
                   value: 50
@@ -99,11 +99,11 @@ stop_rules:
     description: "Stop mining when importing too much from grid"
     conditions:
       all_of:
-        - field: "energy_state.grid.current_power"
+        - field: "energy_state.grid.importing_power"
           operator: "gt"
           value: 2500  # Importing more than 2.5kW
         - any_of:
-            - field: "forecast.predicted_power.next_2_hours"
+            - field: "forecast.predicted_power.next_hour_power"
               operator: "lt"
               value: 1000  # Low solar forecast
             - field: "energy_state.battery.state_of_charge"
@@ -142,7 +142,7 @@ stop_rules:
     enabled: true
 
 metadata:
-  version: "2.0"
+  version: 2
   author: "Edge Mining User"
   created: "2025-08-04"
   last_modified: "2025-08-04"
