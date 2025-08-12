@@ -1,8 +1,9 @@
 """Validation schemas for optimization policies."""
 
+import uuid
 from datetime import datetime
 from typing import List, Union, Optional
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, field_serializer
 
 from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 
@@ -27,6 +28,25 @@ class RuleConditionSchema(BaseModel):
             raise ValueError("Field path contains invalid characters")
 
         return v
+
+    @field_validator('operator', mode='before')
+    @classmethod
+    def validate_operator(cls, v: Union[str, OperatorType]) -> OperatorType:
+        """Validate operator type."""
+        if isinstance(v, str):
+            try:
+                return OperatorType(v.lower())
+            except KeyError as e:
+                raise ValueError(f"Invalid operator: {v}. Must be one of {list(OperatorType)}") from e
+        elif isinstance(v, OperatorType):
+            return v
+        else:
+            raise ValueError("Operator must be a string or an OperatorType enum value")
+
+    @field_serializer('operator')
+    def serialize_operator(self, operator: OperatorType) -> str:
+        """Serialize operator as string value."""
+        return operator.value
 
 class LogicalGroupSchema(BaseModel):
     """Logical grouping of conditions (AND/OR)."""
@@ -73,10 +93,15 @@ class AutomationRuleSchema(BaseModel):
     @field_validator('id')
     @classmethod
     def validate_id(cls, v: Optional[str]) -> Optional[str]:
-        """Validate rule ID."""
-        if v is not None and (not isinstance(v, str) or len(v.strip()) == 0):
+        """Validate rule ID and auto-generate if not provided."""
+        if v is None or (isinstance(v, str) and len(v.strip()) == 0):
+            # Auto-generate ID using UUID4
+            return str(uuid.uuid4())
+        
+        if not isinstance(v, str) or len(v.strip()) == 0:
             raise ValueError("Rule ID must be a non-empty string")
-        return v.strip() if v else None
+        
+        return v.strip()
 
     @field_validator('name')
     @classmethod
@@ -89,7 +114,7 @@ class AutomationRuleSchema(BaseModel):
 class MetadataSchema(BaseModel):
     """Schema for optional metadata."""
     author: Optional[str] = Field(None, description="Author of the policy")
-    version: Optional[str] = Field(None, description="Version of the policy schema")
+    version: Optional[int] = Field(None, description="Version of the policy schema")
     created: Optional[str] = Field(None, description="Creation date")
     last_modified: Optional[str] = Field(None, description="Last modified date")
 
