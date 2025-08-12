@@ -1731,8 +1731,8 @@ class ConfigurationService:
         policy_id: EntityId,
         rule_type: RuleType,
         name: str,
-        conditions: Dict[str, Any],
-        action: MiningDecision,
+        priority: int,
+        conditions: Dict
     ) -> AutomationRule:
         """Add a rule to a policy."""
         policy = self.policy_repo.get_by_id(policy_id)
@@ -1740,7 +1740,7 @@ class ConfigurationService:
         if not policy:
             raise PolicyNotFoundError(f"Policy with ID {policy_id} not found.")
 
-        rule = AutomationRule(name=name, conditions=conditions, action=action)
+        rule = AutomationRule(name=name, conditions=conditions, priority=priority)
         if rule_type == RuleType.START:
             policy.start_rules.append(rule)
         elif rule_type == RuleType.STOP:
@@ -1793,8 +1793,9 @@ class ConfigurationService:
         policy_id: EntityId,
         rule_id: EntityId,
         name: str,
-        conditions: Dict[str, Any],
-        action: MiningDecision,
+        priority: int,
+        enabled: bool,
+        conditions: Dict
     ) -> AutomationRule:
         """Update a rule in a policy."""
         policy = self.policy_repo.get_by_id(policy_id)
@@ -1806,7 +1807,8 @@ class ConfigurationService:
             if rule.id == rule_id:
                 rule.name = name
                 rule.conditions = conditions
-                rule.action = action
+                rule.priority = priority
+                rule.enabled = enabled
                 self.policy_repo.update(policy)
                 self.logger.info(f"Updated rule '{name}' in policy '{policy.name}'")
 
@@ -1839,24 +1841,28 @@ class ConfigurationService:
                 return rule
         raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
 
-    def set_active_policy(self, policy_id: EntityId) -> None:
-        """Set a policy as active."""
-        self.logger.info(f"Setting policy {policy_id} as active.")
+    def enable_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> None:
+        """Set a rule as enabled."""
+        self.logger.info(f"Setting rule {rule_id} of policy {policy_id} as active.")
 
-        policies = self.policy_repo.get_all()
+        policy = self.policy_repo.get_by_id(policy_id)
 
-        found = False
-        for p in policies:
-            if p.id == str(policy_id):
-                # Add checks for the presence and validation of rules before activating
-                p.is_active = True
-                found = True
-            else:
-                p.is_active = False
-            self.policy_repo.update(p)  # Persist change for each policy
-
-        if not found:
+        if not policy:
             raise PolicyError(f"Policy with ID {policy_id} not found.")
+
+        # Find the rule in the policy's start or stop rules
+        rule = None
+        for r in policy.start_rules + policy.stop_rules:
+            if r.id == rule_id:
+                rule = r
+                break
+
+        if not rule:
+            raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+
+        # Set the rule as enabled
+        rule.enabled = True
+        self.policy_repo.update(policy) # Persist change for each policy
 
     def delete_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
         """Delete a policy from the system."""
@@ -1881,21 +1887,57 @@ class ConfigurationService:
             raise PolicyError("Policy not found.")
 
         # Check if start rules contain at least one rule to stop the miner
-        if policy.start_rules:
-            if not any(rule.action == MiningDecision.STOP_MINING for rule in policy.start_rules):
-                raise PolicyError(
-                    "Policy must have at least one start rule with a STOP MINING action."
-                )
+        if not policy.start_rules or len(policy.start_rules) == 0:
+            raise PolicyError(
+                "Policy must have at least one start rule with a STOP MINING action."
+            )
 
         # Check if stop rules contain at least one rule to start the miner
-        if policy.stop_rules:
-            if not any(rule.action == MiningDecision.START_MINING for rule in policy.stop_rules):
-                raise PolicyError(
-                    "Policy must have at least one stop rule with a START MINING action."
-                )   
+        if not policy.stop_rules or len(policy.stop_rules) == 0:
+            raise PolicyError(
+                "Policy must have at least one stop rule with a START MINING action."
+            )
 
         self.logger.debug(f"Policy {policy.id} ({policy.name}) is valid.")
         return True
+
+    def update_policy(
+            self,
+            policy_id: EntityId,
+            name: str,
+            description: str = "",
+        ) -> OptimizationPolicy:
+        """Update a policy in the system."""
+        self.logger.info(f"Updating policy {policy_id} ({name})")
+
+        policy = self.policy_repo.get_by_id(policy_id)
+
+        if not policy:
+            raise PolicyNotFoundError(f"Policy with ID {policy_id} not found")
+
+        policy.name = name
+        policy.description = description
+
+        self.logger.debug(f"Updated policy {name} ({policy_id})")
+        self.policy_repo.update(policy)
+
+    def sort_policy_rules(
+            self,
+            policy_id: EntityId
+        ) -> None:
+        """Sort the rules of a policy by priority."""
+        policy = self.policy_repo.get_by_id(policy_id)
+
+        if not policy:
+            raise PolicyNotFoundError(f"Policy with ID {policy_id} not found")
+
+        # Sort start rules by priority
+        policy.start_rules.sort(key=lambda r: r.priority)
+        # Sort stop rules by priority
+        policy.stop_rules.sort(key=lambda r: r.priority)
+
+        self.logger.info(f"Sorted rules for policy {policy.name} by priority")
+        self.policy_repo.update(policy)
 
     # --- Settings Management ---
     def get_all_settings(self) -> Dict[str, Any]:
