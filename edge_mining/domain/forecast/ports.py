@@ -5,6 +5,7 @@ from typing import Optional, List
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
+from edge_mining.domain.forecast.aggregate_root import Forecast
 from edge_mining.domain.forecast.entities import ForecastProvider
 from edge_mining.domain.forecast.value_objects import ForecastData
 
@@ -15,8 +16,8 @@ class ForecastProviderPort(ABC):
         self.forecast_provider_type = forecast_provider_type
 
     @abstractmethod
-    def get_solar_forecast(self) -> Optional[ForecastData]:
-        """Fetches the solar energy production forecast."""
+    def get_forecast(self) -> Optional[Forecast]:
+        """Fetches the energy production forecast."""
         raise NotImplementedError
 
 class ForecastProviderRepository(ABC):
