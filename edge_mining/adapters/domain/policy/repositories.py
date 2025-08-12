@@ -19,7 +19,6 @@ from edge_mining.domain.policy.exceptions import (
     PolicyError, PolicyConfigurationError, PolicyNotFoundError
 )
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy, AutomationRule
-from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 
 from edge_mining.shared.logging.port import LoggerPort
@@ -30,6 +29,7 @@ from edge_mining.adapters.domain.policy.schemas import (
 )
 
 from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
+from edge_mining.adapters.domain.policy.yaml.utils import CustomDumper
 
 # Simple In-Memory implementation for testing and basic use
 
@@ -429,11 +429,23 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
                 policy_schema.metadata = metadata.model_dump()
 
             # Convert schema to dict for YAML serialization
-            yaml_content = policy_schema.model_dump()
+            yaml_content = policy_schema.model_dump(exclude_none=True, exclude_unset=True)
 
             # Write to file
             with open(file_path, 'w', encoding='utf-8') as f:
-                yaml.dump(yaml_content, f, default_flow_style=False, allow_unicode=True, indent=2)
+                
+                    
+                yaml.dump(
+                    yaml_content,
+                    f,
+                    Dumper=CustomDumper,
+                    default_flow_style=False,
+                    allow_unicode=True,
+                    sort_keys=False,
+                    indent=2,
+                    width=1000,
+                    default_style=None
+                )
 
             if self.logger:
                 self.logger.debug(f"Saved policy '{policy.name}' to {file_path}")
