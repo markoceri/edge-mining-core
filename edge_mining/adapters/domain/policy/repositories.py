@@ -403,6 +403,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
         return AutomationRule(
             id=EntityId(rule_schema.id),
             name=rule_schema.name,
+            description=rule_schema.description,
             priority=rule_schema.priority,
             enabled=rule_schema.enabled,
             conditions=rule_schema.conditions.model_dump()
@@ -476,6 +477,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
             return AutomationRuleSchema(
                 id=str(rule.id),  # Convert UUID to string for YAML
                 name=rule.name,
+                description=rule.description,
                 priority=rule.priority,
                 enabled=rule.enabled,
                 conditions=self._convert_conditions_to_schema(
