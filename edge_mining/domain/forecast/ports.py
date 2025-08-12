@@ -7,7 +7,6 @@ from edge_mining.domain.common import EntityId
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.aggregate_root import Forecast
 from edge_mining.domain.forecast.entities import ForecastProvider
-from edge_mining.domain.forecast.value_objects import ForecastData
 
 class ForecastProviderPort(ABC):
     """Port for the Forecast Provider."""

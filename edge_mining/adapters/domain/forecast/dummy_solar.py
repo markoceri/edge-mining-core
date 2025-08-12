@@ -4,14 +4,15 @@ the energy forecast for Edge Mining Application
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional
 import random
 
-from edge_mining.domain.common import Watts, Timestamp
+from edge_mining.domain.common import Watts, Timestamp, WattHours
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
+from edge_mining.domain.forecast.aggregate_root import Forecast
 from edge_mining.domain.forecast.ports import ForecastProviderPort
-from edge_mining.domain.forecast.value_objects import ForecastData
+from edge_mining.domain.forecast.value_objects import ForecastInterval, ForecastPowerPoint
 from edge_mining.domain.forecast.exceptions import (
     ForecastError
 )
@@ -94,6 +95,9 @@ class DummySolarForecastProvider(ForecastProviderPort):
                             f"Generating forecast for {self.latitude},{self.longitude} "
                             f"({self.capacity_kwp} kWp)")
         now = datetime.now()
+        forecast: Forecast = Forecast(
+            timestamp=Timestamp(now)
+        )
         base_max_watts = self.capacity_kwp * 1000 * (self.efficency_percent/100)
 
         peak_hour = 13
@@ -112,12 +116,32 @@ class DummySolarForecastProvider(ForecastProviderPort):
             else:
                 predicted_power = Watts(0.0)
 
-            predictions[Timestamp(future_time)] = predicted_power
+            # Generate forecast for energy based on peak power
+            predicted_energy = WattHours(predicted_power)
 
-        forecast = ForecastData(
-            predicted_power=predictions,
-            generated_at=Timestamp(now)
-        )
+            # Create a forecast power point for this hour
+            forecast_point = ForecastPowerPoint(
+                timestamp=Timestamp(future_time),
+                power=predicted_power
+            )
+
+            start_time = Timestamp(now) if i == 0 else Timestamp(now + timedelta(hours=i - 1))
+            end_time = Timestamp(future_time)
+
+            # Create a forecast interval for this hour
+            interval = ForecastInterval(
+                start=start_time,
+                end=end_time,
+                energy=predicted_energy,  # Energy in Wh for the hour
+                energy_remaining=None,  # Remaining energy in Wh for the hour
+                power_points=[
+                    forecast_point
+                ]
+            )
+
+            # Add the forecast interval to the forecast
+            forecast.intervals.append(interval)
+
         if self.logger:
-            self.logger.debug(f"DummyForecastProvider: Generated {len(predictions)} predictions.")
+            self.logger.debug(f"DummyForecastProvider: Generated {len(forecast.intervals)} predictions.")
         return forecast

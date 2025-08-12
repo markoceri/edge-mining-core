@@ -10,7 +10,8 @@ from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.ports import ForecastProviderPort
 from edge_mining.domain.common import Watts, WattHours, Timestamp
-from edge_mining.domain.forecast.value_objects import ForecastData
+from edge_mining.domain.forecast.aggregate_root import Forecast
+from edge_mining.domain.forecast.value_objects import ForecastPowerPoint, ForecastInterval
 from edge_mining.domain.forecast.exceptions import (
     ForecastError
 )
@@ -485,37 +486,112 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
         actual_hour = now.replace(minute=0, second=0, microsecond=0)
         end_of_today = datetime.combine(now, time.max)
 
-        # Add power data
-        power_predictions: Dict[Timestamp, Watts] = {}
-
-        if power_actual_h is not None:
-            power_predictions[(now, now + timedelta(hours=0))] = power_actual_h
-        if power_next_1h is not None:
-            power_predictions[(now, now + timedelta(hours=1))] = power_next_1h
-        if power_next_12h is not None:    
-            power_predictions[(now, now + timedelta(hours=12))] = power_next_12h
-        if power_next_24h is not None:
-            power_predictions[(now, now + timedelta(hours=24))] = power_next_24h
-
-        # Add energy data
-        energy_predictions: Dict[Tuple[Timestamp, Timestamp], WattHours] = {}
-
-        if energy_actual_h is not None:
-            energy_predictions[(now, now + timedelta(hours=0))] = energy_actual_h
-        if energy_next_1h is not None:
-            energy_predictions[(now, now + timedelta(hours=1))] = energy_next_1h
-        if energy_remaining_today is not None:
-            energy_predictions[(now, now + timedelta(hours=24))] = energy_remaining_today
-
-        energy_predictions[(now, now + timedelta(hours=24))] = energy_next_24h
-
-        forecast = ForecastData(
-            predicted_energy=energy_predictions,
-            predicted_power=power_predictions,
-            generated_at=now
+        forecast: Forecast = Forecast(
+            timestamp=Timestamp(now)
         )
 
-        self.logger.info(f"HA Monitor: Forecast Power State fetched: {forecast.predicted_power}")
-        self.logger.info(f"HA Monitor: Forecast Energy State fetched: {forecast.predicted_energy}")
+        # Create forecast intervals
+        forecast_interval_actual_h = ForecastInterval(
+            start=Timestamp(actual_hour),
+            end=Timestamp(actual_hour),
+            energy=None,
+            energy_remaining=None,
+            power_points=[]
+        )
+        forecast_interval_1h = ForecastInterval(
+            start=Timestamp(actual_hour),
+            end=Timestamp(actual_hour + timedelta(hours=1)),
+            energy=None,
+            energy_remaining=None,
+            power_points=[]
+        )
+        forecast_interval_12h = ForecastInterval(
+            start=Timestamp(actual_hour),
+            end=Timestamp(actual_hour + timedelta(hours=12)),
+            energy=None,
+            energy_remaining=None,
+            power_points=[]
+        )
+        forecast_interval_24h = ForecastInterval(
+            start=Timestamp(actual_hour),
+            end=Timestamp(actual_hour + timedelta(hours=24)),
+            energy=None,
+            energy_remaining=None,
+            power_points=[]
+        )
+        forecast_interval_today = ForecastInterval(
+            start=Timestamp(actual_hour),
+            end=Timestamp(end_of_today),
+            energy=None,
+            energy_remaining=None,
+            power_points=[]
+        )
+        forecast_interval_tomorrow = ForecastInterval(
+            start=Timestamp(end_of_today + timedelta(seconds=1)),
+            end=Timestamp(end_of_today + timedelta(days=1)),
+            energy=None,
+            energy_remaining=None,
+            power_points=[]
+        )
+
+        # Add energy data
+        if energy_actual_h is not None:
+            forecast_interval_actual_h.energy = WattHours(energy_actual_h)
+        if energy_next_1h is not None:
+            forecast_interval_1h.energy = WattHours(energy_next_1h)
+        if energy_remaining_today is not None:
+            forecast_interval_today.energy_remaining = WattHours(energy_remaining_today)
+        if energy_today is not None:
+            forecast_interval_today.energy = WattHours(energy_today)
+        if energy_tomorrow is not None:
+            forecast_interval_tomorrow.energy = WattHours(energy_tomorrow)
+
+        # Add power data
+        if power_actual_h is not None:
+            forecast_interval_actual_h.power_points.append(
+                ForecastPowerPoint(
+                    timestamp=Timestamp(actual_hour),
+                    power=Watts(power_actual_h)
+                )
+            )
+        if power_next_1h is not None:
+            forecast_interval_1h.power_points.append(
+                ForecastPowerPoint(
+                    timestamp=Timestamp(actual_hour + timedelta(hours=1)),
+                    power=Watts(power_next_1h)
+                )
+            )
+        if power_next_12h is not None:
+            forecast_interval_12h.power_points.append(
+                ForecastPowerPoint(
+                    timestamp=Timestamp(actual_hour + timedelta(hours=12)),
+                    power=Watts(power_next_12h)
+                )
+            )
+        if power_next_24h is not None:
+            forecast_interval_24h.power_points.append(
+                ForecastPowerPoint(
+                    timestamp=Timestamp(actual_hour + timedelta(hours=24)),
+                    power=Watts(power_next_24h)
+                )
+            )
+
+        forecast_intervals: List[ForecastInterval] = [
+            forecast_interval_actual_h,
+            forecast_interval_1h,
+            forecast_interval_12h,
+            forecast_interval_24h,
+            forecast_interval_today,
+            forecast_interval_tomorrow
+        ]
+
+        # Add intervals to forecast if they contain data
+        for interval in forecast_intervals:
+            if (interval.power_points or
+                interval.energy is not None or
+                interval.energy_remaining is not None):
+                forecast.intervals.append(interval)
+
+        self.logger.debug(f"HA Monitor: Forecast Intervals fetched: {forecast.intervals}")
 
         return forecast
