@@ -64,6 +64,7 @@ class RuleEvaluator:
             field_value = RuleEvaluator._get_field_value(context, condition.field)
 
             if field_value is None:
+                print(f"Field '{condition.field}' not found in context.")
                 return False
 
             # Apply operator
