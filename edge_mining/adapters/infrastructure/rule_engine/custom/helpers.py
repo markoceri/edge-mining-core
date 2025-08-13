@@ -12,12 +12,13 @@ class RuleEvaluator:
     @staticmethod
     def evaluate_rule_conditions(
         context: DecisionalContext,
-        conditions: dict
+        conditions: Union[dict, RuleConditionSchema, LogicalGroupSchema]
     ) -> bool:
         """Evaluate rule conditions against the decisional context."""
 
         # Convert conditions to schema if they are in dict format
-        conditions = RuleEvaluator._convert_conditions_to_schema(conditions)
+        if isinstance(conditions, dict):
+            conditions = RuleEvaluator._convert_conditions_to_schema(conditions)
 
         if isinstance(conditions, RuleConditionSchema):
             return RuleEvaluator._evaluate_single_condition(context, conditions)
