@@ -37,7 +37,7 @@ class RuleEvaluator:
                 # Check if conditions are a logical group or a single rule condition
                 conditions_dict_keys = set(conditions.keys())
 
-                if conditions_dict_keys == LogicalGroupSchema.model_fields.keys():
+                if any(key in conditions_dict_keys for key in LogicalGroupSchema.model_fields.keys()):
                     # It's a logical group
                     return LogicalGroupSchema(**conditions)
                 elif conditions_dict_keys == RuleConditionSchema.model_fields.keys():
