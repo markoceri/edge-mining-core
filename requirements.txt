@@ -10,7 +10,8 @@ loguru==0.7.3
 fastapi==0.115.12
 uvicorn[standard]==0.34.1
 
-# Optional - For specific Driven Adapters (add as needed)
+# Optional - For specific Driven Adapters
 paho-mqtt==2.1.0
 homeassistant_api==5.0.0
 python-telegram-bot>=20.0
+astral==3.2
