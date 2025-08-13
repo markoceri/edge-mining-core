@@ -27,7 +27,7 @@ start_rules:
           value: [5, 6]  # Saturday, Sunday
         - any_of:
             - all_of:  # Scenario 1: High solar + good battery
-                - field: "forecast.predicted_power.avg_next_4_hours_power"
+                - field: "forecast.avg_next_4_hours_power"
                   operator: "gt"
                   value: 2000
                 - field: "energy_state.battery.state_of_charge"
@@ -103,7 +103,7 @@ stop_rules:
           operator: "gt"
           value: 2500  # Importing more than 2.5kW
         - any_of:
-            - field: "forecast.predicted_power.next_hour_power"
+            - field: "forecast.next_hour_power"
               operator: "lt"
               value: 1000  # Low solar forecast
             - field: "energy_state.battery.state_of_charge"

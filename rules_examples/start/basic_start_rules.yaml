@@ -16,7 +16,7 @@ rules:
     description: "Start mining when solar production is high and battery is not full"
     conditions:
       all_of:
-        - field: "forecast.predicted_power.next_hour"
+        - field: "forecast.next_hour_power"
           operator: "gt"
           value: 2000  # Watts
         - field: "energy_state.battery.state_of_charge"
@@ -45,7 +45,7 @@ rules:
         - field: "energy_state.battery.state_of_charge"
           operator: "gte"
           value: 95
-        - field: "forecast.predicted_power.next_hour"
+        - field: "forecast.next_hour_power"
           operator: "gt"
           value: 2000  # Watts
     priority: 20
