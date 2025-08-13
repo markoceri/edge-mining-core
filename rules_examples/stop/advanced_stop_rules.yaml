@@ -123,7 +123,6 @@ rules:
               value: 500  # Very low next hour forecast
             - field: "home_load_forecast"
               operator: "gt"
-              value: 2500  # High home consumption expected 
+              value: 2500  # High home consumption expected
     priority: 30
     enabled: true
-

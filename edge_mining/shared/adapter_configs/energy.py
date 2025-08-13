@@ -1,16 +1,19 @@
 """Collection of adapters configuration for the energy domain of the Edge Mining application."""
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 
 from edge_mining.domain.common import Watts
 from edge_mining.domain.energy.common import EnergyMonitorAdapter
-
 from edge_mining.shared.interfaces.config import EnergyMonitorConfig
+
 
 @dataclass(frozen=True)
 class EnergyMonitorDummySolarConfig(EnergyMonitorConfig):
     """Energy monitor configiguration"""
-    max_consumption_power: Watts = field(default=Watts(3200.0))  # Default max consumption power
+
+    max_consumption_power: Watts = field(
+        default=Watts(3200.0)
+    )  # Default max consumption power
 
     def is_valid(self, adapter_type: EnergyMonitorAdapter) -> bool:
         """
@@ -28,12 +31,14 @@ class EnergyMonitorDummySolarConfig(EnergyMonitorConfig):
         """Create a configuration object from a dictionary"""
         return cls(**data)
 
+
 @dataclass(frozen=True)
 class EnergyMonitorHomeAssistantConfig(EnergyMonitorConfig):
     """
     Energy monitor configuration. It encapsulate the configuration parameters
     to retrieve energy data from Home Assistant.
     """
+
     entity_production: str
     entity_consumption: str
     entity_grid: str = field(default="")

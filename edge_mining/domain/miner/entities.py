@@ -3,25 +3,26 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from edge_mining.domain.common import Entity, Watts, EntityId
-from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.miner.common import MinerStatus, MinerControllerAdapter
+from edge_mining.domain.common import Entity, EntityId, Watts
+from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.exceptions import MinerNotActiveError
-
+from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.shared.interfaces.config import MinerControllerConfig
+
 
 @dataclass
 class Miner(Entity):
     """Entity for a miner."""
+
     name: str = ""
     status: MinerStatus = MinerStatus.UNKNOWN
-    hash_rate: Optional[HashRate] = None # Hash rate in GH/s or TH/s
-    hash_rate_max: Optional[HashRate] = None # Max hash rate for the miner
-    power_consumption: Optional[Watts] = None # Can be dynamic or fixed
-    power_consumption_max: Optional[Watts] = None # Max power consumption for the miner
-    active: bool = True # Is the miner active in the system?
+    hash_rate: Optional[HashRate] = None  # Hash rate in GH/s or TH/s
+    hash_rate_max: Optional[HashRate] = None  # Max hash rate for the miner
+    power_consumption: Optional[Watts] = None  # Can be dynamic or fixed
+    power_consumption_max: Optional[Watts] = None  # Max power consumption for the miner
+    active: bool = True  # Is the miner active in the system?
 
-    controller_id: Optional[EntityId] = None # Controller for the miner
+    controller_id: Optional[EntityId] = None  # Controller for the miner
 
     def turn_on(self):
         """Turn on the miner."""
@@ -31,7 +32,9 @@ class Miner(Entity):
                 self.status = MinerStatus.STARTING
                 print(f"Domain: Miner {self.id} requested to turn ON")
         else:
-            raise MinerNotActiveError(f"Miner {self.id} is not active and cannot be turned ON.")
+            raise MinerNotActiveError(
+                f"Miner {self.id} is not active and cannot be turned ON."
+            )
 
     def turn_off(self):
         """Turn off the miner."""
@@ -42,9 +45,16 @@ class Miner(Entity):
                 print(f"Domain: Miner {self.id} requested to turn OFF")
             # Else: Already off or transitioning
         else:
-            raise MinerNotActiveError(f"Miner {self.id} is not active and cannot be turned OFF.")
+            raise MinerNotActiveError(
+                f"Miner {self.id} is not active and cannot be turned OFF."
+            )
 
-    def update_status(self, new_status: MinerStatus, hash_rate: Optional[HashRate] = None, power: Optional[Watts] = None):
+    def update_status(
+        self,
+        new_status: MinerStatus,
+        hash_rate: Optional[HashRate] = None,
+        power: Optional[Watts] = None,
+    ):
         """Update the status of the miner."""
         if self.active:
             self.status = new_status
@@ -54,9 +64,13 @@ class Miner(Entity):
                 self.power_consumption = power
 
             # TODO: Add logic to handle max hash rate and power consumption
-            print(f"Domain: Miner {self.id} status updated to {new_status}, hashrate: {hash_rate}, power: {power}")
+            print(
+                f"Domain: Miner {self.id} status updated to {new_status}, hashrate: {hash_rate}, power: {power}"
+            )
         else:
-            raise MinerNotActiveError(f"Miner {self.id} is not active and cannot update status.")
+            raise MinerNotActiveError(
+                f"Miner {self.id} is not active and cannot update status."
+            )
 
     def activate(self):
         """Activate the miner."""
@@ -68,10 +82,14 @@ class Miner(Entity):
         self.active = False
         print(f"Domain: Miner {self.id} deactivated")
 
+
 @dataclass
 class MinerController(Entity):
     """Entity for a miner controller."""
+
     name: str = ""
-    adapter_type: MinerControllerAdapter = MinerControllerAdapter.DUMMY  # Default to dummy controller
+    adapter_type: MinerControllerAdapter = (
+        MinerControllerAdapter.DUMMY
+    )  # Default to dummy controller
     config: Optional[MinerControllerConfig] = None
     external_service_id: Optional[EntityId] = None

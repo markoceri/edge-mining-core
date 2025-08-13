@@ -7,17 +7,17 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from edge_mining.domain.common import AggregateRoot
+from edge_mining.domain.miner.common import MinerStatus
 from edge_mining.domain.policy.common import MiningDecision
 from edge_mining.domain.policy.entities import AutomationRule
+from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.domain.policy.value_objects import DecisionalContext
 
-from edge_mining.domain.miner.common import MinerStatus
-
-from edge_mining.domain.policy.services import RuleEngine
 
 @dataclass
 class OptimizationPolicy(AggregateRoot):
     """Aggregate Root for the Optimization Policy."""
+
     name: str = ""
     description: Optional[str] = None
 
@@ -30,9 +30,7 @@ class OptimizationPolicy(AggregateRoot):
         self.stop_rules.sort(key=lambda r: r.priority, reverse=True)
 
     def decide_next_action(
-        self,
-        decisional_context: DecisionalContext,
-        rule_engine: RuleEngine
+        self, decisional_context: DecisionalContext, rule_engine: RuleEngine
     ) -> MiningDecision:
         """
         Applies the policy rules to determine the next action.
@@ -54,7 +52,11 @@ class OptimizationPolicy(AggregateRoot):
         self.sort_rules()
 
         # Load rules into the rule engine based on miner status
-        if decisional_context.miner.status in [MinerStatus.OFF, MinerStatus.ERROR, MinerStatus.UNKNOWN]:
+        if decisional_context.miner.status in [
+            MinerStatus.OFF,
+            MinerStatus.ERROR,
+            MinerStatus.UNKNOWN,
+        ]:
             rule_engine.load_rules(self.start_rules)
 
             # Evaluate the rules in the rule engine

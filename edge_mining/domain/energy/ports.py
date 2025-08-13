@@ -1,15 +1,17 @@
 """Collection of Ports for the Energy System Monitoring domain of the Edge Mining application."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.energy.common import EnergyMonitorAdapter
-from edge_mining.domain.energy.entities import EnergySource, EnergyMonitor
+from edge_mining.domain.energy.entities import EnergyMonitor, EnergySource
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
+
 
 class EnergyMonitorPort(ABC):
     """Port for the Energy Monitor."""
+
     def __init__(self, energy_monitor_type: EnergyMonitorAdapter):
         """Initialize the Energy Monitor."""
         self.energy_monitor_type = energy_monitor_type
@@ -19,8 +21,10 @@ class EnergyMonitorPort(ABC):
         """Fetches the latest energy readings from the plant."""
         raise NotImplementedError
 
+
 class EnergySourceRepository(ABC):
     """Port for the Energy Source Repository."""
+
     @abstractmethod
     def add(self, energy_source: EnergySource) -> None:
         """Adds a new energy source to the repository."""
@@ -46,8 +50,10 @@ class EnergySourceRepository(ABC):
         """Removes an energy source from the repository."""
         raise NotImplementedError
 
+
 class EnergyMonitorRepository(ABC):
     """Port for the Energy Monitor Repository."""
+
     @abstractmethod
     def add(self, energy_monitor: EnergyMonitor) -> None:
         """Adds a new energy monitor to the repository."""
@@ -74,6 +80,8 @@ class EnergyMonitorRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(self, external_service_id: EntityId) -> List[EnergyMonitor]:
+    def get_by_external_service_id(
+        self, external_service_id: EntityId
+    ) -> List[EnergyMonitor]:
         """Retrieves a list of energy monitors by its associated external service ID."""
         raise NotImplementedError

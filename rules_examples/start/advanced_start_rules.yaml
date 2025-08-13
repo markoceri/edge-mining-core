@@ -74,4 +74,3 @@ rules:
                   value: [11, 12, 13, 14]
     priority: 5
     enabled: true
-

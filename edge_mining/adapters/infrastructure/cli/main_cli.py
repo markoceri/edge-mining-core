@@ -4,23 +4,33 @@ import click
 
 from edge_mining.adapters.domain.energy.cli.commands import energy_menu
 from edge_mining.adapters.domain.forecast.cli.commands import forecast_menu
-from edge_mining.adapters.domain.optimization_unit.cli.commands import optimization_unit_menu
 from edge_mining.adapters.domain.miner.cli.commands import miner_menu
 from edge_mining.adapters.domain.notification.cli.commands import notifier_menu
+from edge_mining.adapters.domain.optimization_unit.cli.commands import (
+    optimization_unit_menu,
+)
 from edge_mining.adapters.domain.policy.cli.commands import policy_menu
-from edge_mining.adapters.infrastructure.external_services.cli.commands import external_services_menu
-
-from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.adapters.infrastructure.external_services.cli.commands import (
+    external_services_menu,
+)
 from edge_mining.shared.infrastructure import Services
+from edge_mining.shared.logging.port import LoggerPort
+
 
 @click.group()
 @click.pass_context
 def cli(ctx: click.Context):
     """Edge Mining CLI"""
 
-    if not isinstance(ctx.obj, dict) or not all(isinstance(ctx.obj.get(k), v) for k, v in {Services: Services, LoggerPort: LoggerPort}.items()):
-        print("WARNING: ctx.obj does not contain expected pre-initialized dependencies.")
+    if not isinstance(ctx.obj, dict) or not all(
+        isinstance(ctx.obj.get(k), v)
+        for k, v in {Services: Services, LoggerPort: LoggerPort}.items()
+    ):
+        print(
+            "WARNING: ctx.obj does not contain expected pre-initialized dependencies."
+        )
         click.echo(click.style("Welcome to the Edge Mining CLI!", fg="red", bold=True))
+
 
 # @click.group()
 # def cli():
@@ -67,12 +77,12 @@ def cli(ctx: click.Context):
 #     if not _configuration_service:
 #         click.echo("Error: Services not initialized.", err=True)
 #         return
-    
+
 #     units = _configuration_service.list_optimization_units()
 #     if not units:
 #         click.echo("No optimization units configured.")
 #         return
-    
+
 #     click.echo("Configured Optimization Units:")
 #     for u in units:
 #         click.echo(f"- ID: {u.id}, Name: {u.name}, Description: {u.description}, Target Miners: {', '.join(u.target_miner_ids)}")
@@ -129,7 +139,7 @@ def cli(ctx: click.Context):
 #     if not _config_service:
 #        click.echo("Error: Services not initialized.", err=True)
 #        return
-   
+
 #     try:
 #        _config_service.remove_miner(miner_id=miner_id)
 #        click.echo(f"Miner {miner_id} removed.")
@@ -141,7 +151,7 @@ def cli(ctx: click.Context):
 # def policy():
 #     """Manage Optimization Policies"""
 #     pass
- 
+
 # @policy.command("create")
 # @click.argument("name")
 # @click.argument("target_miner_ids")
@@ -156,7 +166,7 @@ def cli(ctx: click.Context):
 #         return
 #     try:
 #         target_miner_ids = list(target_miner_ids)  # Convert tuple to list
-        
+
 #         created = _config_service.create_policy(name=name, description=description, target_miner_ids=target_miner_ids)
 #         click.echo(f"Optimization Policy '{created.name}' ({created.description}) on miners {created.target_miner_ids} created successfully.")
 #     except Exception as e:
@@ -170,7 +180,7 @@ def cli(ctx: click.Context):
 #     if not _orchestrator_service:
 #         click.echo("Error: Services not initialized.", err=True)
 #         return
-    
+
 #     click.echo("Manually running evaluation cycle...")
 #     try:
 #         _orchestrator_service.evaluate_and_control_miners()
@@ -186,7 +196,7 @@ def interactive(ctx: click.Context):
     """Interactive main CLI menu for Edge Mining."""
     services: Services = ctx.obj[Services]
     logger: LoggerPort = ctx.obj[LoggerPort]
-    
+
     click.echo(click.style("Welcome to the Edge Mining CLI!", fg="cyan", bold=True))
     click.echo("Select an option or use 'q' to quit.")
 
@@ -212,61 +222,54 @@ def interactive(ctx: click.Context):
         choice: str = click.prompt("Choose an option", type=str)
         choice = choice.strip().lower()
 
-        if choice == '1':
+        if choice == "1":
             sub_choice = energy_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
-        elif choice == '2':
+        elif choice == "2":
             sub_choice = forecast_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
-        elif choice == '3':
+        elif choice == "3":
             sub_choice = miner_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
-        elif choice == '4':
+        elif choice == "4":
             sub_choice = policy_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
-        elif choice == '5':
+        elif choice == "5":
             sub_choice = notifier_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
-        elif choice == '6':
+        elif choice == "6":
             sub_choice = optimization_unit_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
-        elif choice == '7':
+        elif choice == "7":
             sub_choice = external_services_menu(
-                configuration_service=services.configuration_service,
-                logger=logger
+                configuration_service=services.configuration_service, logger=logger
             )
 
-            if sub_choice == 'q':
+            if sub_choice == "q":
                 break
         # elif choice == '3':
         #     handle_remove_miner()
@@ -276,10 +279,11 @@ def interactive(ctx: click.Context):
         #     handle_list_optimization_units()
         # elif choice == '6':
         #     run_evaluation()
-        elif choice == 'q':
+        elif choice == "q":
             break
         else:
             click.echo(click.style("Invalid option, please try again.", fg="red"))
+
 
 # --- CLI main execution ---
 def run_interactive_cli(services: Services, logger: LoggerPort):
@@ -288,10 +292,7 @@ def run_interactive_cli(services: Services, logger: LoggerPort):
     """
 
     # Creates context object to pass services and logger
-    context_data = {
-        Services: services,
-        LoggerPort: logger
-    }
+    context_data = {Services: services, LoggerPort: logger}
 
     # Creates a context object to pass services and logger using class names
     cli.main(obj=context_data)

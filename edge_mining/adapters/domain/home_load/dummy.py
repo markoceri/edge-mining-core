@@ -3,25 +3,21 @@ Dummy adapter (Implementation of Port) that simulates
 the home loads forecast for Edge Mining Application
 """
 
-from datetime import datetime, timedelta
-from typing import Optional, Dict
 import random
+from datetime import datetime, timedelta
+from typing import Dict, Optional
 
-from edge_mining.domain.common import Watts, Timestamp
+from edge_mining.domain.common import Timestamp, Watts
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.home_load.ports import HomeForecastProviderPort
 from edge_mining.domain.home_load.value_objects import ConsumptionForecast
-
 from edge_mining.shared.logging.port import LoggerPort
+
 
 class DummyHomeForecastProvider(HomeForecastProviderPort):
     """Generates a very basic fake home load forecast."""
 
-    def __init__(
-        self,
-        load_power_max: float = 500.0,
-        logger: LoggerPort = None
-    ):
+    def __init__(self, load_power_max: float = 500.0, logger: LoggerPort = None):
         """Initializes the DummyHomeForecastProvider."""
         super().__init__(energy_monitor_type=HomeForecastProviderAdapter.DUMMY)
         self.logger = logger
@@ -29,13 +25,17 @@ class DummyHomeForecastProvider(HomeForecastProviderPort):
         self.load_power_max = load_power_max
         # You can set default values or use the ones from settings if needed
 
-    def get_home_consumption_forecast(self, hours_ahead: int = 3) -> Optional[ConsumptionForecast]:
+    def get_home_consumption_forecast(
+        self, hours_ahead: int = 3
+    ) -> Optional[ConsumptionForecast]:
         """Get the home consumption forecast."""
         # Super simple: return a random average load expected soon for next hours_ahead horhs.
         if self.logger:
-            self.logger.debug(f"DummyHomeForecastProvider: "
-                            f"Generating home load forecast for {hours_ahead} hours ahead "
-                            f"with max load {self.load_power_max} kWp")
+            self.logger.debug(
+                f"DummyHomeForecastProvider: "
+                f"Generating home load forecast for {hours_ahead} hours ahead "
+                f"with max load {self.load_power_max} kWp"
+            )
 
         now = datetime.now()
         predictions: Dict[Timestamp, Watts] = {}
@@ -46,17 +46,18 @@ class DummyHomeForecastProvider(HomeForecastProviderPort):
         # Here we assume a random load between 200W and max load
         avg_load = Watts(random.uniform(200, self.load_power_max))
 
-        for i in range(hours_ahead): # Forecast for next hours_ahead hours
+        for i in range(hours_ahead):  # Forecast for next hours_ahead hours
             future_time = now + timedelta(hours=i)
             predicted_power = avg_load
             predictions[Timestamp(future_time)] = predicted_power
 
         home_forecast = ConsumptionForecast(
-            predicted_watts=predictions,
-            generated_at=Timestamp(now)
+            predicted_watts=predictions, generated_at=Timestamp(now)
         )
 
         if self.logger:
-            self.logger.debug(f"DummyHomeForecastProvider: Estimated avg home load: "
-                            f"{avg_load:.0f}W for next {hours_ahead} hours")
+            self.logger.debug(
+                f"DummyHomeForecastProvider: Estimated avg home load: "
+                f"{avg_load:.0f}W for next {hours_ahead} hours"
+            )
         return home_forecast

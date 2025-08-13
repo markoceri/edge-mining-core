@@ -3,11 +3,11 @@ Collection of adapters configuration for the performace tracker domain
 of the Edge Mining application.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter
-
 from edge_mining.shared.interfaces.config import MiningPerformanceTrackerConfig
+
 
 @dataclass(frozen=True)
 class MiningPerformanceTrackerDummyConfig(MiningPerformanceTrackerConfig):
@@ -15,6 +15,7 @@ class MiningPerformanceTrackerDummyConfig(MiningPerformanceTrackerConfig):
     Dummy mining performance tracker configuration. It encapsulates the configuration parameters
     to track performance via a dummy adapter.
     """
+
     message: str = "This is a dummy performance tracker"
 
     def is_valid(self, adapter_type: MiningPerformanceTrackerAdapter) -> bool:

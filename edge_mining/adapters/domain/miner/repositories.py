@@ -1,34 +1,37 @@
 """Repositories for the Miner domain."""
 
 import copy
-import sqlite3
 import json
-from typing import List, Optional, Dict, Any
+import sqlite3
+from typing import Any, Dict, List, Optional
 
+from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.exceptions import ConfigurationError
-
-from edge_mining.domain.miner.common import MinerStatus, MinerControllerAdapter
+from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.entities import Miner, MinerController
-from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.miner.ports import MinerRepository, MinerControllerRepository
 from edge_mining.domain.miner.exceptions import (
-    MinerError, MinerControllerError,
-    MinerControllerNotFoundError, MinerControllerAlreadyExistsError,
-    MinerControllerConfigurationError
+    MinerControllerAlreadyExistsError,
+    MinerControllerConfigurationError,
+    MinerControllerError,
+    MinerControllerNotFoundError,
+    MinerError,
 )
-from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
-
-from edge_mining.shared.interfaces.config import MinerControllerConfig
+from edge_mining.domain.miner.ports import MinerControllerRepository, MinerRepository
+from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
-
+from edge_mining.shared.interfaces.config import MinerControllerConfig
 
 # Simple In-Memory implementation for testing and basic use
 
+
 class InMemoryMinerRepository(MinerRepository):
     """In-Memory implementation for the Miner Repository."""
+
     def __init__(self, initial_miners: Optional[Dict[EntityId, Miner]] = None):
-        self._miners: Dict[EntityId, Miner] = copy.deepcopy(initial_miners) if initial_miners else {}
+        self._miners: Dict[EntityId, Miner] = (
+            copy.deepcopy(initial_miners) if initial_miners else {}
+        )
 
     def add(self, miner: Miner) -> None:
         """Add a miner to the In-Memory repository."""
@@ -58,10 +61,16 @@ class InMemoryMinerRepository(MinerRepository):
 
     def get_by_controller_id(self, controller_id: EntityId) -> List[Miner]:
         """Get all miners associated with a specific controller ID."""
-        return [
-            copy.deepcopy(m) for m in self._miners.values()
-            if m.controller_id == controller_id
-        ] if controller_id else []
+        return (
+            [
+                copy.deepcopy(m)
+                for m in self._miners.values()
+                if m.controller_id == controller_id
+            ]
+            if controller_id
+            else []
+        )
+
 
 class SqliteMinerRepository(MinerRepository):
     """SQLite implementation for the Miner Repository."""
@@ -74,8 +83,10 @@ class SqliteMinerRepository(MinerRepository):
 
     def _create_tables(self):
         """Create the necessary tables for the Miner domain if they do not exist."""
-        self.logger.debug(f"Ensuring SQLite tables exist for "
-                        f"Miner Repository in {self._db.db_path}...")
+        self.logger.debug(
+            f"Ensuring SQLite tables exist for "
+            f"Miner Repository in {self._db.db_path}..."
+        )
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS miners (
@@ -110,16 +121,13 @@ class SqliteMinerRepository(MinerRepository):
 
     def _dict_to_hashrate(self, data: Dict[str, Any]) -> HashRate:
         """Deserialize a dictionary (from JSON) into an HashRate object."""
-        return HashRate(
-            value=float(data['value']),
-            unit=data['unit']
-        )
+        return HashRate(value=float(data["value"]), unit=data["unit"])
 
     def _hashrate_to_dict(self, hash_rate: Optional[HashRate]) -> Dict[str, Any]:
         """Serializes an HashRate object into a dictionary for JSON."""
         return {
-            'value': hash_rate.value if hash_rate else 0,
-            'unit': hash_rate.unit if hash_rate else 'TH/s'
+            "value": hash_rate.value if hash_rate else 0,
+            "unit": hash_rate.unit if hash_rate else "TH/s",
         }
 
     def _row_to_miner(self, row: sqlite3.Row) -> Optional[Miner]:
@@ -129,10 +137,18 @@ class SqliteMinerRepository(MinerRepository):
         try:
             # Deserialize hash_rate from the database row
             hash_rate_data = json.loads(row["hash_rate"]) if row["hash_rate"] else None
-            hash_rate_max_data = json.loads(row["hash_rate_max"]) if row["hash_rate_max"] else None
+            hash_rate_max_data = (
+                json.loads(row["hash_rate_max"]) if row["hash_rate_max"] else None
+            )
 
-            hash_rate = self._dict_to_hashrate(hash_rate_data) if hash_rate_data else None
-            hash_rate_max = self._dict_to_hashrate(hash_rate_max_data) if hash_rate_max_data else None
+            hash_rate = (
+                self._dict_to_hashrate(hash_rate_data) if hash_rate_data else None
+            )
+            hash_rate_max = (
+                self._dict_to_hashrate(hash_rate_max_data)
+                if hash_rate_max_data
+                else None
+            )
 
             return Miner(
                 id=EntityId(row["id"]),
@@ -141,12 +157,24 @@ class SqliteMinerRepository(MinerRepository):
                 active=row["active"] == 1 if row["active"] is not None else False,
                 hash_rate=hash_rate,
                 hash_rate_max=hash_rate_max,
-                power_consumption=Watts(row["power_consumption"]) if row["power_consumption"] is not None else None,
-                power_consumption_max=Watts(row["power_consumption_max"]) if row["power_consumption_max"] is not None else None,
-                controller_id=EntityId(row["controller_id"]) if row["controller_id"] else None
+                power_consumption=(
+                    Watts(row["power_consumption"])
+                    if row["power_consumption"] is not None
+                    else None
+                ),
+                power_consumption_max=(
+                    Watts(row["power_consumption_max"])
+                    if row["power_consumption_max"] is not None
+                    else None
+                ),
+                controller_id=(
+                    EntityId(row["controller_id"]) if row["controller_id"] else None
+                ),
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(f"Error deserializing Miner from DB row: {row}. Errorr: {e}")
+            self.logger.error(
+                f"Error deserializing Miner from DB row: {row}. Errorr: {e}"
+            )
             return None
 
     def add(self, miner: Miner) -> None:
@@ -164,21 +192,34 @@ class SqliteMinerRepository(MinerRepository):
             hash_rate_max_json = json.dumps(self._hashrate_to_dict(miner.hash_rate_max))
 
             with conn:
-                conn.execute(sql, (
-                    miner.id,
-                    miner.name,
-                    miner.status.value,
-                    miner.active,
-                    hash_rate_json,
-                    hash_rate_max_json,
-                    float(miner.power_consumption) if miner.power_consumption is not None else 0.0,
-                    float(miner.power_consumption_max) if miner.power_consumption_max is not None else 0.0,
-                    miner.controller_id
-                ))
+                conn.execute(
+                    sql,
+                    (
+                        miner.id,
+                        miner.name,
+                        miner.status.value,
+                        miner.active,
+                        hash_rate_json,
+                        hash_rate_max_json,
+                        (
+                            float(miner.power_consumption)
+                            if miner.power_consumption is not None
+                            else 0.0
+                        ),
+                        (
+                            float(miner.power_consumption_max)
+                            if miner.power_consumption_max is not None
+                            else 0.0
+                        ),
+                        miner.controller_id,
+                    ),
+                )
         except sqlite3.IntegrityError as e:
             self.logger.error(f"Integrity error adding miner {miner.id}: {e}")
             # Could mean that the ID already exists
-            raise MinerError(f"Miner with ID {miner.id} already exists or constraint violation: {e}") from e
+            raise MinerError(
+                f"Miner with ID {miner.id} already exists or constraint violation: {e}"
+            ) from e
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error adding miner {miner.id}: {e}")
             raise MinerError(f"DB error adding miner: {e}") from e
@@ -199,7 +240,7 @@ class SqliteMinerRepository(MinerRepository):
             return self._row_to_miner(row)
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error getting miner {miner_id}: {e}")
-            return None # Or raise exception? Returning None is more forgiving
+            return None  # Or raise exception? Returning None is more forgiving
         finally:
             if conn:
                 conn.close()
@@ -241,20 +282,31 @@ class SqliteMinerRepository(MinerRepository):
             # Serialize hash_rate to JSON for storage
             hash_rate_json = json.dumps(self._hashrate_to_dict(miner.hash_rate))
             hash_rate_max_json = json.dumps(self._hashrate_to_dict(miner.hash_rate_max))
-            
+
             with conn:
                 cursor = conn.cursor()
-                cursor.execute(sql, (
-                    miner.name,
-                    miner.status.value,
-                    miner.active,
-                    hash_rate_json,
-                    hash_rate_max_json,
-                    float(miner.power_consumption) if miner.power_consumption is not None else 0.0,
-                    float(miner.power_consumption_max) if miner.power_consumption_max is not None else 0.0,
-                    miner.controller_id,
-                    miner.id
-                ))
+                cursor.execute(
+                    sql,
+                    (
+                        miner.name,
+                        miner.status.value,
+                        miner.active,
+                        hash_rate_json,
+                        hash_rate_max_json,
+                        (
+                            float(miner.power_consumption)
+                            if miner.power_consumption is not None
+                            else 0.0
+                        ),
+                        (
+                            float(miner.power_consumption_max)
+                            if miner.power_consumption_max is not None
+                            else 0.0
+                        ),
+                        miner.controller_id,
+                        miner.id,
+                    ),
+                )
                 if cursor.rowcount == 0:
                     raise MinerError(f"No miner found with ID {miner.id} for update.")
         except sqlite3.Error as e:
@@ -275,7 +327,9 @@ class SqliteMinerRepository(MinerRepository):
                 cursor = conn.cursor()
                 cursor.execute(sql, (miner_id,))
                 if cursor.rowcount == 0:
-                    self.logger.warning(f"Attempt to remove non-existent miner with ID {miner_id}.")
+                    self.logger.warning(
+                        f"Attempt to remove non-existent miner with ID {miner_id}."
+                    )
                     # There is no need to raise an exception here, removing a non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error removing miner {miner_id}: {e}")
@@ -286,7 +340,9 @@ class SqliteMinerRepository(MinerRepository):
 
     def get_by_controller_id(self, controller_id: EntityId) -> List[Miner]:
         """Get all miners associated with a specific controller ID."""
-        self.logger.debug(f"Getting miners by controller ID {controller_id} from SQLite.")
+        self.logger.debug(
+            f"Getting miners by controller ID {controller_id} from SQLite."
+        )
 
         sql = "SELECT * FROM miners WHERE controller_id = ?"
         conn = self._db.get_connection()
@@ -301,22 +357,35 @@ class SqliteMinerRepository(MinerRepository):
                     miners.append(miner)
             return miners
         except sqlite3.Error as e:
-            self.logger.error(f"SQLite error getting miners by controller ID {controller_id}: {e}")
+            self.logger.error(
+                f"SQLite error getting miners by controller ID {controller_id}: {e}"
+            )
             return []
         finally:
             if conn:
                 conn.close()
 
+
 class InMemoryMinerControllerRepository(MinerControllerRepository):
     """In-Memory implementation for the Miner Controller Repository."""
-    def __init__(self, initial_miner_controllers: Optional[Dict[EntityId, MinerController]] = None):
-        self._miner_controllers: Dict[EntityId, MinerController] = copy.deepcopy(initial_miner_controllers) if initial_miner_controllers else {}
+
+    def __init__(
+        self,
+        initial_miner_controllers: Optional[Dict[EntityId, MinerController]] = None,
+    ):
+        self._miner_controllers: Dict[EntityId, MinerController] = (
+            copy.deepcopy(initial_miner_controllers)
+            if initial_miner_controllers
+            else {}
+        )
 
     def add(self, miner_controller: MinerController) -> None:
         """Add a miner controller to the In-Memory repository."""
         if miner_controller.id in self._miner_controllers:
             # Handle update or raise error depending on desired behavior
-            print(f"Warning: Miner Controller {miner_controller.id} already exists, overwriting.")
+            print(
+                f"Warning: Miner Controller {miner_controller.id} already exists, overwriting."
+            )
         self._miner_controllers[miner_controller.id] = copy.deepcopy(miner_controller)
 
     def get_by_id(self, miner_controller_id: EntityId) -> Optional[MinerController]:
@@ -330,7 +399,9 @@ class InMemoryMinerControllerRepository(MinerControllerRepository):
     def update(self, miner_controller: MinerController) -> None:
         """Update a miner controller in the In-Memory repository."""
         if miner_controller.id not in self._miner_controllers:
-            raise ValueError(f"Miner Controller {miner_controller.id} not found for update.")
+            raise ValueError(
+                f"Miner Controller {miner_controller.id} not found for update."
+            )
         self._miner_controllers[miner_controller.id] = copy.deepcopy(miner_controller)
 
     def remove(self, miner_controller_id: EntityId) -> None:
@@ -338,12 +409,20 @@ class InMemoryMinerControllerRepository(MinerControllerRepository):
         if miner_controller_id in self._miner_controllers:
             del self._miner_controllers[miner_controller_id]
 
-    def get_by_external_service_id(self, external_service_id: EntityId) -> List[MinerController]:
+    def get_by_external_service_id(
+        self, external_service_id: EntityId
+    ) -> List[MinerController]:
         """Get all miner controllers associated with a specific external service ID."""
-        return [
-            copy.deepcopy(mc) for mc in self._miner_controllers.values()
-            if mc.external_service_id == external_service_id
-        ] if external_service_id else []
+        return (
+            [
+                copy.deepcopy(mc)
+                for mc in self._miner_controllers.values()
+                if mc.external_service_id == external_service_id
+            ]
+            if external_service_id
+            else []
+        )
+
 
 class SqliteMinerControllerRepository(MinerControllerRepository):
     """SQLite implementation for the Miner Controller Repository."""
@@ -356,8 +435,10 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
 
     def _create_tables(self):
         """Create the necessary tables for the Miner Controller if they do not exist."""
-        self.logger.debug(f"Ensuring SQLite tables exist for "
-                        f"Miner Controller Repository in {self._db.db_path}...")
+        self.logger.debug(
+            f"Ensuring SQLite tables exist for "
+            f"Miner Controller Repository in {self._db.db_path}..."
+        )
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS miner_controllers (
@@ -376,19 +457,19 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                 for statement in sql_statements:
                     cursor.execute(statement)
 
-                self.logger.debug("Miner Controllers tables checked/created successfully.")
+                self.logger.debug(
+                    "Miner Controllers tables checked/created successfully."
+                )
         except sqlite3.Error as e:
             self.logger.error(f"Error creating SQLite tables: {e}")
             raise ConfigurationError(f"DB error creating tables: {e}") from e
         finally:
             if conn:
                 conn.close()
-    
+
     def _deserialize_config(
-            self,
-            adapter_type: MinerControllerAdapter,
-            config_json: str
-        ) -> MinerControllerConfig:
+        self, adapter_type: MinerControllerAdapter, config_json: str
+    ) -> MinerControllerConfig:
         """Deserialize a JSON string into MinerControllerConfig object."""
         data: dict = json.loads(config_json)
 
@@ -397,7 +478,9 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                 f"Error reading MinerController configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: MinerControllerConfig = MINER_CONTROLLER_CONFIG_TYPE_MAP.get(adapter_type)
+        config_class: MinerControllerConfig = MINER_CONTROLLER_CONFIG_TYPE_MAP.get(
+            adapter_type
+        )
         if not config_class:
             raise MinerControllerConfigurationError(
                 f"Error creating MinerController configuration. Type '{adapter_type}'"
@@ -413,20 +496,23 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
             miner_controller_type = MinerControllerAdapter(row["adapter_type"])
 
             # Deserialize the config from the database row
-            config = self._deserialize_config(
-                miner_controller_type,
-                row['config']
-            )
+            config = self._deserialize_config(miner_controller_type, row["config"])
 
             return MinerController(
                 id=EntityId(row["id"]),
                 name=row["name"],
                 adapter_type=miner_controller_type,
                 config=config,
-                external_service_id=EntityId(row['external_service_id']) if row['external_service_id'] else None
+                external_service_id=(
+                    EntityId(row["external_service_id"])
+                    if row["external_service_id"]
+                    else None
+                ),
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(f"Error deserializing MinerController from DB row: {row}. Error: {e}")
+            self.logger.error(
+                f"Error deserializing MinerController from DB row: {row}. Error: {e}"
+            )
             return None
 
     def add(self, miner_controller: MinerController) -> None:
@@ -444,19 +530,28 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
 
             with conn:
                 cursor = conn.cursor()
-                cursor.execute(sql, (
-                    miner_controller.id,
-                    miner_controller.name,
-                    miner_controller.adapter_type.value,
-                    config_json,
-                    miner_controller.external_service_id
-                ))
+                cursor.execute(
+                    sql,
+                    (
+                        miner_controller.id,
+                        miner_controller.name,
+                        miner_controller.adapter_type.value,
+                        config_json,
+                        miner_controller.external_service_id,
+                    ),
+                )
         except sqlite3.IntegrityError as e:
-            self.logger.error(f"Integrity error adding miner controller {miner_controller.id}: {e}")
+            self.logger.error(
+                f"Integrity error adding miner controller {miner_controller.id}: {e}"
+            )
             # Could mean that the ID already exists
-            raise MinerControllerAlreadyExistsError(f"Miner Controller with ID {miner_controller.id} already exists or constraint violation: {e}") from e
+            raise MinerControllerAlreadyExistsError(
+                f"Miner Controller with ID {miner_controller.id} already exists or constraint violation: {e}"
+            ) from e
         except sqlite3.Error as e:
-            self.logger.error(f"SQLite error adding miner controller {miner_controller.id}: {e}")
+            self.logger.error(
+                f"SQLite error adding miner controller {miner_controller.id}: {e}"
+            )
             raise MinerControllerError(f"DB error adding miner controller: {e}") from e
         finally:
             if conn:
@@ -464,7 +559,9 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
 
     def get_by_id(self, miner_controller_id: EntityId) -> Optional[MinerController]:
         """Get a miner controller by ID from the SQLite database."""
-        self.logger.debug(f"Getting miner controller {miner_controller_id} from SQLite.")
+        self.logger.debug(
+            f"Getting miner controller {miner_controller_id} from SQLite."
+        )
 
         sql = "SELECT * FROM miner_controllers WHERE id = ?"
         conn = self._db.get_connection()
@@ -474,8 +571,10 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
             row = cursor.fetchone()
             return self._row_to_miner_controller(row)
         except sqlite3.Error as e:
-            self.logger.error(f"SQLite error getting miner controller {miner_controller_id}: {e}")
-            return None # Or raise exception? Returning None is more forgiving
+            self.logger.error(
+                f"SQLite error getting miner controller {miner_controller_id}: {e}"
+            )
+            return None  # Or raise exception? Returning None is more forgiving
         finally:
             if conn:
                 conn.close()
@@ -519,25 +618,36 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
 
             with conn:
                 cursor = conn.cursor()
-                cursor.execute(sql, (
-                    miner_controller.name,
-                    miner_controller.adapter_type.value,
-                    config_json,
-                    miner_controller.external_service_id,
-                    miner_controller.id
-                ))
+                cursor.execute(
+                    sql,
+                    (
+                        miner_controller.name,
+                        miner_controller.adapter_type.value,
+                        config_json,
+                        miner_controller.external_service_id,
+                        miner_controller.id,
+                    ),
+                )
                 if cursor.rowcount == 0:
-                    raise MinerControllerNotFoundError(f"No miner controller found with ID {miner_controller.id} for update.")
+                    raise MinerControllerNotFoundError(
+                        f"No miner controller found with ID {miner_controller.id} for update."
+                    )
         except sqlite3.Error as e:
-            self.logger.error(f"SQLite error updating miner controller {miner_controller.id}: {e}")
-            raise MinerControllerError(f"DB error updating miner controller: {e}") from e
+            self.logger.error(
+                f"SQLite error updating miner controller {miner_controller.id}: {e}"
+            )
+            raise MinerControllerError(
+                f"DB error updating miner controller: {e}"
+            ) from e
         finally:
             if conn:
                 conn.close()
 
     def remove(self, miner_controller_id: EntityId) -> None:
         """Remove a miner controller from the SQLite database."""
-        self.logger.debug(f"Removing miner controller {miner_controller_id} from SQLite.")
+        self.logger.debug(
+            f"Removing miner controller {miner_controller_id} from SQLite."
+        )
 
         sql = "DELETE FROM miner_controllers WHERE id = ?"
         conn = self._db.get_connection()
@@ -546,18 +656,28 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                 cursor = conn.cursor()
                 cursor.execute(sql, (miner_controller_id,))
                 if cursor.rowcount == 0:
-                    self.logger.warning(f"Attempt to remove non-existent miner controller with ID {miner_controller_id}.")
+                    self.logger.warning(
+                        f"Attempt to remove non-existent miner controller with ID {miner_controller_id}."
+                    )
                     # There is no need to raise an exception here, removing a non-existent is idempotent.
         except sqlite3.Error as e:
-            self.logger.error(f"SQLite error removing miner controller {miner_controller_id}: {e}")
-            raise MinerControllerError(f"DB error removing miner controller: {e}") from e
+            self.logger.error(
+                f"SQLite error removing miner controller {miner_controller_id}: {e}"
+            )
+            raise MinerControllerError(
+                f"DB error removing miner controller: {e}"
+            ) from e
         finally:
             if conn:
                 conn.close()
 
-    def get_by_external_service_id(self, external_service_id: EntityId) -> List[MinerController]:
+    def get_by_external_service_id(
+        self, external_service_id: EntityId
+    ) -> List[MinerController]:
         """Get all miner controllers associated with a specific external service ID."""
-        self.logger.debug(f"Getting miner controllers for external service ID {external_service_id} from SQLite.")
+        self.logger.debug(
+            f"Getting miner controllers for external service ID {external_service_id} from SQLite."
+        )
 
         sql = "SELECT * FROM miner_controllers WHERE external_service_id = ?"
         conn = self._db.get_connection()
@@ -572,7 +692,9 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                     miner_controllers.append(miner_controller)
             return miner_controllers
         except sqlite3.Error as e:
-            self.logger.error(f"SQLite error getting miner controllers by external service ID {external_service_id}: {e}")
+            self.logger.error(
+                f"SQLite error getting miner controllers by external service ID {external_service_id}: {e}"
+            )
             return []
         finally:
             if conn:

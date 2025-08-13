@@ -1,15 +1,17 @@
-""""Collection of Aggregate Roots for the Forecast domain of the Edge Mining application."""
+""" "Collection of Aggregate Roots for the Forecast domain of the Edge Mining application."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from datetime import datetime, timedelta
+from typing import List, Optional
 
-from edge_mining.domain.common import AggregateRoot, Timestamp, Watts, WattHours
+from edge_mining.domain.common import AggregateRoot, Timestamp, WattHours, Watts
 from edge_mining.domain.forecast.value_objects import ForecastInterval
+
 
 @dataclass
 class Forecast(AggregateRoot):
     """Aggregate Root for the Forecast domain."""
+
     timestamp: Timestamp = field(default_factory=datetime.now)
     intervals: List[ForecastInterval] = field(default_factory=list)
 
@@ -115,12 +117,12 @@ class Forecast(AggregateRoot):
 
         for point in total_points:
             if point.timestamp == time:
-                return point.power # Exact match
+                return point.power  # Exact match
             if point.timestamp < time:
                 point_first = point
             elif point.timestamp > time:
                 point_last = point
-                break # If we found a point after the time, we can stop
+                break  # If we found a point after the time, we can stop
 
         # If we don't have both points, we can't interpolate
         if point_first is None or point_last is None:
@@ -132,11 +134,15 @@ class Forecast(AggregateRoot):
         if time_diff == 0:
             return point_first.power
         ratio = time_diff_target / time_diff
-        interpolated_power = point_first.power + (point_last.power - point_first.power) * ratio
+        interpolated_power = (
+            point_first.power + (point_last.power - point_first.power) * ratio
+        )
         interpolated_power = round(interpolated_power, 3)  # Round to 3 decimal places
         return Watts(interpolated_power)
 
-    def get_energy_over_interval(self, start: Timestamp, end: Timestamp) -> Optional[WattHours]:
+    def get_energy_over_interval(
+        self, start: Timestamp, end: Timestamp
+    ) -> Optional[WattHours]:
         """Get the total energy forecasted over a specific time interval."""
         total_energy = WattHours(0.0)
 

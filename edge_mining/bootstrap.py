@@ -2,48 +2,27 @@
 
 import os
 
-from edge_mining.domain.energy.ports import (
-    EnergySourceRepository,
-    EnergyMonitorRepository,
-)
-from edge_mining.domain.miner.ports import MinerRepository
-from edge_mining.domain.forecast.ports import ForecastProviderRepository
-from edge_mining.domain.home_load.ports import (
-    HomeForecastProviderPort,
-    HomeLoadsProfileRepository,
-    HomeForecastProviderRepository,
-)
-
-from edge_mining.domain.notification.ports import NotifierRepository
-from edge_mining.domain.policy.ports import OptimizationPolicyRepository
-from edge_mining.domain.performance.ports import (
-    MiningPerformanceTrackerRepository
-)
-from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
-
-from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
-
 from edge_mining.adapters.domain.energy.repositories import (
     InMemoryEnergyMonitorRepository,
     InMemoryEnergySourceRepository,
     SqliteEnergyMonitorRepository,
     SqliteEnergySourceRepository,
 )
-from edge_mining.adapters.domain.miner.repositories import (
-    InMemoryMinerRepository,
-    InMemoryMinerControllerRepository,
-    SqliteMinerRepository,
-    SqliteMinerControllerRepository,
-)
 from edge_mining.adapters.domain.forecast.repositories import (
     InMemoryForecastProviderRepository,
     SqliteForecastProviderRepository,
 )
 from edge_mining.adapters.domain.home_load.repositories import (
-    InMemoryHomeLoadsProfileRepository,
-    SqliteHomeLoadsProfileRepository,
     InMemoryHomeForecastProviderRepository,
+    InMemoryHomeLoadsProfileRepository,
     SqliteHomeForecastProviderRepository,
+    SqliteHomeLoadsProfileRepository,
+)
+from edge_mining.adapters.domain.miner.repositories import (
+    InMemoryMinerControllerRepository,
+    InMemoryMinerRepository,
+    SqliteMinerControllerRepository,
+    SqliteMinerRepository,
 )
 from edge_mining.adapters.domain.notification.repositories import (
     InMemoryNotifierRepository,
@@ -53,14 +32,14 @@ from edge_mining.adapters.domain.optimization_unit.repositories import (
     InMemoryOptimizationUnitRepository,
     SqliteOptimizationUnitRepository,
 )
+from edge_mining.adapters.domain.performance.repositories import (
+    InMemoryMiningPerformanceTrackerRepository,
+    SqliteMiningPerformanceTrackerRepository,
+)
 from edge_mining.adapters.domain.policy.repositories import (
     InMemoryOptimizationPolicyRepository,
     SqliteOptimizationPolicyRepository,
     YamlOptimizationPolicyRepository,
-)
-from edge_mining.adapters.domain.performance.repositories import (
-    InMemoryMiningPerformanceTrackerRepository,
-    SqliteMiningPerformanceTrackerRepository,
 )
 from edge_mining.adapters.domain.user.repositories import (
     InMemorySettingsRepository,
@@ -70,22 +49,34 @@ from edge_mining.adapters.infrastructure.external_services.repositories import (
     InMemoryExternalServiceRepository,
     SqliteExternalServiceRepository,
 )
-
-from edge_mining.application.interfaces import SunFactoryInterface
+from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 from edge_mining.adapters.infrastructure.sun.factories import AstralSunFactory
-
-from edge_mining.shared.settings.common import PersistenceAdapter
-
-from edge_mining.shared.logging.port import LoggerPort
-from edge_mining.shared.settings.settings import AppSettings
-from edge_mining.shared.settings.ports import SettingsRepository
+from edge_mining.application.interfaces import SunFactoryInterface
+from edge_mining.application.services.adapter_service import AdapterService
+from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.services.miner_action_service import MinerActionService
+from edge_mining.application.services.optimization_service import OptimizationService
+from edge_mining.domain.energy.ports import (
+    EnergyMonitorRepository,
+    EnergySourceRepository,
+)
+from edge_mining.domain.forecast.ports import ForecastProviderRepository
+from edge_mining.domain.home_load.ports import (
+    HomeForecastProviderPort,
+    HomeForecastProviderRepository,
+    HomeLoadsProfileRepository,
+)
+from edge_mining.domain.miner.ports import MinerRepository
+from edge_mining.domain.notification.ports import NotifierRepository
+from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
+from edge_mining.domain.performance.ports import MiningPerformanceTrackerRepository
+from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.shared.external_services.ports import ExternalServiceRepository
 from edge_mining.shared.infrastructure import PersistenceSettings, Services
-
-from edge_mining.application.services.miner_action_service import MinerActionService
-from edge_mining.application.services.configuration_service import ConfigurationService
-from edge_mining.application.services.optimization_service import OptimizationService
-from edge_mining.application.services.adapter_service import AdapterService
+from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.shared.settings.common import PersistenceAdapter
+from edge_mining.shared.settings.ports import SettingsRepository
+from edge_mining.shared.settings.settings import AppSettings
 
 
 def configure_persistence(
@@ -190,7 +181,9 @@ def configure_persistence(
 
     # Initialize specific policies repositories based on the selected persistence adapter
     if policies_persistence_adapter == PersistenceAdapter.IN_MEMORY:
-        policy_repo: OptimizationPolicyRepository = InMemoryOptimizationPolicyRepository()
+        policy_repo: OptimizationPolicyRepository = (
+            InMemoryOptimizationPolicyRepository()
+        )
         logger.debug("Using InMemory policies persistence adapter.")
     elif policies_persistence_adapter == PersistenceAdapter.SQLITE:
         policy_repo: OptimizationPolicyRepository = SqliteOptimizationPolicyRepository(
@@ -199,8 +192,7 @@ def configure_persistence(
         logger.debug("Using SQLite policies persistence adapter.")
     elif policies_persistence_adapter == PersistenceAdapter.YAML:
         policy_repo: OptimizationPolicyRepository = YamlOptimizationPolicyRepository(
-            policies_directory=settings.yaml_policies_dir,
-            logger=logger
+            policies_directory=settings.yaml_policies_dir, logger=logger
         )
         logger.debug("Using YAML policies persistence adapter.")
 
@@ -235,7 +227,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings) -> Service
     sun_factory: SunFactoryInterface = AstralSunFactory(
         latitude=settings.latitude,
         longitude=settings.longitude,
-        timezone=settings.timezone
+        timezone=settings.timezone,
     )
 
     # --- Persistence ---

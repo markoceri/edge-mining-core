@@ -1,12 +1,14 @@
 """The terminal log."""
 
-from loguru import logger
-import sys
 import json
+import sys
 import traceback
 from pprint import pformat
 
+from loguru import logger
+
 from edge_mining.shared.logging.port import LoggerPort
+
 
 class TerminalLogger(LoggerPort):
     """Terminal logger class."""
@@ -28,11 +30,11 @@ class TerminalLogger(LoggerPort):
             sys.stdout,
             level=self.log_level,
             format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-                   "<level>{level: <8}</level> | "
-                   "<level>{message}</level>",
+            "<level>{level: <8}</level> | "
+            "<level>{message}</level>",
             colorize=True,
             backtrace=False,
-            diagnose=True
+            diagnose=True,
         )
 
         # logging.basicConfig(
@@ -40,7 +42,7 @@ class TerminalLogger(LoggerPort):
         #     format='%(asctime)s - %(levelname)s - %(message)s',
         #     handlers=[logging.StreamHandler(sys.stdout)] # Log to console
         # )
-        
+
         # self.logger = logging.getLogger(self.name)
 
     def __call__(self, msg, level="DEBUG"):
@@ -89,7 +91,9 @@ class TerminalLogger(LoggerPort):
         else:
             msg = pformat(msg)
 
-        log_method = getattr(logger, level.lower(), logger.debug) # Default to debug if level is unknown
+        log_method = getattr(
+            logger, level.lower(), logger.debug
+        )  # Default to debug if level is unknown
 
         log_method(msg)
 
@@ -116,7 +120,13 @@ class TerminalLogger(LoggerPort):
     def log_examples(self):
         """Log examples for the log engine."""
 
-        for c in [self, "Hello from logging!", {"ready", "set", "go"}, [1, 4, "finchelabarcavalascialandare"], {"a": 1, "b": {"c": 2}}]:
+        for c in [
+            self,
+            "Hello from logging!",
+            {"ready", "set", "go"},
+            [1, 4, "finchelabarcavalascialandare"],
+            {"a": 1, "b": {"c": 2}},
+        ]:
             self.debug(c)
             self.info(c)
             self.warning(c)
@@ -124,9 +134,11 @@ class TerminalLogger(LoggerPort):
             self.critical(c)
 
         def intentional_error():
-            print(42/0)
+            print(42 / 0)
 
         try:
             intentional_error()
         except Exception:
-            self.error("This error is just for demonstration purposes. Don't worry, I got it covered! 😉")
+            self.error(
+                "This error is just for demonstration purposes. Don't worry, I got it covered! 😉"
+            )

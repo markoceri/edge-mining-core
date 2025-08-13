@@ -1,10 +1,11 @@
 """Collection of Ports for the Energy Optimization Unit domain of the Edge Mining application."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
+
 
 class EnergyOptimizationUnitRepository(ABC):
     """Port for the Energy Optimization Unit Repository."""
@@ -15,7 +16,9 @@ class EnergyOptimizationUnitRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_id(self, optimization_unit_id: EntityId) -> Optional[EnergyOptimizationUnit]:
+    def get_by_id(
+        self, optimization_unit_id: EntityId
+    ) -> Optional[EnergyOptimizationUnit]:
         """Get an energy optimization unit by its ID."""
         raise NotImplementedError
 

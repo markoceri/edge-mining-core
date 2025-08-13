@@ -1,15 +1,17 @@
 """Collection of Ports for the Mining Device Management domain of the Edge Mining application."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from edge_mining.domain.common import EntityId, Watts
-from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.common import MinerStatus
+from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.value_objects import HashRate
+
 
 class MinerControlPort(ABC):
     """Port for the Miner Control."""
+
     @abstractmethod
     def start_miner(self) -> bool:
         """Attempts to start the miner. Returns True on success request."""
@@ -29,11 +31,12 @@ class MinerControlPort(ABC):
     def get_miner_power(self) -> Optional[Watts]:
         """Gets the current power consumption, if available."""
         raise NotImplementedError
-    
+
     @abstractmethod
     def get_miner_hashrate(self) -> Optional[HashRate]:
         """Gets the current hash rate, if available."""
         raise NotImplementedError
+
 
 class MinerRepository(ABC):
     """Port for the Miner Repository."""
@@ -68,6 +71,7 @@ class MinerRepository(ABC):
         """Retrieves a list of miners by their associated controller ID."""
         raise NotImplementedError
 
+
 class MinerControllerRepository(ABC):
     """Port for the Miner Controller Repository."""
 
@@ -85,7 +89,7 @@ class MinerControllerRepository(ABC):
     def get_all(self) -> List[MinerController]:
         """Retrieves all miner controllers in the repository."""
         raise NotImplementedError
-    
+
     @abstractmethod
     def update(self, miner_controller: MinerController) -> None:
         """Updates the state of an existing miner controller in the repository."""
@@ -97,6 +101,8 @@ class MinerControllerRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(self, external_service_id: EntityId) -> List[MinerController]:
+    def get_by_external_service_id(
+        self, external_service_id: EntityId
+    ) -> List[MinerController]:
         """Retrieves a list of miner controlles by its associated external service ID."""
         raise NotImplementedError

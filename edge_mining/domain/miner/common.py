@@ -4,8 +4,10 @@ from enum import Enum
 
 from edge_mining.domain.common import AdapterType
 
+
 class MinerStatus(Enum):
     """Enum for the different miner statuses."""
+
     UNKNOWN = "unknown"
     OFF = "off"
     ON = "on"
@@ -13,6 +15,8 @@ class MinerStatus(Enum):
     STOPPING = "stopping"
     ERROR = "error"
 
+
 class MinerControllerAdapter(AdapterType):
     """Types of miner controller adapter."""
+
     DUMMY = "dummy"

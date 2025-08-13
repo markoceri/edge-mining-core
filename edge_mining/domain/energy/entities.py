@@ -3,24 +3,25 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from edge_mining.domain.common import Entity, Watts, EntityId
+from edge_mining.domain.common import Entity, EntityId, Watts
+from edge_mining.domain.energy.common import EnergyMonitorAdapter, EnergySourceType
 from edge_mining.domain.energy.value_objects import Battery, Grid
-from edge_mining.domain.energy.common import EnergySourceType, EnergyMonitorAdapter
-
 from edge_mining.shared.interfaces.config import EnergyMonitorConfig
+
 
 @dataclass
 class EnergySource(Entity):
     """Entity for an energy source."""
+
     name: str = ""
     type: EnergySourceType = EnergySourceType.SOLAR
     nominal_power_max: Optional[Watts] = None
     storage: Optional[Battery] = None
     grid: Optional[Grid] = None
-    external_source: Optional[Watts] = None # e.g., external generator
+    external_source: Optional[Watts] = None  # e.g., external generator
 
-    energy_monitor_id: Optional[EntityId] = None # Energy monitor to be used
-    forecast_provider_id: Optional[EntityId] = None # Forecast provider to be used
+    energy_monitor_id: Optional[EntityId] = None  # Energy monitor to be used
+    forecast_provider_id: Optional[EntityId] = None  # Forecast provider to be used
 
     def connect_to_grid(self, grid: Grid):
         """Connect to the grid."""
@@ -54,9 +55,11 @@ class EnergySource(Entity):
         """Use a forecast provider."""
         self.forecast_provider_id = forecast_provider_id
 
+
 @dataclass
 class EnergyMonitor(Entity):
     """Entity for an energy monitor."""
+
     name: str = ""
     adapter_type: EnergyMonitorAdapter = EnergyMonitorAdapter.DUMMY_SOLAR
     config: Optional[EnergyMonitorConfig] = None

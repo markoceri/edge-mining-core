@@ -1,111 +1,101 @@
 """Configuration service for managing all domain entities of edge mining application."""
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from edge_mining.domain.common import EntityId, Watts
-
-from edge_mining.domain.energy.common import EnergySourceType, EnergyMonitorAdapter
-from edge_mining.domain.energy.entities import EnergySource, EnergyMonitor
-from edge_mining.domain.energy.value_objects import Battery, Grid
-from edge_mining.domain.energy.ports import (
-    EnergySourceRepository,
-    EnergyMonitorRepository,
-)
+from edge_mining.domain.energy.common import EnergyMonitorAdapter, EnergySourceType
+from edge_mining.domain.energy.entities import EnergyMonitor, EnergySource
 from edge_mining.domain.energy.exceptions import (
-    EnergySourceNotFoundError,
-    EnergyMonitorNotFoundError,
     EnergyMonitorConfigurationError,
+    EnergyMonitorNotFoundError,
+    EnergySourceNotFoundError,
 )
-
+from edge_mining.domain.energy.ports import (
+    EnergyMonitorRepository,
+    EnergySourceRepository,
+)
+from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
-from edge_mining.domain.forecast.ports import ForecastProviderRepository
 from edge_mining.domain.forecast.exceptions import (
-    ForecastProviderNotFoundError,
     ForecastProviderConfigurationError,
+    ForecastProviderNotFoundError,
 )
-
-from edge_mining.domain.miner.common import MinerStatus, MinerControllerAdapter
-from edge_mining.domain.miner.entities import Miner, MinerController
-from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.miner.ports import MinerRepository, MinerControllerRepository
-from edge_mining.domain.miner.exceptions import (
-    MinerNotFoundError,
-    MinerControllerNotFoundError,
-    MinerControllerConfigurationError,
-)
-
-from edge_mining.domain.policy.common import RuleType, MiningDecision
-from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
-from edge_mining.domain.policy.ports import OptimizationPolicyRepository
-from edge_mining.domain.policy.exceptions import (
-    PolicyError, PolicyNotFoundError, PolicyConfigurationError
-)
-
+from edge_mining.domain.forecast.ports import ForecastProviderRepository
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.home_load.entities import HomeForecastProvider
+from edge_mining.domain.home_load.exceptions import HomeForecastProviderNotFoundError
 from edge_mining.domain.home_load.ports import HomeForecastProviderRepository
-from edge_mining.domain.home_load.exceptions import (
-    HomeForecastProviderNotFoundError
+from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
+from edge_mining.domain.miner.entities import Miner, MinerController
+from edge_mining.domain.miner.exceptions import (
+    MinerControllerConfigurationError,
+    MinerControllerNotFoundError,
+    MinerNotFoundError,
 )
-
-from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter
-from edge_mining.domain.performance.entities import MiningPerformanceTracker
-from edge_mining.domain.performance.ports import MiningPerformanceTrackerRepository
-from edge_mining.domain.performance.exceptions import (
-    MiningPerformanceTrackerNotFoundError
+from edge_mining.domain.miner.ports import MinerControllerRepository, MinerRepository
+from edge_mining.domain.miner.value_objects import HashRate
+from edge_mining.domain.notification.common import NotificationAdapter
+from edge_mining.domain.notification.entities import Notifier
+from edge_mining.domain.notification.exceptions import (
+    NotifierConfigurationError,
+    NotifierNotFoundError,
 )
-
+from edge_mining.domain.notification.ports import NotifierRepository
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
-from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
 from edge_mining.domain.optimization_unit.exceptions import (
     OptimizationUnitNotFoundError,
 )
-
-from edge_mining.domain.notification.entities import Notifier
-from edge_mining.domain.notification.common import NotificationAdapter
-from edge_mining.domain.notification.ports import NotifierRepository
-from edge_mining.domain.notification.exceptions import (
-    NotifierNotFoundError, NotifierConfigurationError
+from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
+from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter
+from edge_mining.domain.performance.entities import MiningPerformanceTracker
+from edge_mining.domain.performance.exceptions import (
+    MiningPerformanceTrackerNotFoundError,
 )
-
+from edge_mining.domain.performance.ports import MiningPerformanceTrackerRepository
+from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
+from edge_mining.domain.policy.common import MiningDecision, RuleType
+from edge_mining.domain.policy.entities import AutomationRule
+from edge_mining.domain.policy.exceptions import (
+    PolicyConfigurationError,
+    PolicyError,
+    PolicyNotFoundError,
+)
+from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.user.entities import SystemSettings
-
+from edge_mining.shared.adapter_maps.energy import (
+    ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP,
+    ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP,
+    ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP,
+)
+from edge_mining.shared.adapter_maps.forecast import (
+    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP,
+)
+from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
+from edge_mining.shared.adapter_maps.notification import (
+    NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP,
+)
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
+from edge_mining.shared.external_services.exceptions import (
+    ExternalServiceConfigurationError,
+    ExternalServiceNotFoundError,
+)
+from edge_mining.shared.external_services.ports import ExternalServiceRepository
 from edge_mining.shared.external_services.value_objects import (
     ExternalServiceLinkedEntities,
 )
-from edge_mining.shared.external_services.ports import ExternalServiceRepository
-from edge_mining.shared.external_services.exceptions import (
-    ExternalServiceNotFoundError,
-    ExternalServiceConfigurationError,
-)
-
-from edge_mining.shared.settings.ports import SettingsRepository
-from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.shared.infrastructure import PersistenceSettings
 from edge_mining.shared.interfaces.config import (
-    MinerControllerConfig,
-    ExternalServiceConfig,
     EnergyMonitorConfig,
+    ExternalServiceConfig,
     ForecastProviderConfig,
+    MinerControllerConfig,
     NotificationConfig,
 )
-from edge_mining.shared.infrastructure import PersistenceSettings
+from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.shared.settings.ports import SettingsRepository
 
-from edge_mining.shared.adapter_maps.energy import (
-    ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP,
-    ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP,
-    ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP,
-)
-from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
-from edge_mining.shared.adapter_maps.forecast import (
-    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP
-)
-from edge_mining.shared.adapter_maps.notification import (
-    NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP
-)
 
 class ConfigurationService:
     """Handles configuration of miners, policies, and system settings."""
@@ -408,7 +398,7 @@ class ConfigurationService:
         grid: Optional[Grid] = None,
         external_source: Optional[Watts] = None,
         energy_monitor_id: Optional[EntityId] = None,
-        forecast_provider_id: Optional[EntityId] = None
+        forecast_provider_id: Optional[EntityId] = None,
     ) -> EnergySource:
         """Update an energy source in the system."""
         self.logger.debug(f"Updating energy source {source_id} ({name})")
@@ -450,7 +440,7 @@ class ConfigurationService:
                 raise ForecastProviderNotFoundError(
                     f"Forecast Provider with ID {energy_source.forecast_provider_id} not found."
                 )
-            
+
             # Checks if the forecast provider type is compatible with the source type
             required_types = ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(
                 energy_source.type, None
@@ -469,9 +459,7 @@ class ConfigurationService:
                     )
 
             # Check if forecast provider is valid for the actual forecast provider type
-            if not provider.config.is_valid(
-                provider.adapter_type
-            ):
+            if not provider.config.is_valid(provider.adapter_type):
                 raise ForecastProviderConfigurationError(
                     f"Missmatch between Forecast Provider {provider.id} configuration and "
                     f"adapter type {provider.adapter_type} for Energy Source {energy_source.name}."
@@ -886,40 +874,46 @@ class ConfigurationService:
         return self.optimization_unit_repo.get_all()
 
     def filter_optimization_units(
-            self,
-            filter_by_miners: Optional[List[EntityId]] = None,
-            filter_by_energy_source: Optional[EntityId] = None,
-            filter_by_policy: Optional[EntityId] = None,
-            filter_by_home_forecast_provider: Optional[EntityId] = None,
-            filter_by_performance_tracker: Optional[EntityId] = None,
-            filter_by_notifiers: Optional[List[EntityId]] = None
-        ) -> List[EnergyOptimizationUnit]:
+        self,
+        filter_by_miners: Optional[List[EntityId]] = None,
+        filter_by_energy_source: Optional[EntityId] = None,
+        filter_by_policy: Optional[EntityId] = None,
+        filter_by_home_forecast_provider: Optional[EntityId] = None,
+        filter_by_performance_tracker: Optional[EntityId] = None,
+        filter_by_notifiers: Optional[List[EntityId]] = None,
+    ) -> List[EnergyOptimizationUnit]:
         """Filter optimization units based on various criteria."""
         eous = self.list_optimization_units()
 
         if filter_by_miners is not None:
             eous = [
-                eou for eou in eous if set(eou.target_miner_ids).intersection(filter_by_miners)
+                eou
+                for eou in eous
+                if set(eou.target_miner_ids).intersection(filter_by_miners)
             ]
         if filter_by_energy_source is not None:
             eous = [
                 eou for eou in eous if eou.energy_source_id == filter_by_energy_source
             ]
         if filter_by_policy is not None:
-            eous = [
-                eou for eou in eous if eou.policy_id == filter_by_policy
-            ]
+            eous = [eou for eou in eous if eou.policy_id == filter_by_policy]
         if filter_by_home_forecast_provider is not None:
             eous = [
-                eou for eou in eous if eou.home_forecast_provider_id == filter_by_home_forecast_provider
+                eou
+                for eou in eous
+                if eou.home_forecast_provider_id == filter_by_home_forecast_provider
             ]
         if filter_by_performance_tracker is not None:
             eous = [
-                eou for eou in eous if eou.performance_tracker_id == filter_by_performance_tracker
+                eou
+                for eou in eous
+                if eou.performance_tracker_id == filter_by_performance_tracker
             ]
         if filter_by_notifiers is not None:
             eous = [
-                eou for eou in eous if set(eou.notifier_ids).intersection(filter_by_notifiers)
+                eou
+                for eou in eous
+                if set(eou.notifier_ids).intersection(filter_by_notifiers)
             ]
         return eous
 
@@ -1233,8 +1227,8 @@ class ConfigurationService:
         return optimization_unit
 
     def check_optimization_unit(
-            self, optimization_unit: EnergyOptimizationUnit
-        ) -> bool:
+        self, optimization_unit: EnergyOptimizationUnit
+    ) -> bool:
         """Check if an optimization unit is valid and can be used."""
         self.logger.debug(
             f"Checking optimization unit {optimization_unit.id} ({optimization_unit.name})"
@@ -1245,7 +1239,9 @@ class ConfigurationService:
 
         # Check id the policy is valid
         if optimization_unit.policy_id:
-            policy: OptimizationPolicy = self.policy_repo.get_by_id(optimization_unit.policy_id)
+            policy: OptimizationPolicy = self.policy_repo.get_by_id(
+                optimization_unit.policy_id
+            )
             if not policy:
                 raise PolicyNotFoundError(
                     f"Optimization Policy with ID {optimization_unit.policy_id} not found."
@@ -1455,7 +1451,7 @@ class ConfigurationService:
         name: str,
         adapter: MinerControllerAdapter,
         config: MinerControllerConfig,
-        external_service_id: Optional[EntityId] = None
+        external_service_id: Optional[EntityId] = None,
     ) -> MinerController:
         """Add a miner controller to the system."""
         self.logger.info(f"Adding miner controller '{name}' with adapter {adapter}")
@@ -1464,7 +1460,7 @@ class ConfigurationService:
             name=name,
             adapter_type=adapter,
             config=config,
-            external_service_id=external_service_id
+            external_service_id=external_service_id,
         )
 
         self.miner_controller_repo.add(controller)
@@ -1555,7 +1551,7 @@ class ConfigurationService:
 
         controller.name = name
         controller.config = config
-        
+
         self.check_miner_controller(controller)
 
         self.miner_controller_repo.update(controller)
@@ -1649,7 +1645,7 @@ class ConfigurationService:
         notifier_id: EntityId,
         name: str,
         adapter_type: str,  # Sostituisci con enum/adapter se esiste
-        config: Any,        # Sostituisci con NotifierConfig se esiste
+        config: Any,  # Sostituisci con NotifierConfig se esiste
         external_service_id: Optional[EntityId] = None,
     ) -> Notifier:
         """Update a notifier in the system."""
@@ -1681,12 +1677,15 @@ class ConfigurationService:
                 raise ExternalServiceNotFoundError(
                     f"External Service with ID {notifier.external_service_id} not found."
                 )
-            
+
             # Checks if the external service is compatible with the notifier's adapter type
             requied_external_service_type = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(
                 notifier.adapter_type, None
             )
-            if requied_external_service_type and external_service.type != requied_external_service_type:
+            if (
+                requied_external_service_type
+                and external_service.type != requied_external_service_type
+            ):
                 raise NotifierConfigurationError(
                     f"External Service {external_service.id} is not compatible with Notifier {notifier.name} "
                     f"using adapter {notifier.adapter_type}. Expected type {requied_external_service_type}."
@@ -1700,15 +1699,11 @@ class ConfigurationService:
                 f"Invalid configuration for Notifier {notifier.name} with adapter {notifier.adapter_type}."
             )
 
-        self.logger.debug(
-            f"Notifier {notifier.id} ({notifier.name}) is valid."
-        )
+        self.logger.debug(f"Notifier {notifier.id} ({notifier.name}) is valid.")
         return True
 
     # --- Policy Management ---
-    def create_policy(
-        self, name: str, description: str = ""
-    ) -> OptimizationPolicy:
+    def create_policy(self, name: str, description: str = "") -> OptimizationPolicy:
         """Create a new policy."""
         self.logger.info(f"Creating policy '{name}'")
 
@@ -1732,7 +1727,7 @@ class ConfigurationService:
         rule_type: RuleType,
         name: str,
         priority: int,
-        conditions: Dict
+        conditions: Dict,
     ) -> AutomationRule:
         """Add a rule to a policy."""
         policy = self.policy_repo.get_by_id(policy_id)
@@ -1751,7 +1746,9 @@ class ConfigurationService:
             )
 
         self.policy_repo.update(policy)
-        self.logger.debug(f"Added {rule_type.value} rule '{name}' to policy '{policy.name}'")
+        self.logger.debug(
+            f"Added {rule_type.value} rule '{name}' to policy '{policy.name}'"
+        )
 
         return rule
 
@@ -1795,7 +1792,7 @@ class ConfigurationService:
         name: str,
         priority: int,
         enabled: bool,
-        conditions: Dict
+        conditions: Dict,
     ) -> AutomationRule:
         """Update a rule in a policy."""
         policy = self.policy_repo.get_by_id(policy_id)
@@ -1858,11 +1855,13 @@ class ConfigurationService:
                 break
 
         if not rule:
-            raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+            raise PolicyError(
+                f"Rule with ID {rule_id} not found in policy {policy_id}."
+            )
 
         # Set the rule as enabled
         rule.enabled = True
-        self.policy_repo.update(policy) # Persist change for each policy
+        self.policy_repo.update(policy)  # Persist change for each policy
 
     def delete_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
         """Delete a policy from the system."""
@@ -1902,11 +1901,11 @@ class ConfigurationService:
         return True
 
     def update_policy(
-            self,
-            policy_id: EntityId,
-            name: str,
-            description: str = "",
-        ) -> OptimizationPolicy:
+        self,
+        policy_id: EntityId,
+        name: str,
+        description: str = "",
+    ) -> OptimizationPolicy:
         """Update a policy in the system."""
         self.logger.info(f"Updating policy {policy_id} ({name})")
 
@@ -1921,10 +1920,7 @@ class ConfigurationService:
         self.logger.debug(f"Updated policy {name} ({policy_id})")
         self.policy_repo.update(policy)
 
-    def sort_policy_rules(
-            self,
-            policy_id: EntityId
-        ) -> None:
+    def sort_policy_rules(self, policy_id: EntityId) -> None:
         """Sort the rules of a policy by priority."""
         policy = self.policy_repo.get_by_id(policy_id)
 

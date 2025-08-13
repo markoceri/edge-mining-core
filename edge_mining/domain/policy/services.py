@@ -6,8 +6,10 @@ from typing import List
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.value_objects import DecisionalContext
 
+
 class RuleEngine(ABC):
     """Domain service for rule evaluation."""
+
     @abstractmethod
     def load_rules(self, rules: List[AutomationRule]) -> None:
         """

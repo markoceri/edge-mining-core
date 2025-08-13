@@ -1,29 +1,23 @@
 """Repositories for Forecast Domain."""
 
-import sqlite3
 import json
-
+import sqlite3
 from typing import List, Optional
 
+from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.exceptions import ConfigurationError
-
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
-from edge_mining.domain.forecast.ports import ForecastProviderRepository
 from edge_mining.domain.forecast.exceptions import (
-    ForecastProviderError,
-    ForecastProviderNotFoundError,
     ForecastProviderAlreadyExistsError,
     ForecastProviderConfigurationError,
+    ForecastProviderError,
+    ForecastProviderNotFoundError,
 )
-
-from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
-
+from edge_mining.domain.forecast.ports import ForecastProviderRepository
+from edge_mining.shared.adapter_maps.forecast import FORECAST_PROVIDER_CONFIG_TYPE_MAP
 from edge_mining.shared.interfaces.config import ForecastProviderConfig
-from edge_mining.shared.adapter_maps.forecast import (
-    FORECAST_PROVIDER_CONFIG_TYPE_MAP,
-)
 
 # Simple In-Memory implementation for testing and basic use
 

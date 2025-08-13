@@ -1,28 +1,34 @@
 """API Router for miner domain"""
 
-from typing import List, Annotated
+from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, HTTPException
 
-from edge_mining.application.services.configuration_service import ConfigurationService
-from edge_mining.application.services.miner_action_service import MinerActionService
-
-from edge_mining.domain.common import EntityId
-from edge_mining.domain.miner.exceptions import MinerNotFoundError
-
 from edge_mining.adapters.domain.miner.fast_api.schemas import (
-    MinerResponseSchema, MinerCreateSchema, MinerUpdateSchema,
-    MinerStatusSchema
+    MinerCreateSchema,
+    MinerResponseSchema,
+    MinerStatusSchema,
+    MinerUpdateSchema,
 )
 
 # Import the dependency injection function defined in main_api.py
-from edge_mining.adapters.infrastructure.api.main_api import get_config_service
-from edge_mining.adapters.infrastructure.api.main_api import get_miner_action_service
+from edge_mining.adapters.infrastructure.api.main_api import (
+    get_config_service,
+    get_miner_action_service,
+)
+from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.services.miner_action_service import MinerActionService
+from edge_mining.domain.common import EntityId
+from edge_mining.domain.miner.exceptions import MinerNotFoundError
 
 router = APIRouter()
 
-@router.get("/miners", response_model=List[MinerResponseSchema]) # Use DTOs directly or a Pydantic schema
+
+@router.get(
+    "/miners", response_model=List[MinerResponseSchema]
+)  # Use DTOs directly or a Pydantic schema
 async def get_miners_list(
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Get a list of all configured miners."""
     try:
@@ -42,7 +48,7 @@ async def get_miners_list(
                     hash_rate_max=miner.hash_rate_max,
                     power_consumption=miner.power_consumption,
                     power_consumption_max=miner.power_consumption_max,
-                    ip_address=miner.ip_address
+                    ip_address=miner.ip_address,
                 )
             )
 
@@ -50,10 +56,11 @@ async def get_miners_list(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.get("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def get_miner_details(
     miner_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Get details for a specific miner."""
     try:
@@ -68,19 +75,20 @@ async def get_miner_details(
             hash_rate_max=miner.hash_rate_max,
             power_consumption=miner.power_consumption,
             power_consumption_max=miner.power_consumption_max,
-            ip_address=miner.ip_address
+            ip_address=miner.ip_address,
         )
 
         return response
-    except MinerNotFoundError as e: # Catch specific domain errors if needed
+    except MinerNotFoundError as e:  # Catch specific domain errors if needed
         raise HTTPException(status_code=404, detail="Miner not found") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.post("/miners", response_model=MinerResponseSchema)
 async def add_miner(
     miner: MinerCreateSchema,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Add a new miner."""
     try:
@@ -89,7 +97,7 @@ async def add_miner(
             ip_address=miner.ip_address,
             hash_rate_max=miner.hash_rate_max,
             power_consumption_max=miner.power_consumption_max,
-            active=miner.active
+            active=miner.active,
         )
 
         response = MinerResponseSchema(
@@ -101,17 +109,18 @@ async def add_miner(
             hash_rate=new_miner.hash_rate,
             hash_rate_max=new_miner.hash_rate_max,
             power_consumption=new_miner.power_consumption,
-            power_consumption_max=new_miner.power_consumption_max
+            power_consumption_max=new_miner.power_consumption_max,
         )
 
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.delete("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def remove_miner(
     miner_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Remove a miner."""
     try:
@@ -126,7 +135,7 @@ async def remove_miner(
             hash_rate=deleted_miner.hash_rate,
             hash_rate_max=deleted_miner.hash_rate_max,
             power_consumption=deleted_miner.power_consumption,
-            power_consumption_max=deleted_miner.power_consumption_max
+            power_consumption_max=deleted_miner.power_consumption_max,
         )
 
         return response
@@ -135,11 +144,12 @@ async def remove_miner(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.put("/miners/{miner_id}", response_model=MinerResponseSchema)
 async def update_miner(
     miner_id: EntityId,
     miner_update: MinerUpdateSchema,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Update a miner's details."""
     try:
@@ -151,7 +161,7 @@ async def update_miner(
             ip_address=miner_update.ip_address,
             hash_rate_max=miner_update.hash_rate_max,
             power_consumption_max=miner_update.power_consumption_max,
-            active=miner.active
+            active=miner.active,
         )
 
         response = MinerResponseSchema(
@@ -163,7 +173,7 @@ async def update_miner(
             hash_rate=miner_updated.hash_rate,
             hash_rate_max=miner_updated.hash_rate_max,
             power_consumption=miner_updated.power_consumption,
-            power_consumption_max=miner_updated.power_consumption_max
+            power_consumption_max=miner_updated.power_consumption_max,
         )
 
         return response
@@ -172,11 +182,12 @@ async def update_miner(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.post("/miners/{miner_id}/start", response_model=MinerStatusSchema)
 async def start_miner(
     miner_id: EntityId,
     action_service: Annotated[MinerActionService, Depends(get_miner_action_service)],
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Start a miner."""
     try:
@@ -190,7 +201,7 @@ async def start_miner(
                 status=miner.status,
                 active=miner.active,
                 hash_rate=miner.hash_rate,
-                power_consumption=miner.power_consumption
+                power_consumption=miner.power_consumption,
             )
 
             return response
@@ -201,11 +212,12 @@ async def start_miner(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.post("/miners/{miner_id}/stop", response_model=MinerStatusSchema)
 async def stop_miner(
     miner_id: EntityId,
     action_service: Annotated[MinerActionService, Depends(get_miner_action_service)],
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Stop a miner."""
     try:
@@ -219,7 +231,7 @@ async def stop_miner(
                 status=miner.status,
                 active=miner.active,
                 hash_rate=miner.hash_rate,
-                power_consumption=miner.power_consumption
+                power_consumption=miner.power_consumption,
             )
 
             return response
@@ -230,10 +242,11 @@ async def stop_miner(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.get("/miners/{miner_id}/status", response_model=MinerStatusSchema)
 async def get_miner_status(
     miner_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Get the current status of a miner."""
     try:
@@ -244,7 +257,7 @@ async def get_miner_status(
             status=miner.status,
             active=miner.active,
             hash_rate=miner.hash_rate,
-            power_consumption=miner.power_consumption
+            power_consumption=miner.power_consumption,
         )
 
         return response
@@ -253,10 +266,11 @@ async def get_miner_status(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.post("/miners/{miner_id}/activate", response_model=MinerStatusSchema)
 async def activate_miner(
     miner_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Activate a miner."""
     try:
@@ -267,7 +281,7 @@ async def activate_miner(
             status=miner.status,
             active=miner.active,
             hash_rate=miner.hash_rate,
-            power_consumption=miner.power_consumption
+            power_consumption=miner.power_consumption,
         )
 
         return response
@@ -276,10 +290,11 @@ async def activate_miner(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+
 @router.post("/miners/{miner_id}/deactivate", response_model=MinerStatusSchema)
 async def deactivate_miner(
     miner_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)]
+    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):
     """Deactivate a miner."""
     try:
@@ -290,7 +305,7 @@ async def deactivate_miner(
             status=miner.status,
             active=miner.active,
             hash_rate=miner.hash_rate,
-            power_consumption=miner.power_consumption
+            power_consumption=miner.power_consumption,
         )
 
         return response

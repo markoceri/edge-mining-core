@@ -3,12 +3,12 @@ Collection of adapters configuration for the miner domain
 of the Edge Mining application.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 
 from edge_mining.domain.miner.common import MinerControllerAdapter
 from edge_mining.domain.miner.value_objects import HashRate
-
 from edge_mining.shared.interfaces.config import MinerControllerConfig
+
 
 @dataclass(frozen=True)
 class MinerControllerDummyConfig(MinerControllerConfig):
@@ -16,6 +16,7 @@ class MinerControllerDummyConfig(MinerControllerConfig):
     Miner controller configuration. It encapsulate the configuration parameters
     to control a miner with dummy controller.
     """
+
     initial_status: str = field(default="UNKNOWN")
     power_max: float = field(default="3200.0")
     hashrate_max: float = field(default=HashRate(90, "TH/s"))
@@ -35,4 +36,3 @@ class MinerControllerDummyConfig(MinerControllerConfig):
     def from_dict(cls, data: dict):
         """Create a configuration object from a dictionary"""
         return cls(**data)
-

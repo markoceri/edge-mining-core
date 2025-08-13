@@ -3,11 +3,11 @@ Collection of adapters configuration for the home load forecast domain
 of the Edge Mining application.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
-
 from edge_mining.shared.interfaces.config import HomeForecastProviderConfig
+
 
 @dataclass(frozen=True)
 class HomeForecastProviderDummyConfig(HomeForecastProviderConfig):
@@ -15,6 +15,7 @@ class HomeForecastProviderDummyConfig(HomeForecastProviderConfig):
     Home Forecast provider configuration. It encapsulate the configuration parameters
     to retrieve home forecast data from a dummy provider.
     """
+
     load_power_max: float = field(default="500.0")
 
     def is_valid(self, adapter_type: HomeForecastProviderAdapter) -> bool:

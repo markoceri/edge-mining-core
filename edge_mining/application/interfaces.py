@@ -1,34 +1,35 @@
 """Edge Mining Application Interfaces Module"""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
 
 from edge_mining.domain.common import EntityId, Watts
-
-from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.policy.value_objects import Sun
-
 from edge_mining.domain.energy.entities import EnergySource
-from edge_mining.domain.miner.entities import Miner
-
 from edge_mining.domain.energy.ports import EnergyMonitorPort
-from edge_mining.domain.miner.ports import MinerControlPort
-from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.forecast.ports import ForecastProviderPort
-from edge_mining.domain.policy.services import RuleEngine
-from edge_mining.shared.external_services.ports import ExternalServicePort
-
+from edge_mining.domain.miner.entities import Miner
+from edge_mining.domain.miner.ports import MinerControlPort
+from edge_mining.domain.miner.value_objects import HashRate
+from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.policy.aggregate_roots import (
-    OptimizationPolicy, AutomationRule, MiningDecision
+    AutomationRule,
+    MiningDecision,
+    OptimizationPolicy,
 )
 from edge_mining.domain.policy.common import RuleType
+from edge_mining.domain.policy.services import RuleEngine
+from edge_mining.domain.policy.value_objects import Sun
+from edge_mining.shared.external_services.ports import ExternalServicePort
+
 
 class AdapterServiceInterface(ABC):
     """Base interface for all adapter services in the Edge Mining application."""
 
     @abstractmethod
-    def get_energy_monitor(self, energy_source: EnergySource) -> Optional[EnergyMonitorPort]:
+    def get_energy_monitor(
+        self, energy_source: EnergySource
+    ) -> Optional[EnergyMonitorPort]:
         """Get an energy monitor adapter instance."""
         pass
 
@@ -53,22 +54,30 @@ class AdapterServiceInterface(ABC):
         pass
 
     @abstractmethod
-    def get_forecast_provider(self, energy_source: EnergySource) -> Optional[ForecastProviderPort]:
+    def get_forecast_provider(
+        self, energy_source: EnergySource
+    ) -> Optional[ForecastProviderPort]:
         """Get a forecast provider adapter instance."""
         pass
 
     @abstractmethod
-    def get_home_load_forecast_provider(self, home_forecast_provider_id: EntityId) -> Optional[ForecastProviderPort]:
+    def get_home_load_forecast_provider(
+        self, home_forecast_provider_id: EntityId
+    ) -> Optional[ForecastProviderPort]:
         """Get an home load forecast provider adapter instance."""
         pass
 
     @abstractmethod
-    def get_mining_performace_tracker(self, tracker_id: EntityId) -> Optional[ForecastProviderPort]:
+    def get_mining_performace_tracker(
+        self, tracker_id: EntityId
+    ) -> Optional[ForecastProviderPort]:
         """Get a mining performace tracker adapter instance."""
         pass
 
     @abstractmethod
-    def get_external_service(self, external_service_id: EntityId) -> Optional[ExternalServicePort]:
+    def get_external_service(
+        self, external_service_id: EntityId
+    ) -> Optional[ExternalServicePort]:
         """Get a specific external service instance by ID."""
         pass
 
@@ -97,6 +106,7 @@ class AdapterServiceInterface(ABC):
         """Remove a specific external seervice from the cache."""
         pass
 
+
 class OptimizationServiceInterface(ABC):
     """Base interface for optimization services in the Edge Mining application."""
 
@@ -105,16 +115,21 @@ class OptimizationServiceInterface(ABC):
         """Run the optimization process for all enabled units."""
         pass
 
+
 class ActionServiceInterface(ABC):
     """Base interface for action services in the Edge Mining application."""
 
     @abstractmethod
-    async def start_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
+    async def start_miner(
+        self, miner_id: EntityId, notifiers: List[NotificationPort]
+    ) -> bool:
         """Start a specific miner."""
         pass
 
     @abstractmethod
-    async def stop_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
+    async def stop_miner(
+        self, miner_id: EntityId, notifiers: List[NotificationPort]
+    ) -> bool:
         """Stop a specific miner."""
         pass
 
@@ -126,17 +141,19 @@ class ActionServiceInterface(ABC):
     def get_miner_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
         """Gets the current hash rate of the specified miner."""
 
+
 class ConfigurationServiceInterface(ABC):
     """Base interface for configuration services in the Edge Mining application."""
 
     @abstractmethod
-    def add_miner(self,
-            name: str,
-            ip_address: Optional[str] = None,
-            hash_rate_max: Optional[HashRate] = None,
-            power_consumption_max: Optional[Watts] = None,
-            active: Optional[bool] = True
-        ) -> Miner:
+    def add_miner(
+        self,
+        name: str,
+        ip_address: Optional[str] = None,
+        hash_rate_max: Optional[HashRate] = None,
+        power_consumption_max: Optional[Watts] = None,
+        active: Optional[bool] = True,
+    ) -> Miner:
         """Add a miner to the system."""
         pass
 
@@ -156,14 +173,15 @@ class ConfigurationServiceInterface(ABC):
         pass
 
     @abstractmethod
-    def update_miner(self,
-            miner_id: EntityId,
-            name: str,
-            ip_address: Optional[str] = None,
-            hash_rate_max: Optional[HashRate] = None,
-            power_consumption_max: Optional[Watts] = None,
-            active: Optional[bool] = True
-        ) -> Miner:
+    def update_miner(
+        self,
+        miner_id: EntityId,
+        name: str,
+        ip_address: Optional[str] = None,
+        hash_rate_max: Optional[HashRate] = None,
+        power_consumption_max: Optional[Watts] = None,
+        active: Optional[bool] = True,
+    ) -> Miner:
         """Update a miner in the system."""
         pass
 
@@ -183,7 +201,8 @@ class ConfigurationServiceInterface(ABC):
         self,
         name: str,
         description: str = "",
-        target_miner_ids: Optional[List[EntityId]] = None) -> OptimizationPolicy:
+        target_miner_ids: Optional[List[EntityId]] = None,
+    ) -> OptimizationPolicy:
         """Create a new policy."""
         pass
 
@@ -204,22 +223,22 @@ class ConfigurationServiceInterface(ABC):
         rule_type: RuleType,
         name: str,
         conditions: dict,
-        action: MiningDecision
+        action: MiningDecision,
     ) -> AutomationRule:
         """Add a rule to a policy."""
         pass
 
     @abstractmethod
     def get_policy_rules(
-        self,
-        policy_id: EntityId,
-        rule_type: RuleType
+        self, policy_id: EntityId, rule_type: RuleType
     ) -> List[AutomationRule]:
         """Get all rules of a policy."""
         pass
 
     @abstractmethod
-    def get_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> Optional[AutomationRule]:
+    def get_policy_rule(
+        self, policy_id: EntityId, rule_id: EntityId
+    ) -> Optional[AutomationRule]:
         """Get a rule by its ID."""
         pass
 
@@ -230,13 +249,15 @@ class ConfigurationServiceInterface(ABC):
         rule_id: EntityId,
         name: str,
         conditions: dict,
-        action: MiningDecision
+        action: MiningDecision,
     ) -> AutomationRule:
         """Update a rule in a policy."""
         pass
 
     @abstractmethod
-    def delete_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
+    def delete_policy_rule(
+        self, policy_id: EntityId, rule_id: EntityId
+    ) -> AutomationRule:
         """Delete a rule from a policy."""
         pass
 
@@ -265,6 +286,7 @@ class ConfigurationServiceInterface(ABC):
     def update_setting(self, key: str, value: any) -> None:
         """Update a setting."""
         pass
+
 
 class SunFactoryInterface(ABC):
     """Base interface for Sun factories in the Edge Mining application."""

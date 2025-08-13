@@ -1,26 +1,23 @@
 """Interfaces for the factories."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any, Dict
 
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.miner.entities import Miner
-
-from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.shared.external_services.ports import ExternalServicePort
 from edge_mining.shared.interfaces.config import Configuration, ExternalServiceConfig
+from edge_mining.shared.logging.port import LoggerPort
+
 
 class ExternalServiceFactory(ABC):
     """Abstract factory for external services"""
 
     @abstractmethod
-    def create(
-        self,
-        config: ExternalServiceConfig,
-        logger: LoggerPort
-    ) -> Any:
+    def create(self, config: ExternalServiceConfig, logger: LoggerPort) -> Any:
         """Create an external service"""
         pass
+
 
 class AdapterFactory(ABC):
     """Abstract factory for adapters"""
@@ -30,10 +27,11 @@ class AdapterFactory(ABC):
         self,
         config: Configuration,
         logger: LoggerPort,
-        external_service: ExternalServicePort
+        external_service: ExternalServicePort,
     ) -> Any:
         """Create an adapter"""
         pass
+
 
 class EnergyMonitorAdapterFactory(AdapterFactory):
     """Abstract factory for energy monitor adapters"""
@@ -43,6 +41,7 @@ class EnergyMonitorAdapterFactory(AdapterFactory):
         """Set the reference energy source"""
         pass
 
+
 class MinerControllerAdapterFactory(AdapterFactory):
     """Abstract factory for miner control adapters"""
 
@@ -51,8 +50,10 @@ class MinerControllerAdapterFactory(AdapterFactory):
         """Set the reference miner"""
         pass
 
+
 class NotificationAdapterFactory(AdapterFactory):
     """Abstract factory for notification adapters"""
+
 
 class ForecastAdapterFactory(AdapterFactory):
     """Abstract factory for forecast adapters"""

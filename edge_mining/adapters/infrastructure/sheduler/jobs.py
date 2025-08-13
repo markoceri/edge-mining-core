@@ -2,11 +2,11 @@
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from edge_mining.shared.scheduler.port import SchedulerPort
+from edge_mining.application.interfaces import OptimizationServiceInterface
 from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.shared.scheduler.port import SchedulerPort
 from edge_mining.shared.settings.settings import AppSettings
 
-from edge_mining.application.interfaces import OptimizationServiceInterface
 
 class AutomationScheduler(SchedulerPort):
     """Scheduler for running optimization jobs at regular intervals."""
@@ -15,7 +15,7 @@ class AutomationScheduler(SchedulerPort):
         self,
         optimization_service: OptimizationServiceInterface,
         logger: LoggerPort,
-        settings: AppSettings
+        settings: AppSettings,
     ):
         self.optimization_service = optimization_service
         self.logger = logger
@@ -36,14 +36,16 @@ class AutomationScheduler(SchedulerPort):
     async def start(self):
         """Adds the job and starts the scheduler."""
         interval = self.settings.scheduler_interval_seconds
-        self.logger.info(f"Starting scheduler. job |{self._job_id}| will run every {interval} seconds.")
+        self.logger.info(
+            f"Starting scheduler. job |{self._job_id}| will run every {interval} seconds."
+        )
 
         self.scheduler.add_job(
             self._run_evaluation_job,
-            'interval',
+            "interval",
             seconds=interval,
             id=self._job_id,
-            replace_existing=True
+            replace_existing=True,
         )
 
         self.logger.info("Scheduler started.")

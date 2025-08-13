@@ -1,13 +1,15 @@
 """Collection of Ports for the Energy Optimization domain of the Edge Mining application."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 
+
 class OptimizationPolicyRepository(ABC):
     """Port for the Optimization Policy Repository."""
+
     @abstractmethod
     def add(self, policy: OptimizationPolicy) -> None:
         """Adds a policy to the repository."""

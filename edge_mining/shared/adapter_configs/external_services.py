@@ -1,9 +1,10 @@
 """Collection of adapters configuration for the external services of the Edge Mining application."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import ExternalServiceConfig
+
 
 @dataclass(frozen=True)
 class ExternalServiceHomeAssistantConfig(ExternalServiceConfig):
@@ -11,6 +12,7 @@ class ExternalServiceHomeAssistantConfig(ExternalServiceConfig):
     Home Assistant external service configuration. It encapsulates the configuration parameters
     to connect to a Home Assistant instance.
     """
+
     url: str
     token: str
 

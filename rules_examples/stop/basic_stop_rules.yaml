@@ -11,7 +11,7 @@ rules:
           value: 2000  # WattHours
     priority: 100  # Highest priority for safety
     enabled: true
-    
+
   - name: "Grid Import Limit"
     description: "Stop mining when importing too much from grid"
     conditions:
@@ -21,7 +21,7 @@ rules:
           value: 200  # Importing more than 200W
     priority: 20
     enabled: true
-    
+
   - name: "High Home Consumption"
     description: "Stop mining when home load is high and battery is not full"
     conditions:
@@ -37,7 +37,7 @@ rules:
           value: [17, 18, 19, 20, 21]  # Evening hours
     priority: 20
     enabled: true
-    
+
   - name: "Maintenance Window"
     description: "Stop mining during maintenance hours"
     conditions:
@@ -50,7 +50,7 @@ rules:
           value: "ERROR"
     priority: 20
     enabled: true
-  
+
   - name: "Quiet Window"
     description: "Stop mining during quiet hours"
     conditions:

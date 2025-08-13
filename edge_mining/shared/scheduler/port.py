@@ -2,8 +2,10 @@
 
 from abc import ABC, abstractmethod
 
+
 class SchedulerPort(ABC):
     """Port for the Scheduler."""
+
     @abstractmethod
     async def start(self):
         """Starts the scheduler"""

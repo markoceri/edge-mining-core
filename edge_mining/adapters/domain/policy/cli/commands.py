@@ -1,26 +1,32 @@
 """CLI commands for the policy domain."""
 
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import click
 
+from edge_mining.adapters.infrastructure.rule_engine.common import (
+    OPERATOR_SYMBOLS,
+    OperatorType,
+)
+from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.domain.common import EntityId
-from edge_mining.domain.policy.common import MiningDecision, RuleType
+from edge_mining.domain.miner.common import MinerStatus
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
+from edge_mining.domain.policy.common import MiningDecision, RuleType
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.exceptions import PolicyError, PolicyNotFoundError
-from edge_mining.domain.miner.common import MinerStatus
-
-from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.shared.logging.port import LoggerPort
 
-from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType, OPERATOR_SYMBOLS
 
 def select_mining_decision() -> Optional[MiningDecision]:
     """Select a mining decision from the available options."""
     click.echo("Select a Mining Decision:")
     for idx, decision in enumerate(MiningDecision):
-        color = "green" if decision == MiningDecision.START_MINING else ("red" if decision == MiningDecision.STOP_MINING else "yellow")
+        color = (
+            "green"
+            if decision == MiningDecision.START_MINING
+            else ("red" if decision == MiningDecision.STOP_MINING else "yellow")
+        )
         click.echo(f"{idx}. {click.style(decision.value, fg=color)}")
 
     click.echo("")
@@ -59,7 +65,7 @@ def select_rule_type() -> Optional[RuleType]:
 def create_rule_conditions() -> Dict[str, Any]:
     """Create rule conditions interactively."""
     conditions = {}
-    
+
     click.echo(click.style("\n--- Define Rule Conditions ---", fg="yellow"))
     click.echo("Available condition types:")
     click.echo("1. Battery SOC greater than (battery_soc_gt)")
@@ -70,7 +76,7 @@ def create_rule_conditions() -> Dict[str, Any]:
 
     while True:
         choice = click.prompt("\nSelect condition type (1-5)", type=int, default=5)
-        
+
         if choice == 5:
             break
         elif choice == 1:
@@ -87,7 +93,7 @@ def create_rule_conditions() -> Dict[str, Any]:
             conditions["solar_forecast_lt"] = value
         else:
             click.echo(click.style("Invalid choice. Please try again.", fg="red"))
-    
+
     return conditions
 
 
@@ -102,28 +108,31 @@ def handle_add_optimization_policy(
 
     try:
         new_policy = configuration_service.create_policy(
-            name=name,
-            description=description
+            name=name, description=description
         )
 
         if not new_policy:
             click.echo(click.style("Failed to create optimization policy.", fg="red"))
             raise PolicyError("Policy creation failed")
 
-        click.echo(click.style(f"Optimization policy '{name}' created successfully!", fg="green"))
+        click.echo(
+            click.style(
+                f"Optimization policy '{name}' created successfully!", fg="green"
+            )
+        )
 
         click.echo()
         click.echo(
-            click.style(f"{RuleType.START.name}", fg="green") +
-            " rules are evaluated when the miner is in " + 
-            click.style(f"{MinerStatus.OFF.name}", fg="red") +
-            " status"
+            click.style(f"{RuleType.START.name}", fg="green")
+            + " rules are evaluated when the miner is in "
+            + click.style(f"{MinerStatus.OFF.name}", fg="red")
+            + " status"
         )
         click.echo(
-            click.style(f"{RuleType.STOP.name}", fg="red") +
-            " rules are evaluated when the miner is in " + 
-            click.style(f"{MinerStatus.ON.name}", fg="green") +
-            " status"
+            click.style(f"{RuleType.STOP.name}", fg="red")
+            + " rules are evaluated when the miner is in "
+            + click.style(f"{MinerStatus.ON.name}", fg="green")
+            + " status"
         )
         click.echo()
 
@@ -135,17 +144,19 @@ def handle_add_optimization_policy(
             while True:
                 rule_name = click.prompt("Start rule name", type=str)
                 conditions = create_rule_conditions()
-                
+
                 if conditions:
                     configuration_service.add_rule_to_policy(
                         policy_id=new_policy.id,
                         rule_type=RuleType.START,
                         name=rule_name,
                         conditions=conditions,
-                        action=MiningDecision.START_MINING
+                        action=MiningDecision.START_MINING,
                     )
-                    click.echo(click.style(f"Start rule '{rule_name}' added!", fg="green"))
-                    
+                    click.echo(
+                        click.style(f"Start rule '{rule_name}' added!", fg="green")
+                    )
+
                     if not click.confirm("Add another start rule?", default=False):
                         break
                 else:
@@ -157,37 +168,44 @@ def handle_add_optimization_policy(
             while True:
                 rule_name = click.prompt("Stop rule name", type=str)
                 conditions = create_rule_conditions()
-                
+
                 if conditions:
                     configuration_service.add_rule_to_policy(
                         policy_id=new_policy.id,
                         rule_type=RuleType.STOP,
                         name=rule_name,
                         conditions=conditions,
-                        action=MiningDecision.STOP_MINING
+                        action=MiningDecision.STOP_MINING,
                     )
-                    click.echo(click.style(f"Stop rule '{rule_name}' added!", fg="green"))
-                    
+                    click.echo(
+                        click.style(f"Stop rule '{rule_name}' added!", fg="green")
+                    )
+
                     if not click.confirm("Add another stop rule?", default=False):
                         break
                 else:
                     break
 
         if conditions.keys():
-            click.echo(click.style("Rules added successfully to Optimization policy '{name}'", fg="green"))
-        
+            click.echo(
+                click.style(
+                    "Rules added successfully to Optimization policy '{name}'",
+                    fg="green",
+                )
+            )
+
     except (PolicyError, PolicyNotFoundError) as e:
         click.echo(click.style(f"Policy error: {str(e)}", fg="red"))
         logger.error(f"Policy error adding optimization policy: {str(e)}")
     except Exception as e:  # Catch-all for unexpected errors
         click.echo(click.style(f"Error adding optimization policy: {str(e)}", fg="red"))
         logger.error(f"Error adding optimization policy: {str(e)}")
-    
+
     click.pause("Press any key to return to the menu...")
 
 
 def handle_list_optimization_policies(
-    configuration_service: ConfigurationService
+    configuration_service: ConfigurationService,
 ) -> None:
     """List all optimization policies."""
     click.echo(click.style("\n--- List Optimization Policies ---", fg="yellow"))
@@ -200,17 +218,22 @@ def handle_list_optimization_policies(
             click.echo(f"{idx}. ID: {click.style(policy.id, fg='yellow')}")
             click.echo(f"   Name: {click.style(policy.name, fg='blue')}")
             if policy.description:
-                click.echo(f"   Description: {click.style(policy.description, fg='cyan')}")
-            click.echo(f"   Start rules: {click.style(str(len(policy.start_rules)), fg='green')}")
-            click.echo(f"   Stop rules: {click.style(str(len(policy.stop_rules)), fg='red')}")
+                click.echo(
+                    f"   Description: {click.style(policy.description, fg='cyan')}"
+                )
+            click.echo(
+                f"   Start rules: {click.style(str(len(policy.start_rules)), fg='green')}"
+            )
+            click.echo(
+                f"   Stop rules: {click.style(str(len(policy.stop_rules)), fg='red')}"
+            )
 
     click.echo("")
     click.pause("Press any key to return to the menu...")
 
 
 def select_optimization_policy(
-    configuration_service: ConfigurationService,
-    default_id: Optional[EntityId] = None
+    configuration_service: ConfigurationService, default_id: Optional[EntityId] = None
 ) -> Optional[OptimizationPolicy]:
     """Select an optimization policy from the list."""
     click.echo(click.style("\n--- Select Optimization Policy ---", fg="yellow"))
@@ -231,12 +254,18 @@ def select_optimization_policy(
 
     click.echo("\nb. Back to menu\n")
 
-    policy_idx: str = click.prompt("Choose an Optimization Policy index", type=str, default=default_idx)
+    policy_idx: str = click.prompt(
+        "Choose an Optimization Policy index", type=str, default=default_idx
+    )
     policy_idx = policy_idx.strip().lower()
     if policy_idx == "b":
         return None
 
-    if not policy_idx.isdigit() or int(policy_idx) < 0 or int(policy_idx) >= len(policies):
+    if (
+        not policy_idx.isdigit()
+        or int(policy_idx) < 0
+        or int(policy_idx) >= len(policies)
+    ):
         click.echo(click.style("Invalid choice. Please try again.", fg="red"))
         return None
 
@@ -251,15 +280,19 @@ def print_optimization_policy_details(policy: OptimizationPolicy) -> None:
     click.echo("| Name: " + click.style(policy.name, fg="blue"))
     if policy.description:
         click.echo("| Description: " + click.style(policy.description, fg="cyan"))
-    
-    click.echo(f"| Start Rules: {click.style(str(len(policy.start_rules)), fg='green')}")
+
+    click.echo(
+        f"| Start Rules: {click.style(str(len(policy.start_rules)), fg='green')}"
+    )
     if policy.start_rules:
         for rule in policy.start_rules:
             print_rule_details(rule)
     else:
         click.echo("|- No start rules defined")
-    
-    click.echo("|------------------------------------------------------------------------")
+
+    click.echo(
+        "|------------------------------------------------------------------------"
+    )
 
     click.echo(f"| Stop Rules: {click.style(str(len(policy.stop_rules)), fg='red')}")
     if policy.stop_rules:
@@ -268,15 +301,19 @@ def print_optimization_policy_details(policy: OptimizationPolicy) -> None:
     else:
         click.echo("|- No stop rules defined")
 
+
 def print_rule_details(rule: AutomationRule) -> None:
     """Print the details of a single automation rule."""
-    priority_str = click.style(str(rule.priority), fg='yellow')
+    priority_str = click.style(str(rule.priority), fg="yellow")
     click.echo(f"| [{priority_str}] {click.style(rule.name, fg='blue')}")
     click.echo(f"       Rule ID: {click.style(rule.id, fg='yellow')}")
-    click.echo(f"       Enabled: {click.style('Yes' if rule.enabled else 'No', fg='green' if rule.enabled else 'red')}")
+    click.echo(
+        f"       Enabled: {click.style('Yes' if rule.enabled else 'No', fg='green' if rule.enabled else 'red')}"
+    )
 
     print_rule_conditions(rule)
     click.echo("")
+
 
 def print_rule_conditions(rule: AutomationRule) -> None:
     """Print the conditions of a rule."""
@@ -288,7 +325,10 @@ def print_rule_conditions(rule: AutomationRule) -> None:
 
     print_rule_condition_items(rule.conditions)
 
-def print_rule_condition_items(conditions: Dict, step: int = 0, prefix: str = None) -> None:
+
+def print_rule_condition_items(
+    conditions: Dict, step: int = 0, prefix: str = None
+) -> None:
     """Print the items of a rule condition."""
 
     for key, value in conditions.items():
@@ -303,42 +343,59 @@ def print_rule_condition_items(conditions: Dict, step: int = 0, prefix: str = No
                     if isinstance(item, dict):
                         if "field" in item and "operator" in item and "value" in item:
                             # This is a condition item
-                            operatore_symbol = OPERATOR_SYMBOLS.get(OperatorType(item['operator']), item['operator'])
-                            operatore_symbol_str = click.style(operatore_symbol, fg='green')
+                            operatore_symbol = OPERATOR_SYMBOLS.get(
+                                OperatorType(item["operator"]), item["operator"]
+                            )
+                            operatore_symbol_str = click.style(
+                                operatore_symbol, fg="green"
+                            )
 
-                            field_str = click.style(item['field'], fg='cyan')
-                            value_str = click.style(str(item['value']), fg='magenta')
+                            field_str = click.style(item["field"], fg="cyan")
+                            value_str = click.style(str(item["value"]), fg="magenta")
 
-                            condition_str = f"{field_str} {operatore_symbol_str} {value_str}"
+                            condition_str = (
+                                f"{field_str} {operatore_symbol_str} {value_str}"
+                            )
                             click.echo(f"{blocks_value}[{idx+1}] -> {condition_str}")
                         else:
-                            print_rule_condition_items(item, step + 1, idx+1)
+                            print_rule_condition_items(item, step + 1, idx + 1)
                     else:
-                        click.echo(f"{blocks_value}[{idx+1}] -> {click.style(str(item), fg='cyan')}")
-            #click.echo(f"          {click.style(f'{key}', fg='yellow')}: {value}")
+                        click.echo(
+                            f"{blocks_value}[{idx+1}] -> {click.style(str(item), fg='cyan')}"
+                        )
+            # click.echo(f"          {click.style(f'{key}', fg='yellow')}: {value}")
+
 
 def update_single_optimization_policy(policy: OptimizationPolicy) -> OptimizationPolicy:
     """Update a single optimization policy."""
-    click.echo(click.style(f"\n--- Update Optimization Policy: {policy.name} ---", fg="yellow"))
-    
+    click.echo(
+        click.style(f"\n--- Update Optimization Policy: {policy.name} ---", fg="yellow")
+    )
+
     # Note: The ConfigurationService doesn't have a direct update_policy method,
     # so we'll focus on updating rules and use the existing policy structure
-    
-    click.echo("Note: Policy name and description updates require recreating the policy.")
+
+    click.echo(
+        "Note: Policy name and description updates require recreating the policy."
+    )
     click.echo("You can manage rules using the rule management options.")
-    
+
     return policy
 
 
 def delete_single_optimization_policy(
     policy: OptimizationPolicy,
     configuration_service: ConfigurationService,
-    logger: LoggerPort
+    logger: LoggerPort,
 ) -> bool:
     """Delete a single optimization policy."""
-    click.echo(click.style(f"\n--- Delete Optimization Policy: {policy.name} ---", fg="red"))
-    
-    if not click.confirm(f"Are you sure you want to delete '{policy.name}'?", default=False):
+    click.echo(
+        click.style(f"\n--- Delete Optimization Policy: {policy.name} ---", fg="red")
+    )
+
+    if not click.confirm(
+        f"Are you sure you want to delete '{policy.name}'?", default=False
+    ):
         return False
 
     try:
@@ -349,9 +406,11 @@ def delete_single_optimization_policy(
         click.echo(click.style(f"Policy error: {str(e)}", fg="red"))
         logger.error(f"Policy error deleting optimization policy: {str(e)}")
     except Exception as e:  # Catch-all for unexpected errors
-        click.echo(click.style(f"Error deleting optimization policy: {str(e)}", fg="red"))
+        click.echo(
+            click.style(f"Error deleting optimization policy: {str(e)}", fg="red")
+        )
         logger.error(f"Error deleting optimization policy: {str(e)}")
-    
+
     return False
 
 
@@ -363,10 +422,14 @@ def manage_single_optimization_policy_menu(
     """Menu to manage a single optimization policy."""
     while True:
         click.clear()
-        click.echo(click.style(f"=== Manage Optimization Policy: {policy.name} ===", fg="yellow"))
-        
+        click.echo(
+            click.style(
+                f"=== Manage Optimization Policy: {policy.name} ===", fg="yellow"
+            )
+        )
+
         print_optimization_policy_details(policy)
-        
+
         click.echo("\nOptions:")
         click.echo("1. Update policy (manage rules)")
         click.echo("2. Sort rules by priority")
@@ -384,12 +447,21 @@ def manage_single_optimization_policy_menu(
         elif choice == "2":
             try:
                 configuration_service.sort_policy_rules(policy.id)
-                click.echo(click.style(f"Rules of Policy '{policy.name}' sorted by priority.", fg="green"))
+                click.echo(
+                    click.style(
+                        f"Rules of Policy '{policy.name}' sorted by priority.",
+                        fg="green",
+                    )
+                )
             except (PolicyError, PolicyNotFoundError) as e:
                 click.echo(click.style(f"Policy error: {str(e)}", fg="red"))
                 logger.error(f"Policy error when sorting rules: {str(e)}")
             except Exception as e:  # Catch-all for unexpected errors
-                click.echo(click.style(f"Error sorting rules for the policy: {str(e)}", fg="red"))
+                click.echo(
+                    click.style(
+                        f"Error sorting rules for the policy: {str(e)}", fg="red"
+                    )
+                )
                 logger.error(f"Error sorting rules for the policy: {str(e)}")
             click.pause("Press any key to continue...")
         elif choice == "3":
@@ -413,10 +485,12 @@ def manage_policy_rules_menu(
     """Menu to manage rules within a policy."""
     while True:
         click.clear()
-        click.echo(click.style(f"=== Manage Rules for Policy: {policy.name} ===", fg="yellow"))
-        
+        click.echo(
+            click.style(f"=== Manage Rules for Policy: {policy.name} ===", fg="yellow")
+        )
+
         print_optimization_policy_details(policy)
-        
+
         click.echo("\nRule Management Options:")
         click.echo("1. Add start rule")
         click.echo("2. Add stop rule")
@@ -461,28 +535,36 @@ def add_rule_to_policy(
     policy: OptimizationPolicy,
     rule_type: RuleType,
     configuration_service: ConfigurationService,
-    logger: LoggerPort
+    logger: LoggerPort,
 ) -> None:
     """Add a rule to a policy."""
     type_name = "START" if rule_type == RuleType.START else "STOP"
     click.echo(click.style(f"\n--- Add {type_name} Rule ---", fg="yellow"))
-    
+
     rule_name = click.prompt("Rule name", type=str)
     conditions = create_rule_conditions()
-    
+
     if not conditions:
         click.echo(click.style("No conditions specified. Rule not created.", fg="red"))
         return
-    
+
     try:
         configuration_service.add_rule_to_policy(
             policy_id=policy.id,
             rule_type=rule_type,
             name=rule_name,
             conditions=conditions,
-            action=MiningDecision.START_MINING if rule_type == RuleType.START else MiningDecision.STOP_MINING
+            action=(
+                MiningDecision.START_MINING
+                if rule_type == RuleType.START
+                else MiningDecision.STOP_MINING
+            ),
         )
-        click.echo(click.style(f"{type_name} rule '{rule_name}' added successfully!", fg="green"))
+        click.echo(
+            click.style(
+                f"{type_name} rule '{rule_name}' added successfully!", fg="green"
+            )
+        )
     except (PolicyError, PolicyNotFoundError) as e:
         click.echo(click.style(f"Policy error: {str(e)}", fg="red"))
         logger.error(f"Policy error adding rule to policy: {str(e)}")
@@ -495,46 +577,48 @@ def edit_policy_rule(
     policy: OptimizationPolicy,
     rule_type: RuleType,
     configuration_service: ConfigurationService,
-    logger: LoggerPort
+    logger: LoggerPort,
 ) -> None:
     """Edit a rule in a policy."""
     type_name = "START" if rule_type == RuleType.START else "STOP"
     rules = policy.start_rules if rule_type == RuleType.START else policy.stop_rules
-    
+
     if not rules:
         click.echo(click.style(f"No {type_name.lower()} rules found.", fg="red"))
         return
-    
+
     click.echo(click.style(f"\n--- Edit {type_name} Rule ---", fg="yellow"))
     click.echo("Select a rule to edit:")
-    
+
     for idx, rule in enumerate(rules):
         click.echo(f"{idx}. {click.style(rule.name, fg='blue')}")
-    
+
     try:
         rule_idx = click.prompt("Choose rule index", type=int)
         if rule_idx < 0 or rule_idx >= len(rules):
             click.echo(click.style("Invalid rule index.", fg="red"))
             return
-        
+
         selected_rule = rules[rule_idx]
-        
+
         new_name = click.prompt("New rule name", type=str, default=selected_rule.name)
         new_conditions = create_rule_conditions()
-        
+
         if not new_conditions:
-            click.echo(click.style("No conditions specified. Rule not updated.", fg="red"))
+            click.echo(
+                click.style("No conditions specified. Rule not updated.", fg="red")
+            )
             return
-        
+
         configuration_service.update_policy_rule(
             policy_id=policy.id,
             rule_id=selected_rule.id,
             name=new_name,
             conditions=new_conditions,
-            action=selected_rule.action
+            action=selected_rule.action,
         )
         click.echo(click.style(f"Rule '{new_name}' updated successfully!", fg="green"))
-        
+
     except (ValueError, IndexError):
         click.echo(click.style("Invalid input.", fg="red"))
     except (PolicyError, PolicyNotFoundError) as e:
@@ -549,36 +633,44 @@ def delete_policy_rule(
     policy: OptimizationPolicy,
     rule_type: RuleType,
     configuration_service: ConfigurationService,
-    logger: LoggerPort
+    logger: LoggerPort,
 ) -> None:
     """Delete a rule from a policy."""
     type_name = "START" if rule_type == RuleType.START else "STOP"
     rules = policy.start_rules if rule_type == RuleType.START else policy.stop_rules
-    
+
     if not rules:
         click.echo(click.style(f"No {type_name.lower()} rules found.", fg="red"))
         return
-    
+
     click.echo(click.style(f"\n--- Delete {type_name} Rule ---", fg="yellow"))
     click.echo("Select a rule to delete:")
-    
+
     for idx, rule in enumerate(rules):
         click.echo(f"{idx}. {click.style(rule.name, fg='blue')}")
-    
+
     try:
         rule_idx = click.prompt("Choose rule index", type=int)
         if rule_idx < 0 or rule_idx >= len(rules):
             click.echo(click.style("Invalid rule index.", fg="red"))
             return
-        
+
         selected_rule = rules[rule_idx]
-        
-        if not click.confirm(f"Are you sure you want to delete '{selected_rule.name}'?", default=False):
+
+        if not click.confirm(
+            f"Are you sure you want to delete '{selected_rule.name}'?", default=False
+        ):
             return
-        
-        configuration_service.delete_policy_rule(policy_id=policy.id, rule_id=selected_rule.id)
-        click.echo(click.style(f"Rule '{selected_rule.name}' deleted successfully!", fg="green"))
-        
+
+        configuration_service.delete_policy_rule(
+            policy_id=policy.id, rule_id=selected_rule.id
+        )
+        click.echo(
+            click.style(
+                f"Rule '{selected_rule.name}' deleted successfully!", fg="green"
+            )
+        )
+
     except (ValueError, IndexError):
         click.echo(click.style("Invalid input.", fg="red"))
     except (PolicyError, PolicyNotFoundError) as e:
@@ -589,7 +681,9 @@ def delete_policy_rule(
         logger.error(f"Error deleting rule: {str(e)}")
 
 
-def optimization_policies_menu(configuration_service: ConfigurationService, logger: LoggerPort) -> str:
+def optimization_policies_menu(
+    configuration_service: ConfigurationService, logger: LoggerPort
+) -> str:
     """Main menu for managing optimization policies."""
     while True:
         click.clear()
@@ -610,7 +704,9 @@ def optimization_policies_menu(configuration_service: ConfigurationService, logg
         elif choice == "3":
             policy = select_optimization_policy(configuration_service)
             if policy:
-                result = manage_single_optimization_policy_menu(policy, configuration_service, logger)
+                result = manage_single_optimization_policy_menu(
+                    policy, configuration_service, logger
+                )
                 if result == "q":
                     return "q"
         elif choice == "b":
@@ -645,13 +741,13 @@ def policy_menu(configuration_service: ConfigurationService, logger: LoggerPort)
         elif choice == "3":
             policy = select_optimization_policy(configuration_service)
             if policy is None:
-                click.echo(click.style("No Optimization Policy selected. Aborting.", fg="red"))
+                click.echo(
+                    click.style("No Optimization Policy selected. Aborting.", fg="red")
+                )
                 continue
 
             sub_choice = manage_single_optimization_policy_menu(
-                policy,
-                configuration_service, 
-                logger
+                policy, configuration_service, logger
             )
             if sub_choice == "q":
                 break

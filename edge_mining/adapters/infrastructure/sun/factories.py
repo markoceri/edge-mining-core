@@ -1,30 +1,36 @@
 """Collection of factories to create Sun."""
 
 from datetime import datetime
+
 from astral import LocationInfo
 from astral.sun import sun
 
+from edge_mining.application.interfaces import SunFactoryInterface
 from edge_mining.domain.policy.value_objects import Sun
 
-from edge_mining.application.interfaces import SunFactoryInterface
 
 class AstralSunFactory(SunFactoryInterface):
     """
     Factory to create Sun Value Objects using the astral library.
     """
+
     def __init__(
-            self,
-            latitude: float,
-            longitude: float,
-            timezone: str,
-            name: str = "",
-            region: str = ""
-        ):
+        self,
+        latitude: float,
+        longitude: float,
+        timezone: str,
+        name: str = "",
+        region: str = "",
+    ):
         """
         Initializes the factory with location information.
         """
         location_info = LocationInfo(
-            name=name, region=region, timezone=timezone, latitude=latitude, longitude=longitude
+            name=name,
+            region=region,
+            timezone=timezone,
+            latitude=latitude,
+            longitude=longitude,
         )
         self._location = location_info
 
@@ -42,9 +48,9 @@ class AstralSunFactory(SunFactoryInterface):
             sunset=s["sunset"],
             dusk=s["dusk"],
             daylight=s["daylight"],
-            night= s["night"],
+            night=s["night"],
             twilight=s["twilight"],
             azimuth=s["azimuth"],
             zenith=s["zenith"],
-            elevation=s["elevation"]
+            elevation=s["elevation"],
         )

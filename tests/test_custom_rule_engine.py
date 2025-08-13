@@ -96,7 +96,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         self.assertEqual(self.engine.rules, new_rules)
         self.assertEqual(len(self.engine.rules), 1)
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_no_rules(self, mock_rule_evaluator):
         """Test evaluation when no rules are loaded."""
         result = self.engine.evaluate(self.mock_context)
@@ -104,7 +104,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         self.assertFalse(result)
         mock_rule_evaluator.evaluate_rule_conditions.assert_not_called()
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_single_rule_matches(self, mock_rule_evaluator):
         """Test evaluation when single rule matches."""
         mock_rule_evaluator.evaluate_rule_conditions.return_value = True
@@ -118,7 +118,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         )
         self.mock_logger.debug.assert_any_call("Rule 'High Priority Rule' matched!")
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_single_rule_no_match(self, mock_rule_evaluator):
         """Test evaluation when single rule doesn't match."""
         mock_rule_evaluator.evaluate_rule_conditions.return_value = False
@@ -131,7 +131,7 @@ class TestCustomRuleEngine(unittest.TestCase):
             self.mock_context, self.mock_rule_high_priority.conditions
         )
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_multiple_rules_first_matches(self, mock_rule_evaluator):
         """Test evaluation when first rule (by priority) matches."""
         mock_rule_evaluator.evaluate_rule_conditions.return_value = True
@@ -147,7 +147,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         )
         self.mock_logger.debug.assert_any_call("Rule 'High Priority Rule' matched!")
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_multiple_rules_second_matches(self, mock_rule_evaluator):
         """Test evaluation when second rule (by priority) matches."""
         # First call returns False, second returns True
@@ -162,7 +162,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         self.assertEqual(mock_rule_evaluator.evaluate_rule_conditions.call_count, 2)
         self.mock_logger.debug.assert_any_call("Rule 'Low Priority Rule' matched!")
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_priority_sorting(self, mock_rule_evaluator):
         """Test that rules are evaluated in priority order (highest first)."""
         mock_rule_evaluator.evaluate_rule_conditions.side_effect = [False, False]
@@ -181,7 +181,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         # Second call should be for low priority rule
         self.assertEqual(calls[1][0][1], self.mock_rule_low_priority.conditions)
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_skips_disabled_rules(self, mock_rule_evaluator):
         """Test that disabled rules are skipped during evaluation."""
         mock_rule_evaluator.evaluate_rule_conditions.return_value = False
@@ -196,10 +196,12 @@ class TestCustomRuleEngine(unittest.TestCase):
             self.mock_context, self.mock_rule_high_priority.conditions
         )
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_handles_value_error(self, mock_rule_evaluator):
         """Test evaluation handles ValueError exceptions gracefully."""
-        mock_rule_evaluator.evaluate_rule_conditions.side_effect = ValueError("Test error")
+        mock_rule_evaluator.evaluate_rule_conditions.side_effect = ValueError(
+            "Test error"
+        )
 
         self.engine.load_rules([self.mock_rule_high_priority])
         result = self.engine.evaluate(self.mock_context)
@@ -209,10 +211,12 @@ class TestCustomRuleEngine(unittest.TestCase):
             "Error evaluating rule 'High Priority Rule': Test error"
         )
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_handles_attribute_error(self, mock_rule_evaluator):
         """Test evaluation handles AttributeError exceptions gracefully."""
-        mock_rule_evaluator.evaluate_rule_conditions.side_effect = AttributeError("Test error")
+        mock_rule_evaluator.evaluate_rule_conditions.side_effect = AttributeError(
+            "Test error"
+        )
 
         self.engine.load_rules([self.mock_rule_high_priority])
         result = self.engine.evaluate(self.mock_context)
@@ -222,13 +226,13 @@ class TestCustomRuleEngine(unittest.TestCase):
             "Error evaluating rule 'High Priority Rule': Test error"
         )
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_continues_after_error(self, mock_rule_evaluator):
         """Test that evaluation continues with other rules after an error."""
         # First rule throws exception, second rule matches
         mock_rule_evaluator.evaluate_rule_conditions.side_effect = [
             ValueError("Test error"),
-            True
+            True,
         ]
 
         rules = [self.mock_rule_high_priority, self.mock_rule_low_priority]
@@ -242,7 +246,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         )
         self.mock_logger.debug.assert_any_call("Rule 'Low Priority Rule' matched!")
 
-    @patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator')
+    @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_all_rules_fail(self, mock_rule_evaluator):
         """Test evaluation when all rules fail to match."""
         mock_rule_evaluator.evaluate_rule_conditions.return_value = False
@@ -263,7 +267,9 @@ class TestCustomRuleEngine(unittest.TestCase):
         enabled_rule.enabled = True
         enabled_rule.conditions = ["condition"]
 
-        with patch('edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator') as mock_evaluator:
+        with patch(
+            "edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator"
+        ) as mock_evaluator:
             mock_evaluator.evaluate_rule_conditions.return_value = True
 
             rules = [self.mock_rule_disabled, enabled_rule, self.mock_rule_low_priority]
@@ -278,5 +284,5 @@ class TestCustomRuleEngine(unittest.TestCase):
             )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

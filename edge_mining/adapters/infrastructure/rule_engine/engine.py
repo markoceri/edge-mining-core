@@ -2,13 +2,12 @@
 
 from typing import List
 
+from edge_mining.adapters.infrastructure.rule_engine.custom.helpers import RuleEvaluator
+from edge_mining.domain.policy.entities import AutomationRule
+from edge_mining.domain.policy.services import RuleEngine
+from edge_mining.domain.policy.value_objects import DecisionalContext
 from edge_mining.shared.logging.port import LoggerPort
 
-from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.value_objects import DecisionalContext
-from edge_mining.domain.policy.services import RuleEngine
-
-from edge_mining.adapters.infrastructure.rule_engine.custom.helpers import RuleEvaluator
 
 class CustomRuleEngine(RuleEngine):
     """Custom rule engine for automation rules."""
@@ -23,12 +22,11 @@ class CustomRuleEngine(RuleEngine):
         # Store the rules
         self.rules = rules
 
-        self.logger.debug(f"Successfully loaded {len(rules)} rules into CustomRuleEngine")
+        self.logger.debug(
+            f"Successfully loaded {len(rules)} rules into CustomRuleEngine"
+        )
 
-    def evaluate(
-        self,
-        context: DecisionalContext
-    ) -> bool:
+    def evaluate(self, context: DecisionalContext) -> bool:
         """
         Evaluate all rules against the decisional context.
         Returns True if any rule matches, False if no rules match

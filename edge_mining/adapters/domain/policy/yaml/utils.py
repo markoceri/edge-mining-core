@@ -2,6 +2,7 @@
 
 from yaml import SafeDumper
 
+
 class CustomDumper(SafeDumper):
     """Custom YAML dumper for better formatting."""
 
@@ -15,14 +16,17 @@ class CustomDumper(SafeDumper):
 
     def represent_list(self, data):
         """
-        Checks whether a list contains only primitive values (int, float, str) 
+        Checks whether a list contains only primitive values (int, float, str)
         and in that case uses the flow style (square brackets), otherwise
         uses the normal block style.
         """
         # Check if this list should be in flow style (for value arrays)
         if len(data) > 0 and all(isinstance(item, (int, float, str)) for item in data):
-            return self.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
-        return self.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=False)
+            return self.represent_sequence(
+                "tag:yaml.org,2002:seq", data, flow_style=True
+            )
+        return self.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=False)
+
 
 # Add the custom list representer
 CustomDumper.add_representer(list, CustomDumper.represent_list)

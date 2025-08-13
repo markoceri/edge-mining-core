@@ -3,11 +3,11 @@ Collection of adapters configuration for the notification domain
 of the Edge Mining application.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 from edge_mining.domain.notification.common import NotificationAdapter
-
 from edge_mining.shared.interfaces.config import NotificationConfig
+
 
 @dataclass(frozen=True)
 class DummyNotificationConfig(NotificationConfig):
@@ -15,6 +15,7 @@ class DummyNotificationConfig(NotificationConfig):
     Dummy notification configuration. It encapsulate the configuration parameters
     to send notifications via a dummy adapter.
     """
+
     message: str = "This is a dummy notification"
 
     def is_valid(self, adapter_type: NotificationAdapter) -> bool:
@@ -33,12 +34,14 @@ class DummyNotificationConfig(NotificationConfig):
         """Create a configuration object from a dictionary"""
         return cls(**data)
 
+
 @dataclass(frozen=True)
 class TelegramNotificationConfig(NotificationConfig):
     """
     Telegram notification configuration. It encapsulate the configuration parameters
     to send notifications via Telegram.
     """
+
     bot_token: str
     chat_id: str
 

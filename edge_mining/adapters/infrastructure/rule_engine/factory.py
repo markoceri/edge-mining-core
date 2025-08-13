@@ -2,20 +2,19 @@
 
 from typing import Optional
 
-from edge_mining.domain.policy.services import RuleEngine
-
 from edge_mining.adapters.infrastructure.rule_engine.common import RuleEngineType
-from edge_mining.adapters.infrastructure.rule_engine.engine import (
-    CustomRuleEngine
-)
-
+from edge_mining.adapters.infrastructure.rule_engine.engine import CustomRuleEngine
+from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.shared.logging.port import LoggerPort
+
 
 class RuleEngineFactory:
     """Factory for creating RuleEngine instances."""
 
     def create(
-        self, engine_type: RuleEngineType = RuleEngineType.CUSTOM, logger: Optional[LoggerPort] = None
+        self,
+        engine_type: RuleEngineType = RuleEngineType.CUSTOM,
+        logger: Optional[LoggerPort] = None,
     ) -> RuleEngine:
         """
         Creates a rule engine instance based on the specified type.

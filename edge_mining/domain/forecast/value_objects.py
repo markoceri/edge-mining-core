@@ -1,14 +1,16 @@
 """Collection of Value Objects for the Energy Forecast domain of the Edge Mining application."""
 
 from dataclasses import dataclass, field
-from typing import Optional, List
 from datetime import datetime, timedelta
+from typing import List, Optional
 
-from edge_mining.domain.common import Watts, WattHours, Timestamp, ValueObject
+from edge_mining.domain.common import Timestamp, ValueObject, WattHours, Watts
+
 
 @dataclass(frozen=True)
 class Sun(ValueObject):
     """Value Object for sunrise and sunset times."""
+
     # The time in the morning when the sun is a specific number of degrees below the horizon.
     dawn: datetime
     # The time in the morning when the top of the sun breaks the horizon.
@@ -59,15 +61,19 @@ class Sun(ValueObject):
         """Returns the time elapsed since sunset."""
         return datetime.now() - self.sunset
 
+
 @dataclass(frozen=True)
 class ForecastPowerPoint(ValueObject):
     """Value Object for a single forecast power point."""
+
     timestamp: Timestamp
     power: Watts
+
 
 @dataclass(frozen=True)
 class ForecastInterval(ValueObject):
     """Value Object for a forecast energy interval."""
+
     start: Timestamp
     end: Timestamp
     energy: Optional[WattHours] = None
@@ -86,4 +92,6 @@ class ForecastInterval(ValueObject):
             return Watts(0.0)
 
         total_power = sum(point.power for point in self.power_points)
-        return Watts(total_power / len(self.power_points)) if total_power else Watts(0.0)
+        return (
+            Watts(total_power / len(self.power_points)) if total_power else Watts(0.0)
+        )

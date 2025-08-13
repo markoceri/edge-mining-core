@@ -2,13 +2,18 @@
 
 from typing import Dict, List, Optional
 
-from edge_mining.domain.energy.common import EnergySourceType, EnergyMonitorAdapter
+from edge_mining.adapters.domain.energy.dummy_solar import DummySolarEnergyMonitor
+from edge_mining.adapters.domain.energy.home_assistant_api import (
+    HomeAssistantAPIEnergyMonitor,
+)
+from edge_mining.adapters.domain.forecast.dummy_solar import DummySolarForecastProvider
+from edge_mining.adapters.domain.forecast.home_assistant_api import (
+    HomeAssistantForecastProvider,
+)
+from edge_mining.domain.energy.common import EnergyMonitorAdapter, EnergySourceType
 from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.ports import ForecastProviderPort
-
-from edge_mining.shared.external_services.common import ExternalServiceAdapter
-from edge_mining.shared.interfaces.config import EnergyMonitorConfig
 from edge_mining.shared.adapter_configs.energy import (
     EnergyMonitorDummySolarConfig,
     EnergyMonitorHomeAssistantConfig,
@@ -17,19 +22,17 @@ from edge_mining.shared.adapter_configs.forecast import (
     ForecastProviderDummySolarConfig,
     ForecastProviderHomeAssistantConfig,
 )
-
-from edge_mining.adapters.domain.energy.dummy_solar import DummySolarEnergyMonitor
-from edge_mining.adapters.domain.energy.home_assistant_api import HomeAssistantAPIEnergyMonitor
-from edge_mining.adapters.domain.forecast.dummy_solar import DummySolarForecastProvider
-from edge_mining.adapters.domain.forecast.home_assistant_api import HomeAssistantForecastProvider
-
+from edge_mining.shared.external_services.common import ExternalServiceAdapter
+from edge_mining.shared.interfaces.config import EnergyMonitorConfig
 
 # Mapping of energy source types to forecast providers types.
 ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP: Dict[
     EnergySourceType, Optional[List[ForecastProviderAdapter]]
 ] = {
-    EnergySourceType.SOLAR:
-        [ForecastProviderAdapter.DUMMY_SOLAR, ForecastProviderAdapter.HOME_ASSISTANT_API],
+    EnergySourceType.SOLAR: [
+        ForecastProviderAdapter.DUMMY_SOLAR,
+        ForecastProviderAdapter.HOME_ASSISTANT_API,
+    ],
     EnergySourceType.WIND: [ForecastProviderAdapter.HOME_ASSISTANT_API],
     EnergySourceType.GRID: [ForecastProviderAdapter.HOME_ASSISTANT_API],
     EnergySourceType.HYDROELECTRIC: [ForecastProviderAdapter.HOME_ASSISTANT_API],
@@ -40,7 +43,10 @@ ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP: Dict[
 ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP: Dict[
     EnergySourceType, Optional[List[EnergyMonitorConfig]]
 ] = {
-    EnergySourceType.SOLAR: [ForecastProviderDummySolarConfig, ForecastProviderHomeAssistantConfig],
+    EnergySourceType.SOLAR: [
+        ForecastProviderDummySolarConfig,
+        ForecastProviderHomeAssistantConfig,
+    ],
     EnergySourceType.WIND: None,
     EnergySourceType.GRID: None,
     EnergySourceType.HYDROELECTRIC: None,
@@ -61,8 +67,10 @@ ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CLASS_MAP: Dict[
 ENERGY_SOURCE_TYPE_ENERGY_MONITOR_MAP: Dict[
     EnergySourceType, Optional[List[EnergyMonitorAdapter]]
 ] = {
-    EnergySourceType.SOLAR:
-        [EnergyMonitorAdapter.DUMMY_SOLAR, EnergyMonitorAdapter.HOME_ASSISTANT_API],
+    EnergySourceType.SOLAR: [
+        EnergyMonitorAdapter.DUMMY_SOLAR,
+        EnergyMonitorAdapter.HOME_ASSISTANT_API,
+    ],
     EnergySourceType.WIND: [EnergyMonitorAdapter.HOME_ASSISTANT_API],
     EnergySourceType.GRID: [EnergyMonitorAdapter.HOME_ASSISTANT_API],
     EnergySourceType.HYDROELECTRIC: [EnergyMonitorAdapter.HOME_ASSISTANT_API],
@@ -90,5 +98,5 @@ ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP: Dict[
     EnergyMonitorAdapter, Optional[ExternalServiceAdapter]
 ] = {
     EnergyMonitorAdapter.DUMMY_SOLAR: None,  # Dummy does not use an external service
-    EnergyMonitorAdapter.HOME_ASSISTANT_API: ExternalServiceAdapter.HOME_ASSISTANT_API
+    EnergyMonitorAdapter.HOME_ASSISTANT_API: ExternalServiceAdapter.HOME_ASSISTANT_API,
 }

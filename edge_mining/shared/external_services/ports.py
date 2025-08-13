@@ -1,14 +1,16 @@
 """The External Services port."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from edge_mining.domain.common import EntityId
-from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
+from edge_mining.shared.external_services.entities import ExternalService
+
 
 class ExternalServicePort(ABC):
     """Interface for external service."""
+
     def __init__(self, external_service_type: ExternalServiceAdapter):
         """Initialize the External Service."""
         self.external_service_type = external_service_type
@@ -22,6 +24,7 @@ class ExternalServicePort(ABC):
     def disconnect(self) -> None:
         """Disconnect from the external service."""
         pass
+
 
 class ExternalServiceRepository(ABC):
     """Port for the External Service Repository."""

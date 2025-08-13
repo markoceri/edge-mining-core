@@ -2,8 +2,10 @@
 
 from abc import ABC, abstractmethod
 
+
 class LoggerPort(ABC):
     """Port for the Logger."""
+
     @abstractmethod
     def show_log_level(self, record):
         """Allows to show stuff in the log based on the global setting."""

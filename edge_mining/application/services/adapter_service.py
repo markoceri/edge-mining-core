@@ -2,46 +2,13 @@
 This service is responsible for creating and managing adapters for the application.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
-from edge_mining.domain.common import EntityId
-from edge_mining.shared.external_services.ports import ExternalServicePort
-from edge_mining.shared.interfaces.factories import (
-    EnergyMonitorAdapterFactory,
-    ForecastAdapterFactory,
-    ExternalServiceFactory,
-)
-from edge_mining.shared.logging.port import LoggerPort
-
-from edge_mining.domain.energy.common import EnergyMonitorAdapter
-from edge_mining.domain.energy.entities import EnergySource, EnergyMonitor
-from edge_mining.domain.energy.ports import EnergyMonitorPort, EnergyMonitorRepository
 from edge_mining.adapters.domain.energy.dummy_solar import (
     DummySolarEnergyMonitorFactory,
 )
 from edge_mining.adapters.domain.energy.home_assistant_api import (
     HomeAssistantAPIEnergyMonitorFactory,
-)
-
-from edge_mining.domain.miner.common import MinerControllerAdapter
-from edge_mining.domain.miner.entities import Miner, MinerController
-from edge_mining.domain.miner.ports import MinerControlPort, MinerControllerRepository
-from edge_mining.adapters.domain.miner.dummy import DummyMinerController
-
-from edge_mining.domain.notification.common import NotificationAdapter
-from edge_mining.domain.notification.entities import Notifier
-from edge_mining.domain.notification.ports import NotificationPort, NotifierRepository
-from edge_mining.adapters.domain.notification.dummy import DummyNotifier
-from edge_mining.adapters.domain.notification.telegram import TelegramNotifierFactory
-
-from edge_mining.domain.policy.services import RuleEngine
-from edge_mining.adapters.infrastructure.rule_engine.factory import RuleEngineFactory
-
-from edge_mining.domain.forecast.common import ForecastProviderAdapter
-from edge_mining.domain.forecast.entities import ForecastProvider
-from edge_mining.domain.forecast.ports import (
-    ForecastProviderPort,
-    ForecastProviderRepository,
 )
 from edge_mining.adapters.domain.forecast.dummy_solar import (
     DummyForecastProviderFactory,
@@ -49,33 +16,57 @@ from edge_mining.adapters.domain.forecast.dummy_solar import (
 from edge_mining.adapters.domain.forecast.home_assistant_api import (
     HomeAssistantForecastProviderFactory,
 )
-
+from edge_mining.adapters.domain.home_load.dummy import DummyHomeForecastProvider
+from edge_mining.adapters.domain.miner.dummy import DummyMinerController
+from edge_mining.adapters.domain.notification.dummy import DummyNotifier
+from edge_mining.adapters.domain.notification.telegram import TelegramNotifierFactory
+from edge_mining.adapters.domain.performance.dummy import DummyMiningPerformanceTracker
+from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import (
+    ServiceHomeAssistantAPIFactory,
+)
+from edge_mining.adapters.infrastructure.rule_engine.factory import RuleEngineFactory
+from edge_mining.application.interfaces import AdapterServiceInterface
+from edge_mining.domain.common import EntityId
+from edge_mining.domain.energy.common import EnergyMonitorAdapter
+from edge_mining.domain.energy.entities import EnergyMonitor, EnergySource
+from edge_mining.domain.energy.ports import EnergyMonitorPort, EnergyMonitorRepository
+from edge_mining.domain.forecast.common import ForecastProviderAdapter
+from edge_mining.domain.forecast.entities import ForecastProvider
+from edge_mining.domain.forecast.ports import (
+    ForecastProviderPort,
+    ForecastProviderRepository,
+)
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.home_load.entities import HomeForecastProvider
 from edge_mining.domain.home_load.ports import (
     HomeForecastProviderPort,
     HomeForecastProviderRepository,
 )
-
+from edge_mining.domain.miner.common import MinerControllerAdapter
+from edge_mining.domain.miner.entities import Miner, MinerController
+from edge_mining.domain.miner.ports import MinerControllerRepository, MinerControlPort
+from edge_mining.domain.notification.common import NotificationAdapter
+from edge_mining.domain.notification.entities import Notifier
+from edge_mining.domain.notification.ports import NotificationPort, NotifierRepository
 from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter
 from edge_mining.domain.performance.entities import MiningPerformanceTracker
 from edge_mining.domain.performance.ports import (
-    MiningPerformanceTrackerPort, MiningPerformanceTrackerRepository
+    MiningPerformanceTrackerPort,
+    MiningPerformanceTrackerRepository,
 )
-from edge_mining.adapters.domain.performance.dummy import (
-    DummyMiningPerformanceTracker
-)
-
-from edge_mining.shared.external_services.entities import ExternalService
+from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
-from edge_mining.shared.external_services.ports import ExternalServiceRepository
-from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import (
-    ServiceHomeAssistantAPIFactory,
+from edge_mining.shared.external_services.entities import ExternalService
+from edge_mining.shared.external_services.ports import (
+    ExternalServicePort,
+    ExternalServiceRepository,
 )
-
-from edge_mining.adapters.domain.home_load.dummy import DummyHomeForecastProvider
-
-from edge_mining.application.interfaces import AdapterServiceInterface
+from edge_mining.shared.interfaces.factories import (
+    EnergyMonitorAdapterFactory,
+    ExternalServiceFactory,
+    ForecastAdapterFactory,
+)
+from edge_mining.shared.logging.port import LoggerPort
 
 
 class AdapterService(AdapterServiceInterface):
@@ -334,7 +325,10 @@ class AdapterService(AdapterServiceInterface):
         try:
             forecast_provider_adapter_factory: ForecastAdapterFactory = None
 
-            if forecast_provider.adapter_type == ForecastProviderAdapter.DUMMY_SOLAR.name:
+            if (
+                forecast_provider.adapter_type
+                == ForecastProviderAdapter.DUMMY_SOLAR.name
+            ):
                 # --- Dummy Forecast Provider ---
                 if not energy_source:
                     raise ValueError(
@@ -430,9 +424,7 @@ class AdapterService(AdapterServiceInterface):
 
         # Retrieve the external service associated to the energy monitor
         if tracker.external_service_id:
-            external_service = self.get_external_service(
-                tracker.external_service_id
-            )
+            external_service = self.get_external_service(tracker.external_service_id)
             if not external_service:
                 raise ValueError(
                     f"Unable to load external service {tracker.external_service_id} "
@@ -572,7 +564,9 @@ class AdapterService(AdapterServiceInterface):
             return None
         return self._initialize_home_forecast_provider_adapter(home_forecast_provider)
 
-    def get_mining_performace_tracker(self, tracker_id: EntityId) -> Optional[ForecastProviderPort]:
+    def get_mining_performace_tracker(
+        self, tracker_id: EntityId
+    ) -> Optional[ForecastProviderPort]:
         """Get a mining performace tracker adapter instance."""
         tracker = self.mining_performance_tracker_repo.get_by_id(tracker_id)
         if not tracker:

@@ -1,29 +1,29 @@
 """Start Edge Mining."""
 
-import sys
-import os
 import asyncio
+import os
+import sys
+
 import uvicorn
 
-from edge_mining.adapters.infrastructure.sheduler.jobs import AutomationScheduler
-from edge_mining.adapters.infrastructure.logging.terminal_logging import TerminalLogger
-from edge_mining.shared.settings.settings import AppSettings
-
+from edge_mining.adapters.infrastructure.api.main_api import app as fastapi_app
+from edge_mining.adapters.infrastructure.api.main_api import set_api_services
 from edge_mining.adapters.infrastructure.cli.main_cli import run_interactive_cli
-from edge_mining.adapters.infrastructure.api.main_api import app as fastapi_app, set_api_services
-
-from edge_mining.shared.infrastructure import ApplicationMode, Services
-
+from edge_mining.adapters.infrastructure.logging.terminal_logging import TerminalLogger
+from edge_mining.adapters.infrastructure.sheduler.jobs import AutomationScheduler
 from edge_mining.bootstrap import configure_dependencies
+from edge_mining.shared.infrastructure import ApplicationMode, Services
+from edge_mining.shared.settings.settings import AppSettings
 
 # Ensure the src directory is in the Python path
 # This is often needed when running directly with `python -m edge_mining`
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
 settings = AppSettings()
 logger = TerminalLogger(log_level=settings.log_level)
+
 
 async def main_async():
     """Main entry point for the Edge Mining application."""
@@ -46,7 +46,7 @@ async def main_async():
         # Remove mode argument so Click/FastAPI don't see it
         sys.argv.pop(1)
     else:
-        mode = ApplicationMode.STANDARD # Default mode
+        mode = ApplicationMode.STANDARD  # Default mode
 
     logger.debug(f"Running in '{mode}' mode.")
 
@@ -59,19 +59,19 @@ async def main_async():
             fastapi_app,
             host="0.0.0.0",
             port=settings.api_port,
-            log_level=settings.log_level.lower()
+            log_level=settings.log_level.lower(),
         )
         api_server = uvicorn.Server(api_config)
-        
+
         # --- Run the main automation loop ---
         scheduler = AutomationScheduler(
             optimization_service=services.optimization_service,
             logger=logger,
-            settings=settings
+            settings=settings,
         )
 
         await asyncio.gather(
-            api_server.serve(), # Run the FastAPI server
+            api_server.serve(),  # Run the FastAPI server
             # scheduler.start()   # Run the automation scheduler
         )
 
@@ -80,8 +80,11 @@ async def main_async():
         run_interactive_cli(services, logger)
 
     else:
-        logger.error(f"Unknown run mode: '{mode}'. Use '{ApplicationMode.STANDARD.value}', or '{ApplicationMode.CLI.value}'.")
+        logger.error(
+            f"Unknown run mode: '{mode}'. Use '{ApplicationMode.STANDARD.value}', or '{ApplicationMode.CLI.value}'."
+        )
         sys.exit(1)
+
 
 if __name__ == "__main__":
     try:
