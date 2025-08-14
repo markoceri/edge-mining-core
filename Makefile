@@ -53,7 +53,7 @@ lint:
 # Run linting and fix what can be auto-fixed
 lint-fix: format
 	@echo "🔧 Running auto-fixable linting..."
-	$(PYTHON) -m autopep8 --in-place --recursive edge_mining/
+	$(PYTHON) -m autopep8 --in-place --recursive --max-line-length=88 edge_mining/ tests/
 	@echo "✅ Auto-fix complete!"
 
 # Run tests
