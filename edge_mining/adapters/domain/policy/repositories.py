@@ -25,7 +25,11 @@ from edge_mining.adapters.domain.policy.yaml.utils import CustomDumper
 from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.aggregate_roots import AutomationRule, OptimizationPolicy
-from edge_mining.domain.policy.exceptions import PolicyConfigurationError, PolicyError, PolicyNotFoundError
+from edge_mining.domain.policy.exceptions import (
+    PolicyConfigurationError,
+    PolicyError,
+    PolicyNotFoundError,
+)
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -39,7 +43,9 @@ class InMemoryOptimizationPolicyRepository(OptimizationPolicyRepository):
         self,
         initial_policies: Optional[Dict[EntityId, OptimizationPolicy]] = None,
     ):
-        self._policies: Dict[EntityId, OptimizationPolicy] = copy.deepcopy(initial_policies) if initial_policies else {}
+        self._policies: Dict[EntityId, OptimizationPolicy] = (
+            copy.deepcopy(initial_policies) if initial_policies else {}
+        )
 
     def add(self, policy: OptimizationPolicy) -> None:
         if policy.id in self._policies:
@@ -75,7 +81,8 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
     def _create_tables(self):
         """Create the necessary tables for the Optimization Policy domain if they do not exist."""
         self.logger.debug(
-            f"Ensuring SQLite tables exist " f"for Optimization Policy Repository in {self._db.db_path}..."
+            f"Ensuring SQLite tables exist "
+            f"for Optimization Policy Repository in {self._db.db_path}..."
         )
         sql_statements = [
             """
@@ -97,7 +104,9 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
                 for statement in sql_statements:
                     cursor.execute(statement)
 
-                self.logger.debug("Optimization Policies tables checked/created successfully.")
+                self.logger.debug(
+                    "Optimization Policies tables checked/created successfully."
+                )
         except sqlite3.Error as e:
             self.logger.error(f"Error creating SQLite tables: {e}")
             raise PolicyConfigurationError(f"DB error creating tables: {e}") from e
@@ -142,7 +151,9 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
                 stop_rules=stop_rules,
             )
         except (json.JSONDecodeError, ValueError, KeyError, TypeError) as e:
-            self.logger.error(f"Error deserializing Policy from DB line: {dict(row)}. Error: {e}")
+            self.logger.error(
+                f"Error deserializing Policy from DB line: {dict(row)}. Error: {e}"
+            )
             return None
 
     def add(self, policy: OptimizationPolicy) -> None:
@@ -154,8 +165,12 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
         conn = self._db.get_connection()
         try:
             # Serialize rules and target IDs to JSON
-            start_rules_json = json.dumps([self._rule_to_dict(r) for r in policy.start_rules])
-            stop_rules_json = json.dumps([self._rule_to_dict(r) for r in policy.stop_rules])
+            start_rules_json = json.dumps(
+                [self._rule_to_dict(r) for r in policy.start_rules]
+            )
+            stop_rules_json = json.dumps(
+                [self._rule_to_dict(r) for r in policy.stop_rules]
+            )
 
             with conn:
                 conn.execute(
@@ -170,7 +185,9 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
                 )
         except sqlite3.IntegrityError as e:
             self.logger.error(f"Integrity error adding policy '{policy.name}': {e}")
-            raise PolicyError(f"Policy with ID {policy.id} or name '{policy.name}' already exists: {e}") from e
+            raise PolicyError(
+                f"Policy with ID {policy.id} or name '{policy.name}' already exists: {e}"
+            ) from e
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error adding policy '{policy.name}': {e}")
             raise PolicyError(f"DB error adding policy: {e}") from e
@@ -229,8 +246,12 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
                     SET name = ?, description = ?, start_rules = ?, stop_rules = ?
                     WHERE id = ?
                 """
-                start_rules_json = json.dumps([self._rule_to_dict(r) for r in policy.start_rules])
-                stop_rules_json = json.dumps([self._rule_to_dict(r) for r in policy.stop_rules])
+                start_rules_json = json.dumps(
+                    [self._rule_to_dict(r) for r in policy.start_rules]
+                )
+                stop_rules_json = json.dumps(
+                    [self._rule_to_dict(r) for r in policy.stop_rules]
+                )
 
                 cursor.execute(
                     sql_update,
@@ -249,7 +270,9 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
         except sqlite3.IntegrityError as e:
             self.logger.error(f"Integrity error updating policy '{policy.name}': {e}")
             # There might be a conflict over the name UNIQUE
-            raise PolicyError(f"Constraint error updating policy (duplicate name?): {e}") from e
+            raise PolicyError(
+                f"Constraint error updating policy (duplicate name?): {e}"
+            ) from e
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error updating policy '{policy.name}': {e}")
             raise PolicyError(f"EDB error updating policy: {e}") from e
@@ -294,7 +317,8 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
         if self.logger:
             self.logger.debug(
-                f"Initialized YamlOptimizationPolicyRepository " f"with directory: {self.policies_directory}"
+                f"Initialized YamlOptimizationPolicyRepository "
+                f"with directory: {self.policies_directory}"
             )
 
     def _get_policy_file_path(self, policy_id: EntityId) -> Path:
@@ -304,11 +328,15 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
     def _get_policy_file_path_by_name(self, name: str) -> Path:
         """Get a potential file path for a policy based on its name (for searching)."""
         # Sanitize name for filename
-        safe_name = "".join(c for c in name if c.isalnum() or c in (" ", "-", "_")).strip()
+        safe_name = "".join(
+            c for c in name if c.isalnum() or c in (" ", "-", "_")
+        ).strip()
         safe_name = safe_name.replace(" ", "_").lower()
         return os.path.join(self.policies_directory, f"{safe_name}.yaml")
 
-    def _load_policy_from_file(self, file_path: str) -> Tuple[Optional[OptimizationPolicy], Optional[MetadataSchema]]:
+    def _load_policy_from_file(
+        self, file_path: str
+    ) -> Tuple[Optional[OptimizationPolicy], Optional[MetadataSchema]]:
         """Load a policy from a YAML file."""
         try:
             # Check if the file exists
@@ -347,14 +375,20 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
             start_rules = self._load_and_sort_rules(policy_schema.start_rules)
 
             if len(start_rules) > 0:
-                self.logger.debug(f"Successfully loaded {len(start_rules)} start rules " f"from {file_path}")
+                self.logger.debug(
+                    f"Successfully loaded {len(start_rules)} start rules "
+                    f"from {file_path}"
+                )
             else:
                 self.logger.warning(f"No start rules found in {file_path}")
 
             stop_rules = self._load_and_sort_rules(policy_schema.stop_rules)
 
             if len(stop_rules) > 0:
-                self.logger.debug(f"Successfully loaded {len(start_rules)} stop rules " f"from {file_path}")
+                self.logger.debug(
+                    f"Successfully loaded {len(start_rules)} stop rules "
+                    f"from {file_path}"
+                )
             else:
                 self.logger.warning(f"No stop rules found in {file_path}")
 
@@ -376,13 +410,19 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
         except ValueError as e:
             if self.logger:
                 self.logger.error(f"Validation error in {file_path}: {e}")
-            raise PolicyConfigurationError(f"Policy validation error in {file_path}: {e}") from e
+            raise PolicyConfigurationError(
+                f"Policy validation error in {file_path}: {e}"
+            ) from e
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Unexpected error loading policy from {file_path}: {e}")
+                self.logger.error(
+                    f"Unexpected error loading policy from {file_path}: {e}"
+                )
             raise PolicyError(f"Failed to load policy from {file_path}: {e}") from e
 
-    def _load_and_sort_rules(self, rule_schemas: List[AutomationRuleSchema]) -> List[AutomationRule]:
+    def _load_and_sort_rules(
+        self, rule_schemas: List[AutomationRuleSchema]
+    ) -> List[AutomationRule]:
         """Load rule schemas and sort rules by priority."""
         rules: List[AutomationRule] = []
 
@@ -405,7 +445,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
         # Sort by priority (highest first)
         return sorted(rules, key=lambda r: r.priority, reverse=True)
 
-    def _schema_to_automation_rule(self, rule_schema: AutomationRuleSchema) -> AutomationRule:
+    def _schema_to_automation_rule(
+        self, rule_schema: AutomationRuleSchema
+    ) -> AutomationRule:
         """Convert a rule schema to an AutomationRule entity."""
 
         # Create AutomationRule with YAML rule support
@@ -438,7 +480,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
                 policy_schema.metadata = metadata.model_dump()
 
             # Convert schema to dict for YAML serialization
-            yaml_content = policy_schema.model_dump(exclude_none=True, exclude_unset=True)
+            yaml_content = policy_schema.model_dump(
+                exclude_none=True, exclude_unset=True
+            )
 
             # Write to file
             with open(file_path, "w", encoding="utf-8") as f:
@@ -460,7 +504,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Failed to save policy '{policy.name}' to {file_path}: {e}")
+                self.logger.error(
+                    f"Failed to save policy '{policy.name}' to {file_path}: {e}"
+                )
             raise PolicyError(f"Failed to save policy to file: {e}") from e
 
     def _policy_to_schema(self, policy: OptimizationPolicy) -> OptimizationPolicySchema:
@@ -488,7 +534,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
             )
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Error converting policy '{policy.name}' to schema: {e}")
+                self.logger.error(
+                    f"Error converting policy '{policy.name}' to schema: {e}"
+                )
             raise PolicyError(f"Failed to convert policy to schema: {e}") from e
 
     def _automation_rule_to_schema(self, rule: AutomationRule) -> AutomationRuleSchema:
@@ -500,14 +548,18 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
                 description=rule.description,
                 priority=rule.priority,
                 enabled=rule.enabled,
-                conditions=self._convert_conditions_to_schema(rule.conditions),  # Convert conditions to schema
+                conditions=self._convert_conditions_to_schema(
+                    rule.conditions
+                ),  # Convert conditions to schema
             )
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Error converting rule '{rule.name}' to schema: {e}")
             raise PolicyError(f"Failed to convert rule to schema: {e}") from e
 
-    def _convert_conditions_to_schema(self, conditions: dict) -> Union[LogicalGroupSchema, RuleConditionSchema]:
+    def _convert_conditions_to_schema(
+        self, conditions: dict
+    ) -> Union[LogicalGroupSchema, RuleConditionSchema]:
         try:
             if isinstance(conditions, dict):
 
@@ -525,7 +577,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
                     raise PolicyError(f"Invalid conditions format: {conditions}")
             else:
                 # If conditions is not a dict, raise an error
-                raise PolicyError(f"Expected conditions to be a dict, got {type(conditions)}")
+                raise PolicyError(
+                    f"Expected conditions to be a dict, got {type(conditions)}"
+                )
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Error converting conditions to schema: {e}")
@@ -563,11 +617,15 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
         if not self.policies_directory.exists():
             if self.logger:
-                self.logger.warning(f"Policies directory {self.policies_directory} does not exist")
+                self.logger.warning(
+                    f"Policies directory {self.policies_directory} does not exist"
+                )
             return policies
 
         if self.logger:
-            self.logger.debug(f"Scanning policies directory: {self.policies_directory.resolve()}")
+            self.logger.debug(
+                f"Scanning policies directory: {self.policies_directory.resolve()}"
+            )
 
         try:
             # Scan the policies directory for YAML files

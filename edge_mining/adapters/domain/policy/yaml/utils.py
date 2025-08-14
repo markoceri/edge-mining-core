@@ -22,7 +22,9 @@ class CustomDumper(SafeDumper):
         """
         # Check if this list should be in flow style (for value arrays)
         if len(data) > 0 and all(isinstance(item, (int, float, str)) for item in data):
-            return self.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+            return self.represent_sequence(
+                "tag:yaml.org,2002:seq", data, flow_style=True
+            )
         return self.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=False)
 
 

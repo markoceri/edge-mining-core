@@ -16,7 +16,9 @@ class EnergyOptimizationUnitRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_id(self, optimization_unit_id: EntityId) -> Optional[EnergyOptimizationUnit]:
+    def get_by_id(
+        self, optimization_unit_id: EntityId
+    ) -> Optional[EnergyOptimizationUnit]:
         """Get an energy optimization unit by its ID."""
         raise NotImplementedError
 

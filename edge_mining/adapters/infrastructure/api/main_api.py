@@ -77,13 +77,10 @@ def set_api_services(services: Services, logger: LoggerPort):
 # --- End Dependency Injection ---
 
 
+from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
+
 # Import routers after DI setup functions are defined
-from edge_mining.adapters.domain.policy.fast_api.router import (
-    router as policy_router,
-)
-from edge_mining.adapters.domain.miner.fast_api.router import (
-    router as miner_router,
-)
+from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
 
 
 @asynccontextmanager
@@ -139,7 +136,9 @@ async def health_check():
 # Example endpoint using dependency injection
 @app.post("/api/v1/evaluate", tags=["system"])
 async def trigger_evaluation(
-    optimization_service: Annotated[OptimizationService, Depends(get_optimization_service)],  # Inject service
+    optimization_service: Annotated[
+        OptimizationService, Depends(get_optimization_service)
+    ],  # Inject service
 ):
     """Manually run all enabled optimization units."""
     _api_logger.info("API run all enabled optimization units...")

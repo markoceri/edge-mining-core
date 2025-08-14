@@ -36,7 +36,9 @@ class Miner(Entity):
                 self.status = MinerStatus.STARTING
                 print(f"Domain: Miner {self.id} requested to turn ON")
         else:
-            raise MinerNotActiveError(f"Miner {self.id} is not active and cannot be turned ON.")
+            raise MinerNotActiveError(
+                f"Miner {self.id} is not active and cannot be turned ON."
+            )
 
     def turn_off(self):
         """Turn off the miner."""
@@ -47,7 +49,9 @@ class Miner(Entity):
                 print(f"Domain: Miner {self.id} requested to turn OFF")
             # Else: Already off or transitioning
         else:
-            raise MinerNotActiveError(f"Miner {self.id} is not active and cannot be turned OFF.")
+            raise MinerNotActiveError(
+                f"Miner {self.id} is not active and cannot be turned OFF."
+            )
 
     def update_status(
         self,
@@ -64,9 +68,13 @@ class Miner(Entity):
                 self.power_consumption = power
 
             # TODO: Add logic to handle max hash rate and power consumption
-            print(f"Domain: Miner {self.id} status updated to {new_status}, hashrate: {hash_rate}, power: {power}")
+            print(
+                f"Domain: Miner {self.id} status updated to {new_status}, hashrate: {hash_rate}, power: {power}"
+            )
         else:
-            raise MinerNotActiveError(f"Miner {self.id} is not active and cannot update status.")
+            raise MinerNotActiveError(
+                f"Miner {self.id} is not active and cannot update status."
+            )
 
     def activate(self):
         """Activate the miner."""
@@ -84,6 +92,8 @@ class MinerController(Entity):
     """Entity for a miner controller."""
 
     name: str = ""
-    adapter_type: MinerControllerAdapter = MinerControllerAdapter.DUMMY  # Default to dummy controller
+    adapter_type: MinerControllerAdapter = (
+        MinerControllerAdapter.DUMMY
+    )  # Default to dummy controller
     config: Optional[MinerControllerConfig] = None
     external_service_id: Optional[EntityId] = None

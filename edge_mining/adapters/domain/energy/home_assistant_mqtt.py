@@ -47,16 +47,28 @@ class MqttEnergyMonitor(EnergyMonitorPort):
         self.broker_port = broker_port
         self.username = username
         self.password = password
-        self.client_id = f"{client_id}-{int(time.time())}"  # Aggiungi timestamp per maggiore unicità
-        self.topics_map = {k: v for k, v in topics.items() if v}  # Ignora topic non configurati
+        self.client_id = (
+            f"{client_id}-{int(time.time())}"  # Aggiungi timestamp per maggiore unicità
+        )
+        self.topics_map = {
+            k: v for k, v in topics.items() if v
+        }  # Ignora topic non configurati
         self.units_map = units
         self.conventions = conventions
-        self.battery_capacity = WattHours(battery_capacity_wh) if battery_capacity_wh else None
+        self.battery_capacity = (
+            WattHours(battery_capacity_wh) if battery_capacity_wh else None
+        )
         self.max_data_age = timedelta(seconds=max_data_age_seconds)
 
-        self._latest_values: Dict[str, Any] = {}  # Conserva l'ultimo valore per nome interno sensore
-        self._last_update_times: Dict[str, datetime] = {}  # Conserva timestamp ultima ricezione
-        self._lock = threading.Lock()  # Protegge accesso a _latest_values e _last_update_times
+        self._latest_values: Dict[str, Any] = (
+            {}
+        )  # Conserva l'ultimo valore per nome interno sensore
+        self._last_update_times: Dict[str, datetime] = (
+            {}
+        )  # Conserva timestamp ultima ricezione
+        self._lock = (
+            threading.Lock()
+        )  # Protegge accesso a _latest_values e _last_update_times
         self._connected = threading.Event()  # Segnala se connesso
         self._client: Optional[mqtt.Client] = None
         self._thread: Optional[threading.Thread] = None
@@ -72,7 +84,9 @@ class MqttEnergyMonitor(EnergyMonitorPort):
         logger.debug(f"Max data age: {self.max_data_age_seconds} seconds")
 
         if not self.topics_map:
-            logger.warning("MQTT Energy Monitor initialized, but no topics were configured.")
+            logger.warning(
+                "MQTT Energy Monitor initialized, but no topics were configured."
+            )
             # L'adapter funzionerà ma non riceverà dati
 
         self._setup_client()
@@ -82,10 +96,14 @@ class MqttEnergyMonitor(EnergyMonitorPort):
         try:
             # Usare MQTTv5 se possibile, altrimenti fallback
             try:
-                self._client = mqtt.Client(client_id=self.client_id, protocol=mqtt.MQTTv5)
+                self._client = mqtt.Client(
+                    client_id=self.client_id, protocol=mqtt.MQTTv5
+                )
                 logger.debug("Using MQTTv5 protocol.")
             except ValueError:
-                logger.warning("MQTTv5 not supported by paho-mqtt version or broker? Falling back to v3.1.1.")
+                logger.warning(
+                    "MQTTv5 not supported by paho-mqtt version or broker? Falling back to v3.1.1."
+                )
                 self._client = mqtt.Client(client_id=self.client_id)  # Default (v3.1.1)
 
             self._client.on_connect = self._on_connect
@@ -103,7 +121,9 @@ class MqttEnergyMonitor(EnergyMonitorPort):
                 self._client.tls_set(tls_version=ssl.PROTOCOL_TLS_CLIENT)
                 # Per certs custom: self._client.tls_set(ca_certs="ca.crt", certfile="client.crt", keyfile="client.key")
 
-            logger.info(f"Connecting MQTT client to {self.broker_host}:{self.broker_port}...")
+            logger.info(
+                f"Connecting MQTT client to {self.broker_host}:{self.broker_port}..."
+            )
             self._client.connect_async(self.broker_host, self.broker_port, 60)
 
             # Avvia il loop di rete in un thread separato
@@ -124,7 +144,9 @@ class MqttEnergyMonitor(EnergyMonitorPort):
                 # loop() gestisce la rete e i timeout per noi
                 rc = self._client.loop(timeout=1.0)
                 if rc != mqtt.MQTT_ERR_SUCCESS:
-                    logger.warning(f"MQTT loop returned error code: {rc}. Attempting to handle.")
+                    logger.warning(
+                        f"MQTT loop returned error code: {rc}. Attempting to handle."
+                    )
                     # Paho tenta di riconnettersi automaticamente, ma potremmo aggiungere logica qui
                     time.sleep(5)  # Aspetta prima di riprovare il loop
             except Exception as e:
@@ -173,7 +195,9 @@ class MqttEnergyMonitor(EnergyMonitorPort):
     def _on_connect(self, client, userdata, flags, rc, properties=None):
         """Callback quando la connessione al broker è stabilita."""
         if rc == 0:
-            logger.info(f"Successfully connected to MQTT broker: {self.broker_host}:{self.broker_port}")
+            logger.info(
+                f"Successfully connected to MQTT broker: {self.broker_host}:{self.broker_port}"
+            )
             self._connected.set()  # Segnala connessione avvenuta
             # Iscriviti ai topic configurati
             for internal_name, topic in self.topics_map.items():
@@ -182,9 +206,13 @@ class MqttEnergyMonitor(EnergyMonitorPort):
                     # Usare QoS 1 per maggiore affidabilità se il broker lo supporta bene
                     result, mid = client.subscribe(topic, qos=1)
                     if result != mqtt.MQTT_ERR_SUCCESS:
-                        logger.error(f"Failed to subscribe to topic '{topic}': {mqtt.error_string(result)}")
+                        logger.error(
+                            f"Failed to subscribe to topic '{topic}': {mqtt.error_string(result)}"
+                        )
                     else:
-                        logger.debug(f"Subscription request sent for '{topic}' (MID: {mid})")
+                        logger.debug(
+                            f"Subscription request sent for '{topic}' (MID: {mid})"
+                        )
 
         else:
             logger.error(f"Failed to connect to MQTT broker: {mqtt.connack_string(rc)}")
@@ -236,18 +264,24 @@ class MqttEnergyMonitor(EnergyMonitorPort):
                     parsed_value = self._parse_percentage(payload, topic)
 
                 else:
-                    logger.warning(f"Received message for unhandled internal sensor name: '{internal_name}'")
+                    logger.warning(
+                        f"Received message for unhandled internal sensor name: '{internal_name}'"
+                    )
 
                 # Aggiorna lo stato interno in modo thread-safe
                 if parsed_value is not None:
                     with self._lock:
                         self._latest_values[internal_name] = parsed_value
-                        self._last_update_times[internal_name] = datetime.now(timezone.utc)  # Usa UTC
+                        self._last_update_times[internal_name] = datetime.now(
+                            timezone.utc
+                        )  # Usa UTC
                         logger.debug(
                             f"Stored '{internal_name}' = {parsed_value} (Timestamp: {self._last_update_times[internal_name]})"
                         )
                 else:
-                    logger.warning(f"Could not parse value for topic '{topic}', payload '{payload}'")
+                    logger.warning(
+                        f"Could not parse value for topic '{topic}', payload '{payload}'"
+                    )
 
             else:
                 logger.warning(f"Received message on unexpected topic: '{topic}'")
@@ -271,12 +305,16 @@ class MqttEnergyMonitor(EnergyMonitorPort):
             if configured_unit == "kw":
                 value *= 1000
             elif configured_unit != "w":
-                logger.warning(f"Unsupported unit '{configured_unit}' for topic '{entity_id_for_log}'. Assuming Watts.")
+                logger.warning(
+                    f"Unsupported unit '{configured_unit}' for topic '{entity_id_for_log}'. Assuming Watts."
+                )
             return Watts(value)
         except (ValueError, TypeError):
             return None
 
-    def _parse_percentage(self, state: Optional[str], entity_id_for_log: str) -> Optional[Percentage]:
+    def _parse_percentage(
+        self, state: Optional[str], entity_id_for_log: str
+    ) -> Optional[Percentage]:
         """Helper per parsare valori percentuali."""
         if state is None:
             return None
@@ -304,7 +342,9 @@ class MqttEnergyMonitor(EnergyMonitorPort):
             last_update_times = self._last_update_times.copy()
 
         now = datetime.now(timezone.utc)
-        snapshot_time = Timestamp(now.astimezone())  # Converti a timezone locale per snapshot
+        snapshot_time = Timestamp(
+            now.astimezone()
+        )  # Converti a timezone locale per snapshot
         has_critical_error = False
         is_stale = False
 
@@ -316,7 +356,9 @@ class MqttEnergyMonitor(EnergyMonitorPort):
             stale = False
             if self.topics_map.get(name):  # Solo se il topic è configurato
                 if value is None:
-                    logger.warning(f"No value received yet for sensor '{name}' (Topic: {self.topics_map.get(name)})")
+                    logger.warning(
+                        f"No value received yet for sensor '{name}' (Topic: {self.topics_map.get(name)})"
+                    )
                     # Consideralo errore solo se è un sensore fondamentale?
                     # Per ora, non lo consideriamo errore critico se non è MAI arrivato
                 elif last_update is None or (now - last_update) > self.max_data_age:
@@ -340,25 +382,37 @@ class MqttEnergyMonitor(EnergyMonitorPort):
 
         # Verifica se i dati *richiesti* (configurati) sono mancanti (mai arrivati)
         if self.topics_map.get("solar_production") and production is None:
-            logger.error(f"Missing critical value: Solar Production (Topic: {self.topics_map['solar_production']})")
+            logger.error(
+                f"Missing critical value: Solar Production (Topic: {self.topics_map['solar_production']})"
+            )
             has_critical_error = True
         if self.topics_map.get("house_consumption") and consumption is None:
-            logger.error(f"Missing critical value: House Consumption (Topic: {self.topics_map['house_consumption']})")
+            logger.error(
+                f"Missing critical value: House Consumption (Topic: {self.topics_map['house_consumption']})"
+            )
             has_critical_error = True
         if self.topics_map.get("grid_power") and grid_power is None:
-            logger.error(f"Missing critical value: Grid Power (Topic: {self.topics_map['grid_power']})")
+            logger.error(
+                f"Missing critical value: Grid Power (Topic: {self.topics_map['grid_power']})"
+            )
             has_critical_error = True
         # Batteria è critica solo se SOC e Power sono entrambi richiesti e mancanti
         if self.topics_map.get("battery_soc") and self.topics_map.get("battery_power"):
             if battery_soc is None:
-                logger.error(f"Missing critical value: Battery SOC (Topic: {self.topics_map['battery_soc']})")
+                logger.error(
+                    f"Missing critical value: Battery SOC (Topic: {self.topics_map['battery_soc']})"
+                )
                 has_critical_error = True
             if battery_power is None:
-                logger.error(f"Missing critical value: Battery Power (Topic: {self.topics_map['battery_power']})")
+                logger.error(
+                    f"Missing critical value: Battery Power (Topic: {self.topics_map['battery_power']})"
+                )
                 has_critical_error = True
 
         if has_critical_error:
-            logger.error("One or more critical energy values were never received via MQTT. Cannot create snapshot.")
+            logger.error(
+                "One or more critical energy values were never received via MQTT. Cannot create snapshot."
+            )
             return None
 
         if is_stale:
@@ -375,7 +429,11 @@ class MqttEnergyMonitor(EnergyMonitorPort):
 
         # Costruisci BatteryState se possibile
         battery_state: Optional[BatteryState] = None
-        if battery_soc is not None and battery_power is not None and self.battery_capacity is not None:
+        if (
+            battery_soc is not None
+            and battery_power is not None
+            and self.battery_capacity is not None
+        ):
             battery_state = BatteryState(
                 state_of_charge=battery_soc,
                 nominal_capacity=self.battery_capacity,

@@ -44,7 +44,9 @@ class DummyMinerController(MinerControlPort):
     def stop_miner(self) -> bool:
         """Stop the miner."""
         if self.logger:
-            self.logger.debug(f"DummyController: Received STOP (current: {self._status.name})")
+            self.logger.debug(
+                f"DummyController: Received STOP (current: {self._status.name})"
+            )
         if self._status == MinerStatus.ON:
             self._status = MinerStatus.STOPPING
             if self.logger:
@@ -59,7 +61,9 @@ class DummyMinerController(MinerControlPort):
         if self._status == MinerStatus.STARTING:
             if random.random() < 0.8:  # 80% chance it finished starting
                 if self.logger:
-                    self.logger.debug("DummyController: Simulating finished starting -> ON")
+                    self.logger.debug(
+                        "DummyController: Simulating finished starting -> ON"
+                    )
                 self._status = MinerStatus.ON
             else:
                 if self.logger:
@@ -68,7 +72,9 @@ class DummyMinerController(MinerControlPort):
         elif self._status == MinerStatus.STOPPING:
             if random.random() < 0.9:  # 90% chance it finished stopping
                 if self.logger:
-                    self.logger.debug("DummyController: Simulating finished stopping -> OFF")
+                    self.logger.debug(
+                        "DummyController: Simulating finished stopping -> OFF"
+                    )
                 self._status = MinerStatus.OFF
             else:
                 if self.logger:
@@ -92,7 +98,9 @@ class DummyMinerController(MinerControlPort):
                 self.logger.debug(f"DummyController: Reporting power {power:.0f}W")
         else:
             if self.logger:
-                self.logger.debug(f"DummyController: Reporting power 0W (status: {status.name})")
+                self.logger.debug(
+                    f"DummyController: Reporting power 0W (status: {status.name})"
+                )
             power = Watts(0.0)
 
         self._power = power
@@ -103,13 +111,19 @@ class DummyMinerController(MinerControlPort):
         status = self._status
         if status == MinerStatus.ON:
             # Simulate hash rate
-            hash_rate = HashRate(value=random.uniform(20, self._hashrate_max), unit="TH/s")
+            hash_rate = HashRate(
+                value=random.uniform(20, self._hashrate_max), unit="TH/s"
+            )
             if self.logger:
-                self.logger.debug(f"DummyController: Reporting hash rate {hash_rate.value:.2f} {hash_rate.unit}")
+                self.logger.debug(
+                    f"DummyController: Reporting hash rate {hash_rate.value:.2f} {hash_rate.unit}"
+                )
             return hash_rate
         else:
             if self.logger:
-                self.logger.debug(f"DummyController: Reporting hash rate 0 (status: {status.name})")
+                self.logger.debug(
+                    f"DummyController: Reporting hash rate 0 (status: {status.name})"
+                )
             return HashRate(value=0.0, unit="TH/s")
 
     # Helper for simulated transitions (if using timers)

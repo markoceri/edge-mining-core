@@ -10,11 +10,17 @@ from edge_mining.domain.energy.exceptions import (
     EnergyMonitorNotFoundError,
     EnergySourceNotFoundError,
 )
-from edge_mining.domain.energy.ports import EnergyMonitorRepository, EnergySourceRepository
+from edge_mining.domain.energy.ports import (
+    EnergyMonitorRepository,
+    EnergySourceRepository,
+)
 from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
-from edge_mining.domain.forecast.exceptions import ForecastProviderConfigurationError, ForecastProviderNotFoundError
+from edge_mining.domain.forecast.exceptions import (
+    ForecastProviderConfigurationError,
+    ForecastProviderNotFoundError,
+)
 from edge_mining.domain.forecast.ports import ForecastProviderRepository
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.home_load.entities import HomeForecastProvider
@@ -31,19 +37,30 @@ from edge_mining.domain.miner.ports import MinerControllerRepository, MinerRepos
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.notification.common import NotificationAdapter
 from edge_mining.domain.notification.entities import Notifier
-from edge_mining.domain.notification.exceptions import NotifierConfigurationError, NotifierNotFoundError
+from edge_mining.domain.notification.exceptions import (
+    NotifierConfigurationError,
+    NotifierNotFoundError,
+)
 from edge_mining.domain.notification.ports import NotifierRepository
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
-from edge_mining.domain.optimization_unit.exceptions import OptimizationUnitNotFoundError
+from edge_mining.domain.optimization_unit.exceptions import (
+    OptimizationUnitNotFoundError,
+)
 from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
 from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter
 from edge_mining.domain.performance.entities import MiningPerformanceTracker
-from edge_mining.domain.performance.exceptions import MiningPerformanceTrackerNotFoundError
+from edge_mining.domain.performance.exceptions import (
+    MiningPerformanceTrackerNotFoundError,
+)
 from edge_mining.domain.performance.ports import MiningPerformanceTrackerRepository
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import MiningDecision, RuleType
 from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.exceptions import PolicyConfigurationError, PolicyError, PolicyNotFoundError
+from edge_mining.domain.policy.exceptions import (
+    PolicyConfigurationError,
+    PolicyError,
+    PolicyNotFoundError,
+)
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.user.entities import SystemSettings
 from edge_mining.shared.adapter_maps.energy import (
@@ -51,9 +68,13 @@ from edge_mining.shared.adapter_maps.energy import (
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP,
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP,
 )
-from edge_mining.shared.adapter_maps.forecast import FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP
+from edge_mining.shared.adapter_maps.forecast import (
+    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP,
+)
 from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
-from edge_mining.shared.adapter_maps.notification import NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP
+from edge_mining.shared.adapter_maps.notification import (
+    NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP,
+)
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.external_services.exceptions import (
@@ -61,7 +82,9 @@ from edge_mining.shared.external_services.exceptions import (
     ExternalServiceNotFoundError,
 )
 from edge_mining.shared.external_services.ports import ExternalServiceRepository
-from edge_mining.shared.external_services.value_objects import ExternalServiceLinkedEntities
+from edge_mining.shared.external_services.value_objects import (
+    ExternalServiceLinkedEntities,
+)
 from edge_mining.shared.infrastructure import PersistenceSettings
 from edge_mining.shared.interfaces.config import (
     EnergyMonitorConfig,
@@ -79,14 +102,28 @@ class ConfigurationService:
 
     def __init__(self, persistence_settings: PersistenceSettings, logger: LoggerPort):
         # Domains
-        self.external_service_repo: ExternalServiceRepository = persistence_settings.external_service_repo
-        self.energy_source_repo: EnergySourceRepository = persistence_settings.energy_source_repo
-        self.energy_monitor_repo: EnergyMonitorRepository = persistence_settings.energy_monitor_repo
+        self.external_service_repo: ExternalServiceRepository = (
+            persistence_settings.external_service_repo
+        )
+        self.energy_source_repo: EnergySourceRepository = (
+            persistence_settings.energy_source_repo
+        )
+        self.energy_monitor_repo: EnergyMonitorRepository = (
+            persistence_settings.energy_monitor_repo
+        )
         self.miner_repo: MinerRepository = persistence_settings.miner_repo
-        self.miner_controller_repo: MinerControllerRepository = persistence_settings.miner_controller_repo
-        self.policy_repo: OptimizationPolicyRepository = persistence_settings.policy_repo
-        self.optimization_unit_repo: EnergyOptimizationUnitRepository = persistence_settings.optimization_unit_repo
-        self.forecast_provider_repo: ForecastProviderRepository = persistence_settings.forecast_provider_repo
+        self.miner_controller_repo: MinerControllerRepository = (
+            persistence_settings.miner_controller_repo
+        )
+        self.policy_repo: OptimizationPolicyRepository = (
+            persistence_settings.policy_repo
+        )
+        self.optimization_unit_repo: EnergyOptimizationUnitRepository = (
+            persistence_settings.optimization_unit_repo
+        )
+        self.forecast_provider_repo: ForecastProviderRepository = (
+            persistence_settings.forecast_provider_repo
+        )
         self.home_forecast_provider_repo: HomeForecastProviderRepository = (
             persistence_settings.home_forecast_provider_repo
         )
@@ -107,9 +144,13 @@ class ConfigurationService:
         config: ExternalServiceConfig,
     ) -> ExternalService:
         """Create a new external service."""
-        self.logger.debug(f"Creating external service '{name}' with adapter {adapter_type}")
+        self.logger.debug(
+            f"Creating external service '{name}' with adapter {adapter_type}"
+        )
 
-        external_service = ExternalService(name=name, adapter_type=adapter_type, config=config)
+        external_service = ExternalService(
+            name=name, adapter_type=adapter_type, config=config
+        )
 
         self.check_external_service(external_service)
 
@@ -119,7 +160,9 @@ class ConfigurationService:
 
     def get_external_service(self, service_id: EntityId) -> Optional[ExternalService]:
         """Get an external service by its ID."""
-        external_service: ExternalService = self.external_service_repo.get_by_id(service_id)
+        external_service: ExternalService = self.external_service_repo.get_by_id(
+            service_id
+        )
 
         if not external_service:
             return None
@@ -130,15 +173,25 @@ class ConfigurationService:
         """List all external services in the system."""
         return self.external_service_repo.get_all()
 
-    def get_entities_by_external_service(self, service_id: EntityId) -> ExternalServiceLinkedEntities:
+    def get_entities_by_external_service(
+        self, service_id: EntityId
+    ) -> ExternalServiceLinkedEntities:
         """Get entities associated with this external service"""
-        miner_controllers: List[MinerController] = self.miner_controller_repo.get_by_external_service_id(service_id)
-        energy_monitors: List[EnergyMonitor] = self.energy_monitor_repo.get_by_external_service_id(service_id)
-        forecast_providers: List[ForecastProvider] = self.forecast_provider_repo.get_by_external_service_id(service_id)
-        home_forecast_providers: List[ForecastProvider] = self.home_forecast_provider_repo.get_by_external_service_id(
+        miner_controllers: List[MinerController] = (
+            self.miner_controller_repo.get_by_external_service_id(service_id)
+        )
+        energy_monitors: List[EnergyMonitor] = (
+            self.energy_monitor_repo.get_by_external_service_id(service_id)
+        )
+        forecast_providers: List[ForecastProvider] = (
+            self.forecast_provider_repo.get_by_external_service_id(service_id)
+        )
+        home_forecast_providers: List[ForecastProvider] = (
+            self.home_forecast_provider_repo.get_by_external_service_id(service_id)
+        )
+        notifiers: List[Notifier] = self.notifier_repo.get_by_external_service_id(
             service_id
         )
-        notifiers: List[Notifier] = self.notifier_repo.get_by_external_service_id(service_id)
 
         external_service_linked_entities = ExternalServiceLinkedEntities(
             miner_controllers=miner_controllers,
@@ -154,7 +207,9 @@ class ConfigurationService:
         self.logger.debug(f"Unlinking external service {service_id}")
 
         # Get entities associated with this external service
-        external_service_linked_entities = self.get_entities_by_external_service(service_id)
+        external_service_linked_entities = self.get_entities_by_external_service(
+            service_id
+        )
 
         # Unlink from miner controllers
         for controller in external_service_linked_entities.miner_controllers:
@@ -181,7 +236,9 @@ class ConfigurationService:
             self.forecast_provider_repo.update(forecast_provider)
 
         # Unlink from home forecast providers
-        for home_forecast_provider in external_service_linked_entities.home_forecast_providers:
+        for (
+            home_forecast_provider
+        ) in external_service_linked_entities.home_forecast_providers:
             self.logger.debug(
                 f"Unlinking home forecast provider {home_forecast_provider.name} ({home_forecast_provider.id}) from external service {service_id}"
             )
@@ -190,7 +247,9 @@ class ConfigurationService:
 
         # Unlink from notifiers
         for notifier in external_service_linked_entities.notifiers:
-            self.logger.debug(f"Unlinking notifier {notifier.name} ({notifier.id}) from external service {service_id}")
+            self.logger.debug(
+                f"Unlinking notifier {notifier.name} ({notifier.id}) from external service {service_id}"
+            )
             notifier.external_service_id = None
             self.notifier_repo.update(notifier)
 
@@ -198,10 +257,14 @@ class ConfigurationService:
         """Remove an external service from the system."""
         self.logger.debug(f"Removing external service {service_id}")
 
-        external_service: ExternalService = self.external_service_repo.get_by_id(service_id)
+        external_service: ExternalService = self.external_service_repo.get_by_id(
+            service_id
+        )
 
         if not external_service:
-            raise ExternalServiceNotFoundError(f"External Service with ID {service_id} not found.")
+            raise ExternalServiceNotFoundError(
+                f"External Service with ID {service_id} not found."
+            )
 
         # Unlink the external service from all associated entities before removal
         self.unlink_external_service(service_id)
@@ -221,10 +284,14 @@ class ConfigurationService:
         This method updates the name and configuration only of an existing external service.
         """
 
-        external_service: ExternalService = self.external_service_repo.get_by_id(service_id)
+        external_service: ExternalService = self.external_service_repo.get_by_id(
+            service_id
+        )
 
         if not external_service:
-            raise ExternalServiceNotFoundError(f"External Service with ID {name} not found.")
+            raise ExternalServiceNotFoundError(
+                f"External Service with ID {name} not found."
+            )
 
         self.logger.debug(f"Updating external service {service_id} ({name})")
 
@@ -239,18 +306,24 @@ class ConfigurationService:
 
     def check_external_service(self, external_service: ExternalService) -> bool:
         """Check if an external service is valid and can be used."""
-        self.logger.debug(f"Checking external service {external_service.id} ({external_service.name})")
+        self.logger.debug(
+            f"Checking external service {external_service.id} ({external_service.name})"
+        )
 
         if not external_service:
             raise ExternalServiceNotFoundError("External Service not found.")
 
         # Checks if the configuration is valid for the given adapter type
-        if external_service.config is None or not external_service.config.is_valid(external_service.adapter_type):
+        if external_service.config is None or not external_service.config.is_valid(
+            external_service.adapter_type
+        ):
             raise ExternalServiceConfigurationError(
                 f"Invalid configuration for External Service {external_service.name} with adapter {external_service.adapter_type}."
             )
 
-        self.logger.debug(f"External Service {external_service.id} ({external_service.name}) is valid.")
+        self.logger.debug(
+            f"External Service {external_service.id} ({external_service.name}) is valid."
+        )
         return True
 
     # --- Energy Source Management ---
@@ -290,7 +363,9 @@ class ConfigurationService:
         energy_source: EnergySource = self.energy_source_repo.get_by_id(source_id)
 
         if not energy_source:
-            raise EnergySourceNotFoundError(f"Energy Source with ID {source_id} not found.")
+            raise EnergySourceNotFoundError(
+                f"Energy Source with ID {source_id} not found."
+            )
 
         return energy_source
 
@@ -305,7 +380,9 @@ class ConfigurationService:
         energy_source: EnergySource = self.energy_source_repo.get_by_id(source_id)
 
         if not energy_source:
-            raise EnergySourceNotFoundError(f"Energy Source with ID {source_id} not found.")
+            raise EnergySourceNotFoundError(
+                f"Energy Source with ID {source_id} not found."
+            )
 
         self.energy_source_repo.remove(source_id)
 
@@ -329,7 +406,9 @@ class ConfigurationService:
         energy_source: EnergySource = self.energy_source_repo.get_by_id(source_id)
 
         if not energy_source:
-            raise EnergySourceNotFoundError(f"Energy Source with ID {source_id} not found.")
+            raise EnergySourceNotFoundError(
+                f"Energy Source with ID {source_id} not found."
+            )
 
         energy_source.name = name
         energy_source.type = source_type
@@ -348,20 +427,31 @@ class ConfigurationService:
 
     def check_energy_source(self, energy_source: EnergySource) -> bool:
         """Check if an energy source is valid and can be used."""
-        self.logger.debug(f"Checking energy source {energy_source.id} ({energy_source.name})")
+        self.logger.debug(
+            f"Checking energy source {energy_source.id} ({energy_source.name})"
+        )
 
         if energy_source.forecast_provider_id:
             # Checks if the forecast provider exists
-            provider: ForecastProvider = self.forecast_provider_repo.get_by_id(energy_source.forecast_provider_id)
+            provider: ForecastProvider = self.forecast_provider_repo.get_by_id(
+                energy_source.forecast_provider_id
+            )
             if not provider:
                 raise ForecastProviderNotFoundError(
                     f"Forecast Provider with ID {energy_source.forecast_provider_id} not found."
                 )
 
             # Checks if the forecast provider type is compatible with the source type
-            required_types = ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(energy_source.type, None)
+            required_types = ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(
+                energy_source.type, None
+            )
             if required_types:
-                is_allowed_type = any([(provider.adapter_type == required_type) for required_type in required_types])
+                is_allowed_type = any(
+                    [
+                        (provider.adapter_type == required_type)
+                        for required_type in required_types
+                    ]
+                )
                 if not is_allowed_type:
                     raise ForecastProviderConfigurationError(
                         f"Forecast Provider {provider.id} Type {provider.adapter_type} is not compatible "
@@ -376,10 +466,15 @@ class ConfigurationService:
                 )
 
             # Checks if the forecast provider configuration is compatible with the source type
-            required_classes = ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP.get(energy_source.type, None)
+            required_classes = ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP.get(
+                energy_source.type, None
+            )
             if required_classes:
                 is_allowed_class = any(
-                    [isinstance(provider.config, required_class) for required_class in required_classes]
+                    [
+                        isinstance(provider.config, required_class)
+                        for required_class in required_classes
+                    ]
                 )
                 if not is_allowed_class:
                     raise ForecastProviderConfigurationError(
@@ -387,7 +482,9 @@ class ConfigurationService:
                         f"with Energy Source {energy_source.name} of type {energy_source.type}."
                     )
 
-        self.logger.debug(f"Energy Source {energy_source.id} ({energy_source.name}) is valid.")
+        self.logger.debug(
+            f"Energy Source {energy_source.id} ({energy_source.name}) is valid."
+        )
         return True
 
     def create_energy_monitor(
@@ -398,7 +495,9 @@ class ConfigurationService:
         external_service_id: Optional[EntityId] = None,
     ) -> EnergyMonitor:
         """Create a new energy monitor."""
-        self.logger.debug(f"Creating energy monitor '{name}' with adapter {adapter_type}")
+        self.logger.debug(
+            f"Creating energy monitor '{name}' with adapter {adapter_type}"
+        )
 
         energy_monitor = EnergyMonitor(
             name=name,
@@ -418,7 +517,9 @@ class ConfigurationService:
         energy_monitor: EnergyMonitor = self.energy_monitor_repo.get_by_id(monitor_id)
 
         if not energy_monitor:
-            raise EnergyMonitorNotFoundError(f"Energy Monitor with ID {monitor_id} not found.")
+            raise EnergyMonitorNotFoundError(
+                f"Energy Monitor with ID {monitor_id} not found."
+            )
 
         return energy_monitor
 
@@ -435,7 +536,9 @@ class ConfigurationService:
 
         for source in energy_sources:
             if source.energy_monitor_id == monitor_id:
-                self.logger.debug(f"Unlinking energy monitor {monitor_id} from energy source {source.id}")
+                self.logger.debug(
+                    f"Unlinking energy monitor {monitor_id} from energy source {source.id}"
+                )
                 source.energy_monitor_id = None
                 self.energy_source_repo.update(source)
 
@@ -445,7 +548,9 @@ class ConfigurationService:
         energy_monitor: EnergyMonitor = self.energy_monitor_repo.get_by_id(monitor_id)
 
         if not energy_monitor:
-            raise EnergyMonitorNotFoundError(f"Energy Monitor with ID {monitor_id} not found.")
+            raise EnergyMonitorNotFoundError(
+                f"Energy Monitor with ID {monitor_id} not found."
+            )
 
         # Unlink the energy monitor from all associated energy sources before delete
         self.unlink_energy_monitor(monitor_id)
@@ -467,7 +572,9 @@ class ConfigurationService:
         energy_monitor: EnergyMonitor = self.energy_monitor_repo.get_by_id(monitor_id)
 
         if not energy_monitor:
-            raise EnergyMonitorNotFoundError(f"Energy Monitor with ID {monitor_id} not found.")
+            raise EnergyMonitorNotFoundError(
+                f"Energy Monitor with ID {monitor_id} not found."
+            )
 
         energy_monitor.name = name
         energy_monitor.adapter_type = adapter_type
@@ -484,12 +591,18 @@ class ConfigurationService:
         self, energy_source_id: EntityId, energy_monitor_id: EntityId
     ) -> EnergySource:
         """Set an energy monitor to an energy source."""
-        self.logger.debug(f"Setting energy monitor {energy_monitor_id} to energy source {energy_source_id}")
+        self.logger.debug(
+            f"Setting energy monitor {energy_monitor_id} to energy source {energy_source_id}"
+        )
 
-        energy_source: EnergySource = self.energy_source_repo.get_by_id(energy_source_id)
+        energy_source: EnergySource = self.energy_source_repo.get_by_id(
+            energy_source_id
+        )
 
         if not energy_source:
-            raise EnergySourceNotFoundError(f"Energy Source with ID {energy_source_id} not found.")
+            raise EnergySourceNotFoundError(
+                f"Energy Source with ID {energy_source_id} not found."
+            )
 
         energy_source.energy_monitor_id = energy_monitor_id
 
@@ -497,51 +610,78 @@ class ConfigurationService:
 
         return energy_source
 
-    def list_energy_sources_by_monitor(self, monitor_id: EntityId) -> List[EnergySource]:
+    def list_energy_sources_by_monitor(
+        self, monitor_id: EntityId
+    ) -> List[EnergySource]:
         """List all energy sources that use a specific energy monitor."""
         self.logger.debug(f"Listing energy sources using energy monitor {monitor_id}")
 
         energy_sources: List[EnergySource] = self.energy_source_repo.get_all()
 
-        filtered_sources = [source for source in energy_sources if source.energy_monitor_id == monitor_id]
+        filtered_sources = [
+            source
+            for source in energy_sources
+            if source.energy_monitor_id == monitor_id
+        ]
 
         return filtered_sources
 
-    def list_energy_sources_by_forecast_provider(self, forecast_provider_id: EntityId) -> List[EnergySource]:
+    def list_energy_sources_by_forecast_provider(
+        self, forecast_provider_id: EntityId
+    ) -> List[EnergySource]:
         """List all energy sources that use a specific forecast provider."""
-        self.logger.debug(f"Listing energy sources using forecast provider {forecast_provider_id}")
+        self.logger.debug(
+            f"Listing energy sources using forecast provider {forecast_provider_id}"
+        )
         energy_sources: List[EnergySource] = self.energy_source_repo.get_all()
-        filtered_sources = [source for source in energy_sources if source.forecast_provider_id == forecast_provider_id]
+        filtered_sources = [
+            source
+            for source in energy_sources
+            if source.forecast_provider_id == forecast_provider_id
+        ]
         return filtered_sources
 
     def check_energy_monitor(self, energy_minitor: EnergyMonitor) -> bool:
         """Check if an energy monitor is valid and can be used."""
-        self.logger.debug(f"Checking energy monitor {energy_minitor.id} ({energy_minitor.name})")
+        self.logger.debug(
+            f"Checking energy monitor {energy_minitor.id} ({energy_minitor.name})"
+        )
 
         if energy_minitor.external_service_id:
-            external_service: ExternalService = self.external_service_repo.get_by_id(energy_minitor.external_service_id)
+            external_service: ExternalService = self.external_service_repo.get_by_id(
+                energy_minitor.external_service_id
+            )
             if not external_service:
                 raise ExternalServiceNotFoundError(
                     f"External Service with ID {energy_minitor.external_service_id} not found."
                 )
 
             # Checks if the external service is compatible with the adapter type
-            required_external_service_type = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
-                energy_minitor.adapter_type, None
+            required_external_service_type = (
+                ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
+                    energy_minitor.adapter_type, None
+                )
             )
-            if required_external_service_type and external_service.adapter_type != required_external_service_type:
+            if (
+                required_external_service_type
+                and external_service.adapter_type != required_external_service_type
+            ):
                 raise EnergyMonitorConfigurationError(
                     f"External Service {energy_minitor.external_service_id} is not compatible "
                     f"with Energy Monitor {energy_minitor.name} using adapter {energy_minitor.adapter_type}."
                 )
 
         # Checks if the configuration is valid for the given adapter type
-        if energy_minitor.config is None or not energy_minitor.config.is_valid(energy_minitor.adapter_type):
+        if energy_minitor.config is None or not energy_minitor.config.is_valid(
+            energy_minitor.adapter_type
+        ):
             raise EnergyMonitorConfigurationError(
                 f"Invalid configuration for Energy Monitor {energy_minitor.name} with adapter {energy_minitor.adapter_type}."
             )
 
-        self.logger.debug(f"Energy monitor {energy_minitor.id} ({energy_minitor.name}) is valid.")
+        self.logger.debug(
+            f"Energy monitor {energy_minitor.id} ({energy_minitor.name}) is valid."
+        )
         return True
 
     # --- Forecast Provider Management ---
@@ -553,7 +693,9 @@ class ConfigurationService:
         external_service_id: Optional[EntityId] = None,
     ) -> ForecastProvider:
         """Create a new forecast provider."""
-        self.logger.debug(f"Creating forecast provider '{name}' with adapter {adapter_type}")
+        self.logger.debug(
+            f"Creating forecast provider '{name}' with adapter {adapter_type}"
+        )
 
         forecast_provider = ForecastProvider(
             name=name,
@@ -568,12 +710,18 @@ class ConfigurationService:
 
         return forecast_provider
 
-    def get_forecast_provider(self, provider_id: EntityId) -> Optional[ForecastProvider]:
+    def get_forecast_provider(
+        self, provider_id: EntityId
+    ) -> Optional[ForecastProvider]:
         """Get a forecast provider by its ID."""
-        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(provider_id)
+        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(
+            provider_id
+        )
 
         if not forecast_provider:
-            raise ForecastProviderNotFoundError(f"Forecast Provider with ID {provider_id} not found.")
+            raise ForecastProviderNotFoundError(
+                f"Forecast Provider with ID {provider_id} not found."
+            )
 
         return forecast_provider
 
@@ -585,10 +733,14 @@ class ConfigurationService:
         """Remove a forecast provider from the system."""
         self.logger.debug(f"Removing forecast provider {provider_id}")
 
-        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(provider_id)
+        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(
+            provider_id
+        )
 
         if not forecast_provider:
-            raise ForecastProviderNotFoundError(f"Forecast Provider with ID {provider_id} not found.")
+            raise ForecastProviderNotFoundError(
+                f"Forecast Provider with ID {provider_id} not found."
+            )
 
         self.forecast_provider_repo.remove(provider_id)
 
@@ -605,10 +757,14 @@ class ConfigurationService:
         """Update a forecast provider in the system."""
         self.logger.debug(f"Updating forecast provider {provider_id} ({name})")
 
-        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(provider_id)
+        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(
+            provider_id
+        )
 
         if not forecast_provider:
-            raise ForecastProviderNotFoundError(f"Forecast Provider with ID {provider_id} not found.")
+            raise ForecastProviderNotFoundError(
+                f"Forecast Provider with ID {provider_id} not found."
+            )
 
         forecast_provider.name = name
         forecast_provider.adapter_type = adapter_type
@@ -626,29 +782,40 @@ class ConfigurationService:
         self.logger.debug(f"Checking forecast provider {provider.id} ({provider.name})")
 
         if provider.external_service_id:
-            external_service: ExternalService = self.external_service_repo.get_by_id(provider.external_service_id)
+            external_service: ExternalService = self.external_service_repo.get_by_id(
+                provider.external_service_id
+            )
             if not external_service:
                 raise ExternalServiceNotFoundError(
                     f"External Service with ID {provider.external_service_id} not found."
                 )
 
             # Checks if the external service is compatible with the adapter type
-            required_external_service_type = FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP.get(
-                provider.adapter_type, None
+            required_external_service_type = (
+                FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP.get(
+                    provider.adapter_type, None
+                )
             )
-            if required_external_service_type and external_service.adapter_type != required_external_service_type:
+            if (
+                required_external_service_type
+                and external_service.adapter_type != required_external_service_type
+            ):
                 raise ForecastProviderConfigurationError(
                     f"External Service {provider.external_service_id} is not compatible "
                     f"with Forecast Provider {provider.name} using adapter {provider.adapter_type}."
                 )
 
         # Checks if the configuration is valid for the given adapter type
-        if provider.config is None or not provider.config.is_valid(provider.adapter_type):
+        if provider.config is None or not provider.config.is_valid(
+            provider.adapter_type
+        ):
             raise ForecastProviderConfigurationError(
                 f"Invalid configuration for Forecast Provider {provider.name} with adapter {provider.adapter_type}."
             )
 
-        self.logger.debug(f"Forecast provider {provider.id} ({provider.name}) is valid.")
+        self.logger.debug(
+            f"Forecast provider {provider.id} ({provider.name}) is valid."
+        )
         return True
 
     # --- Optimization Unit Management ---
@@ -665,7 +832,9 @@ class ConfigurationService:
         notifier_ids: Optional[List[EntityId]] = None,
     ) -> Optional[EnergyOptimizationUnit]:
         """Create an optimization unit into the system."""
-        self.logger.info(f"Adding optimization unit {name} ({description}), Active: {is_enabled}")
+        self.logger.info(
+            f"Adding optimization unit {name} ({description}), Active: {is_enabled}"
+        )
 
         optimization_unit = EnergyOptimizationUnit(
             name=name,
@@ -685,12 +854,18 @@ class ConfigurationService:
 
         return optimization_unit
 
-    def get_optimization_unit(self, unit_id: EntityId) -> Optional[EnergyOptimizationUnit]:
+    def get_optimization_unit(
+        self, unit_id: EntityId
+    ) -> Optional[EnergyOptimizationUnit]:
         """Get an optimization unit by its ID."""
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         return optimization_unit
 
@@ -711,27 +886,49 @@ class ConfigurationService:
         eous = self.list_optimization_units()
 
         if filter_by_miners is not None:
-            eous = [eou for eou in eous if set(eou.target_miner_ids).intersection(filter_by_miners)]
+            eous = [
+                eou
+                for eou in eous
+                if set(eou.target_miner_ids).intersection(filter_by_miners)
+            ]
         if filter_by_energy_source is not None:
-            eous = [eou for eou in eous if eou.energy_source_id == filter_by_energy_source]
+            eous = [
+                eou for eou in eous if eou.energy_source_id == filter_by_energy_source
+            ]
         if filter_by_policy is not None:
             eous = [eou for eou in eous if eou.policy_id == filter_by_policy]
         if filter_by_home_forecast_provider is not None:
-            eous = [eou for eou in eous if eou.home_forecast_provider_id == filter_by_home_forecast_provider]
+            eous = [
+                eou
+                for eou in eous
+                if eou.home_forecast_provider_id == filter_by_home_forecast_provider
+            ]
         if filter_by_performance_tracker is not None:
-            eous = [eou for eou in eous if eou.performance_tracker_id == filter_by_performance_tracker]
+            eous = [
+                eou
+                for eou in eous
+                if eou.performance_tracker_id == filter_by_performance_tracker
+            ]
         if filter_by_notifiers is not None:
-            eous = [eou for eou in eous if set(eou.notifier_ids).intersection(filter_by_notifiers)]
+            eous = [
+                eou
+                for eou in eous
+                if set(eou.notifier_ids).intersection(filter_by_notifiers)
+            ]
         return eous
 
     def remove_optimization_unit(self, unit_id: EntityId) -> EnergyOptimizationUnit:
         """Remove an optimization unit from the system."""
         self.logger.info(f"Removing optimization unit {unit_id}")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         self.optimization_unit_repo.remove(unit_id)
 
@@ -753,10 +950,14 @@ class ConfigurationService:
         """Update an optimization unit in the system."""
         self.logger.info(f"Updating optimization unit {unit_id} ({name})")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         optimization_unit.name = name
         optimization_unit.description = description
@@ -786,10 +987,14 @@ class ConfigurationService:
         """Activate an optimization unit in the system."""
         self.logger.info(f"Activating optimization unit {unit_id}")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         self.check_optimization_unit(optimization_unit)
         self.check_policy(optimization_unit.policy_id)
@@ -804,10 +1009,14 @@ class ConfigurationService:
         """Deactivate an optimization unit in the system."""
         self.logger.info(f"Deactivating optimization unit {unit_id}")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         optimization_unit.disable()
 
@@ -815,19 +1024,27 @@ class ConfigurationService:
 
         return optimization_unit
 
-    def add_miner_to_optimization_unit(self, unit_id: EntityId, miner_id: EntityId) -> EnergyOptimizationUnit:
+    def add_miner_to_optimization_unit(
+        self, unit_id: EntityId, miner_id: EntityId
+    ) -> EnergyOptimizationUnit:
         """Add a miner to an optimization unit."""
         self.logger.info(f"Adding miner {miner_id} to optimization unit {unit_id}")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         if miner_id not in optimization_unit.target_miner_ids:
             optimization_unit.target_miner_ids.append(miner_id)
         else:
-            self.logger.warning(f"Miner {miner_id} is already part of the optimization unit {unit_id}.")
+            self.logger.warning(
+                f"Miner {miner_id} is already part of the optimization unit {unit_id}."
+            )
 
         self.check_optimization_unit(optimization_unit)
 
@@ -835,32 +1052,46 @@ class ConfigurationService:
 
         return optimization_unit
 
-    def remove_miner_from_optimization_unit(self, unit_id: EntityId, miner_id: EntityId) -> EnergyOptimizationUnit:
+    def remove_miner_from_optimization_unit(
+        self, unit_id: EntityId, miner_id: EntityId
+    ) -> EnergyOptimizationUnit:
         """Remove a miner from an optimization unit."""
         self.logger.info(f"Removing miner {miner_id} from optimization unit {unit_id}")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         if miner_id in optimization_unit.target_miner_ids:
             optimization_unit.target_miner_ids.remove(miner_id)
         else:
-            self.logger.warning(f"Miner {miner_id} is not part of the optimization unit {unit_id}.")
+            self.logger.warning(
+                f"Miner {miner_id} is not part of the optimization unit {unit_id}."
+            )
 
         self.check_optimization_unit(optimization_unit)
         self.optimization_unit_repo.update(optimization_unit)
 
         return optimization_unit
 
-    def assign_policy_to_optimization_unit(self, unit_id: EntityId, policy_id: EntityId) -> EnergyOptimizationUnit:
+    def assign_policy_to_optimization_unit(
+        self, unit_id: EntityId, policy_id: EntityId
+    ) -> EnergyOptimizationUnit:
         """Assign a policy to an optimization unit."""
         self.logger.info(f"Assigning policy {policy_id} to optimization unit {unit_id}")
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         optimization_unit.policy_id = policy_id
         self.check_optimization_unit(optimization_unit)
@@ -872,12 +1103,18 @@ class ConfigurationService:
         self, unit_id: EntityId, energy_source_id: EntityId
     ) -> EnergyOptimizationUnit:
         """Assign an energy source to an optimization unit."""
-        self.logger.info(f"Assigning energy source {energy_source_id} to optimization unit {unit_id}")
+        self.logger.info(
+            f"Assigning energy source {energy_source_id} to optimization unit {unit_id}"
+        )
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         optimization_unit.energy_source_id = energy_source_id
         self.check_optimization_unit(optimization_unit)
@@ -889,12 +1126,18 @@ class ConfigurationService:
         self, unit_id: EntityId, home_forecast_provider_id: EntityId
     ) -> EnergyOptimizationUnit:
         """Assign a home forecast provider to an optimization unit."""
-        self.logger.info(f"Assigning home forecast provider {home_forecast_provider_id} to optimization unit {unit_id}")
+        self.logger.info(
+            f"Assigning home forecast provider {home_forecast_provider_id} to optimization unit {unit_id}"
+        )
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         optimization_unit.home_forecast_provider_id = home_forecast_provider_id
         self.check_optimization_unit(optimization_unit)
@@ -906,12 +1149,18 @@ class ConfigurationService:
         self, unit_id: EntityId, performance_tracker_id: EntityId
     ) -> EnergyOptimizationUnit:
         """Assign a performance tracker to an optimization unit."""
-        self.logger.info(f"Assigning performance tracker {performance_tracker_id} to optimization unit {unit_id}")
+        self.logger.info(
+            f"Assigning performance tracker {performance_tracker_id} to optimization unit {unit_id}"
+        )
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         optimization_unit.performance_tracker_id = performance_tracker_id
         self.check_optimization_unit(optimization_unit)
@@ -919,19 +1168,29 @@ class ConfigurationService:
 
         return optimization_unit
 
-    def add_notifier_to_optimization_unit(self, unit_id: EntityId, notifier_id: EntityId) -> EnergyOptimizationUnit:
+    def add_notifier_to_optimization_unit(
+        self, unit_id: EntityId, notifier_id: EntityId
+    ) -> EnergyOptimizationUnit:
         """Add a notifier to an optimization unit."""
-        self.logger.info(f"Adding notifier {notifier_id} to optimization unit {unit_id}")
+        self.logger.info(
+            f"Adding notifier {notifier_id} to optimization unit {unit_id}"
+        )
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         if notifier_id not in optimization_unit.notifier_ids:
             optimization_unit.notifier_ids.append(notifier_id)
         else:
-            self.logger.warning(f"Notifier {notifier_id} is already part of the optimization unit {unit_id}.")
+            self.logger.warning(
+                f"Notifier {notifier_id} is already part of the optimization unit {unit_id}."
+            )
 
         self.check_optimization_unit(optimization_unit)
         self.optimization_unit_repo.update(optimization_unit)
@@ -942,35 +1201,51 @@ class ConfigurationService:
         self, unit_id: EntityId, notifier_id: EntityId
     ) -> EnergyOptimizationUnit:
         """Remove a notifier from an optimization unit."""
-        self.logger.info(f"Removing notifier {notifier_id} from optimization unit {unit_id}")
+        self.logger.info(
+            f"Removing notifier {notifier_id} from optimization unit {unit_id}"
+        )
 
-        optimization_unit: EnergyOptimizationUnit = self.optimization_unit_repo.get_by_id(unit_id)
+        optimization_unit: EnergyOptimizationUnit = (
+            self.optimization_unit_repo.get_by_id(unit_id)
+        )
 
         if not optimization_unit:
-            raise OptimizationUnitNotFoundError(f"Optimization Unit with ID {unit_id} not found.")
+            raise OptimizationUnitNotFoundError(
+                f"Optimization Unit with ID {unit_id} not found."
+            )
 
         if notifier_id in optimization_unit.notifier_ids:
             optimization_unit.notifier_ids.remove(notifier_id)
         else:
-            self.logger.warning(f"Notifier {notifier_id} is not part of the optimization unit {unit_id}.")
+            self.logger.warning(
+                f"Notifier {notifier_id} is not part of the optimization unit {unit_id}."
+            )
 
         self.check_optimization_unit(optimization_unit)
         self.optimization_unit_repo.update(optimization_unit)
 
         return optimization_unit
 
-    def check_optimization_unit(self, optimization_unit: EnergyOptimizationUnit) -> bool:
+    def check_optimization_unit(
+        self, optimization_unit: EnergyOptimizationUnit
+    ) -> bool:
         """Check if an optimization unit is valid and can be used."""
-        self.logger.debug(f"Checking optimization unit {optimization_unit.id} ({optimization_unit.name})")
+        self.logger.debug(
+            f"Checking optimization unit {optimization_unit.id} ({optimization_unit.name})"
+        )
 
         if not optimization_unit:
             raise OptimizationUnitNotFoundError("Optimization Unit not found.")
 
         # Check id the policy is valid
         if optimization_unit.policy_id:
-            policy: OptimizationPolicy = self.policy_repo.get_by_id(optimization_unit.policy_id)
+            policy: OptimizationPolicy = self.policy_repo.get_by_id(
+                optimization_unit.policy_id
+            )
             if not policy:
-                raise PolicyNotFoundError(f"Optimization Policy with ID {optimization_unit.policy_id} not found.")
+                raise PolicyNotFoundError(
+                    f"Optimization Policy with ID {optimization_unit.policy_id} not found."
+                )
 
         # Check if the miners are valid
         if optimization_unit.target_miner_ids:
@@ -981,7 +1256,9 @@ class ConfigurationService:
 
         # Check if the energy source is valid
         if optimization_unit.energy_source_id:
-            energy_source: EnergySource = self.energy_source_repo.get_by_id(optimization_unit.energy_source_id)
+            energy_source: EnergySource = self.energy_source_repo.get_by_id(
+                optimization_unit.energy_source_id
+            )
             if not energy_source:
                 raise EnergySourceNotFoundError(
                     f"Energy Source with ID {optimization_unit.energy_source_id} not found."
@@ -989,8 +1266,10 @@ class ConfigurationService:
 
         # Check if the home forecast provider is valid
         if optimization_unit.home_forecast_provider_id:
-            home_forecast_provider: HomeForecastProvider = self.home_forecast_provider_repo.get_by_id(
-                optimization_unit.home_forecast_provider_id
+            home_forecast_provider: HomeForecastProvider = (
+                self.home_forecast_provider_repo.get_by_id(
+                    optimization_unit.home_forecast_provider_id
+                )
             )
             if not home_forecast_provider:
                 raise HomeForecastProviderNotFoundError(
@@ -999,8 +1278,10 @@ class ConfigurationService:
 
         # Check if the performance tracker is valid
         if optimization_unit.performance_tracker_id:
-            performance_tracker: MiningPerformanceTracker = self.mining_performance_tracker_repo.get_by_id(
-                optimization_unit.performance_tracker_id
+            performance_tracker: MiningPerformanceTracker = (
+                self.mining_performance_tracker_repo.get_by_id(
+                    optimization_unit.performance_tracker_id
+                )
             )
             if not performance_tracker:
                 raise MiningPerformanceTrackerNotFoundError(
@@ -1012,9 +1293,13 @@ class ConfigurationService:
             for notifier_id in optimization_unit.notifier_ids:
                 notifier: Notifier = self.notifier_repo.get_by_id(notifier_id)
                 if not notifier:
-                    raise NotifierNotFoundError(f"Notifier with ID {notifier_id} not found.")
+                    raise NotifierNotFoundError(
+                        f"Notifier with ID {notifier_id} not found."
+                    )
 
-        self.logger.debug(f"Optimization unit {optimization_unit.id} ({optimization_unit.name}) is valid.")
+        self.logger.debug(
+            f"Optimization unit {optimization_unit.id} ({optimization_unit.name}) is valid."
+        )
         return True
 
     # --- Miner Management ---
@@ -1150,9 +1435,13 @@ class ConfigurationService:
 
         # Check if the controller exists
         if miner.controller_id:
-            controller: MinerController = self.miner_controller_repo.get_by_id(miner.controller_id)
+            controller: MinerController = self.miner_controller_repo.get_by_id(
+                miner.controller_id
+            )
             if not controller:
-                raise MinerControllerNotFoundError(f"Miner Controller with ID {miner.controller_id} not found.")
+                raise MinerControllerNotFoundError(
+                    f"Miner Controller with ID {miner.controller_id} not found."
+                )
 
         self.logger.debug(f"Miner {miner.id} ({miner.name}) is valid.")
         return True
@@ -1179,12 +1468,18 @@ class ConfigurationService:
 
         return controller
 
-    def get_miner_controller(self, controller_id: EntityId) -> Optional[MinerController]:
+    def get_miner_controller(
+        self, controller_id: EntityId
+    ) -> Optional[MinerController]:
         """Get a miner controller by its ID."""
-        controller: MinerController = self.miner_controller_repo.get_by_id(controller_id)
+        controller: MinerController = self.miner_controller_repo.get_by_id(
+            controller_id
+        )
 
         if not controller:
-            raise MinerControllerNotFoundError(f"Controller with ID {controller_id} not found.")
+            raise MinerControllerNotFoundError(
+                f"Controller with ID {controller_id} not found."
+            )
 
         return controller
 
@@ -1199,7 +1494,9 @@ class ConfigurationService:
         miners: List[Miner] = self.miner_repo.get_by_controller_id(miner_controller_id)
 
         for miner in miners:
-            self.logger.info(f"Unlinking miner {miner.name} ({miner.id}) from controller {miner_controller_id}")
+            self.logger.info(
+                f"Unlinking miner {miner.name} ({miner.id}) from controller {miner_controller_id}"
+            )
             miner.controller_id = None
             self.miner_repo.update(miner)
 
@@ -1207,10 +1504,14 @@ class ConfigurationService:
         """Remove a miner controller from the system."""
         self.logger.info(f"Removing miner controller {controller_id}")
 
-        controller: MinerController = self.miner_controller_repo.get_by_id(controller_id)
+        controller: MinerController = self.miner_controller_repo.get_by_id(
+            controller_id
+        )
 
         if not controller:
-            raise MinerControllerNotFoundError(f"Controller with ID {controller_id} not found.")
+            raise MinerControllerNotFoundError(
+                f"Controller with ID {controller_id} not found."
+            )
 
         # Unlink the controller from all miners before removal
         self.unlink_miner_controller(controller_id)
@@ -1229,13 +1530,19 @@ class ConfigurationService:
         """
         self.logger.info(f"Updating miner controller {controller_id} ({name})")
 
-        controller: MinerController = self.miner_controller_repo.get_by_id(controller_id)
+        controller: MinerController = self.miner_controller_repo.get_by_id(
+            controller_id
+        )
 
         if not controller:
-            raise MinerControllerNotFoundError(f"Controller with ID {controller_id} not found.")
+            raise MinerControllerNotFoundError(
+                f"Controller with ID {controller_id} not found."
+            )
 
         # Check if the config is valid for the current adapter type
-        if not isinstance(config, MINER_CONTROLLER_CONFIG_TYPE_MAP[controller.adapter_type]):
+        if not isinstance(
+            config, MINER_CONTROLLER_CONFIG_TYPE_MAP[controller.adapter_type]
+        ):
             raise MinerControllerConfigurationError(
                 f"Invalid configuration type for controller {controller_id}. "
                 f"Expected {MINER_CONTROLLER_CONFIG_TYPE_MAP[controller.adapter_type].__name__}, "
@@ -1261,22 +1568,30 @@ class ConfigurationService:
             raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
 
         if not self.miner_controller_repo.get_by_id(controller_id):
-            raise MinerControllerNotFoundError(f"Controller with ID {controller_id} does not exist.")
+            raise MinerControllerNotFoundError(
+                f"Controller with ID {controller_id} does not exist."
+            )
 
         miner.controller_id = controller_id
         self.miner_repo.update(miner)
 
     def check_miner_controller(self, controller: MinerController) -> bool:
         """Check if a miner controller is valid and can be used."""
-        self.logger.debug(f"Checking miner controller {controller.id} ({controller.name})")
+        self.logger.debug(
+            f"Checking miner controller {controller.id} ({controller.name})"
+        )
 
         # Checks if the configuration is valid for the given adapter type
-        if controller.config is None or not controller.config.is_valid(controller.adapter_type):
+        if controller.config is None or not controller.config.is_valid(
+            controller.adapter_type
+        ):
             raise MinerControllerConfigurationError(
                 f"Invalid configuration for Miner Controller {controller.name} with adapter {controller.adapter_type}."
             )
 
-        self.logger.debug(f"Miner controller {controller.id} ({controller.name}) is valid.")
+        self.logger.debug(
+            f"Miner controller {controller.id} ({controller.name}) is valid."
+        )
         return True
 
     # --- Notifier Management ---
@@ -1355,22 +1670,31 @@ class ConfigurationService:
         self.logger.debug(f"Checking notifier {notifier.id} ({notifier.name})")
 
         if notifier.external_service_id:
-            external_service: ExternalService = self.external_service_repo.get_by_id(notifier.external_service_id)
+            external_service: ExternalService = self.external_service_repo.get_by_id(
+                notifier.external_service_id
+            )
             if not external_service:
                 raise ExternalServiceNotFoundError(
                     f"External Service with ID {notifier.external_service_id} not found."
                 )
 
             # Checks if the external service is compatible with the notifier's adapter type
-            requied_external_service_type = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(notifier.adapter_type, None)
-            if requied_external_service_type and external_service.type != requied_external_service_type:
+            requied_external_service_type = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(
+                notifier.adapter_type, None
+            )
+            if (
+                requied_external_service_type
+                and external_service.type != requied_external_service_type
+            ):
                 raise NotifierConfigurationError(
                     f"External Service {external_service.id} is not compatible with Notifier {notifier.name} "
                     f"using adapter {notifier.adapter_type}. Expected type {requied_external_service_type}."
                 )
 
         # Checks if the configuration is valid for the given adapter type
-        if notifier.config is None or not notifier.config.is_valid(notifier.adapter_type):
+        if notifier.config is None or not notifier.config.is_valid(
+            notifier.adapter_type
+        ):
             raise NotifierNotFoundError(
                 f"Invalid configuration for Notifier {notifier.name} with adapter {notifier.adapter_type}."
             )
@@ -1417,14 +1741,20 @@ class ConfigurationService:
         elif rule_type == RuleType.STOP:
             policy.stop_rules.append(rule)
         else:
-            raise PolicyConfigurationError(f"Invalid Rule Type. Must be {RuleType.START} or {RuleType.STOP}.")
+            raise PolicyConfigurationError(
+                f"Invalid Rule Type. Must be {RuleType.START} or {RuleType.STOP}."
+            )
 
         self.policy_repo.update(policy)
-        self.logger.debug(f"Added {rule_type.value} rule '{name}' to policy '{policy.name}'")
+        self.logger.debug(
+            f"Added {rule_type.value} rule '{name}' to policy '{policy.name}'"
+        )
 
         return rule
 
-    def get_policy_rules(self, policy_id: EntityId, rule_type: RuleType) -> List[AutomationRule]:
+    def get_policy_rules(
+        self, policy_id: EntityId, rule_type: RuleType
+    ) -> List[AutomationRule]:
         """Get all rules of a policy."""
         policy = self.policy_repo.get_by_id(policy_id)
 
@@ -1436,9 +1766,13 @@ class ConfigurationService:
         elif rule_type == RuleType.STOP:
             return policy.stop_rules
         else:
-            raise ValueError(f"Invalid rule_type. Must be {RuleType.START} or {RuleType.STOP}.")
+            raise ValueError(
+                f"Invalid rule_type. Must be {RuleType.START} or {RuleType.STOP}."
+            )
 
-    def get_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> Optional[AutomationRule]:
+    def get_policy_rule(
+        self, policy_id: EntityId, rule_id: EntityId
+    ) -> Optional[AutomationRule]:
         """Get a rule by its ID."""
         policy = self.policy_repo.get_by_id(policy_id)
 
@@ -1479,7 +1813,9 @@ class ConfigurationService:
 
         raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
 
-    def delete_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
+    def delete_policy_rule(
+        self, policy_id: EntityId, rule_id: EntityId
+    ) -> AutomationRule:
         """Delete a rule from a policy."""
         policy = self.policy_repo.get_by_id(policy_id)
 
@@ -1495,7 +1831,9 @@ class ConfigurationService:
 
                 self.policy_repo.update(policy)
 
-                self.logger.info(f"Deleted rule '{rule.name}' from policy '{policy.name}'")
+                self.logger.info(
+                    f"Deleted rule '{rule.name}' from policy '{policy.name}'"
+                )
 
                 return rule
         raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
@@ -1517,7 +1855,9 @@ class ConfigurationService:
                 break
 
         if not rule:
-            raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+            raise PolicyError(
+                f"Rule with ID {rule_id} not found in policy {policy_id}."
+            )
 
         # Set the rule as enabled
         rule.enabled = True
@@ -1547,11 +1887,15 @@ class ConfigurationService:
 
         # Check if start rules contain at least one rule to stop the miner
         if not policy.start_rules or len(policy.start_rules) == 0:
-            raise PolicyError("Policy must have at least one start rule with a STOP MINING action.")
+            raise PolicyError(
+                "Policy must have at least one start rule with a STOP MINING action."
+            )
 
         # Check if stop rules contain at least one rule to start the miner
         if not policy.stop_rules or len(policy.stop_rules) == 0:
-            raise PolicyError("Policy must have at least one stop rule with a START MINING action.")
+            raise PolicyError(
+                "Policy must have at least one stop rule with a START MINING action."
+            )
 
         self.logger.debug(f"Policy {policy.id} ({policy.name}) is valid.")
         return True

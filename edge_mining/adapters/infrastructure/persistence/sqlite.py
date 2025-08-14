@@ -25,7 +25,9 @@ class BaseSqliteRepository(ABC):
         """Obtain a database connection."""
         try:
             # We set a timeout for blocking operations
-            conn = sqlite3.connect(self.db_path, timeout=10, detect_types=sqlite3.PARSE_DECLTYPES)
+            conn = sqlite3.connect(
+                self.db_path, timeout=10, detect_types=sqlite3.PARSE_DECLTYPES
+            )
             conn.row_factory = sqlite3.Row  # Accessing columns by name
             conn.execute("PRAGMA foreign_keys = ON;")  # Enable foreign keys if used
 

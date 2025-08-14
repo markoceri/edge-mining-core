@@ -11,7 +11,9 @@ from edge_mining.shared.interfaces.config import EnergyMonitorConfig
 class EnergyMonitorDummySolarConfig(EnergyMonitorConfig):
     """Energy monitor configiguration"""
 
-    max_consumption_power: Watts = field(default=Watts(3200.0))  # Default max consumption power
+    max_consumption_power: Watts = field(
+        default=Watts(3200.0)
+    )  # Default max consumption power
 
     def is_valid(self, adapter_type: EnergyMonitorAdapter) -> bool:
         """

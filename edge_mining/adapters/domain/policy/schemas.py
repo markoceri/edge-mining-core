@@ -4,7 +4,13 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 
@@ -12,7 +18,9 @@ from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 class RuleConditionSchema(BaseModel):
     """Single condition within a rule."""
 
-    field: str = Field(..., description="Field path in DecisionalContext (dot notation)")
+    field: str = Field(
+        ..., description="Field path in DecisionalContext (dot notation)"
+    )
     operator: OperatorType = Field(..., description="Comparison operator")
     value: Union[int, float, str, bool, List[Union[int, float, str]]] = Field(
         ..., description="Value to compare against"
@@ -26,7 +34,9 @@ class RuleConditionSchema(BaseModel):
             raise ValueError("Field path must be a non-empty string")
 
         # Basic validation - could be enhanced with actual field path checking
-        allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._")
+        allowed_chars = set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._"
+        )
         if not all(c in allowed_chars for c in v):
             raise ValueError("Field path contains invalid characters")
 
@@ -40,7 +50,9 @@ class RuleConditionSchema(BaseModel):
             try:
                 return OperatorType(v.lower())
             except KeyError as e:
-                raise ValueError(f"Invalid operator: {v}. Must be one of {list(OperatorType)}") from e
+                raise ValueError(
+                    f"Invalid operator: {v}. Must be one of {list(OperatorType)}"
+                ) from e
         elif isinstance(v, OperatorType):
             return v
         else:
@@ -81,7 +93,9 @@ class LogicalGroupSchema(BaseModel):
         operators = [self.all_of, self.any_of, self.not_]
         non_none_count = sum(1 for op in operators if op is not None)
         if non_none_count != 1:
-            raise ValueError("Exactly one logical operator (all_of, any_of, not_) must be specified")
+            raise ValueError(
+                "Exactly one logical operator (all_of, any_of, not_) must be specified"
+            )
         return self
 
 
@@ -145,8 +159,12 @@ class OptimizationPolicySchema(BaseModel):
     description: Optional[str] = Field(None, description="Policy description")
 
     # Rules embedded directly in the policy file
-    start_rules: List[AutomationRuleSchema] = Field(default_factory=list, description="Rules for starting mining")
-    stop_rules: List[AutomationRuleSchema] = Field(default_factory=list, description="Rules for stopping mining")
+    start_rules: List[AutomationRuleSchema] = Field(
+        default_factory=list, description="Rules for starting mining"
+    )
+    stop_rules: List[AutomationRuleSchema] = Field(
+        default_factory=list, description="Rules for stopping mining"
+    )
 
     # Metadata
     metadata: Optional[MetadataSchema] = Field(
@@ -168,7 +186,9 @@ class OptimizationPolicySchema(BaseModel):
 
     @field_validator("start_rules", "stop_rules")
     @classmethod
-    def validate_rule_ids_unique(cls, v: List["OptimizationPolicySchema"]) -> List["OptimizationPolicySchema"]:
+    def validate_rule_ids_unique(
+        cls, v: List["OptimizationPolicySchema"]
+    ) -> List["OptimizationPolicySchema"]:
         """Ensure rule ids are unique within each rule type."""
         if not v:
             return v
@@ -187,7 +207,9 @@ class OptimizationPolicySchema(BaseModel):
 
         if len(all_rule_ids) != len(set(all_rule_ids)):
             duplicates = [id for id in all_rule_ids if all_rule_ids.count(id) > 1]
-            raise ValueError(f"Duplicate rule ids found across start and stop rules: {duplicates}")
+            raise ValueError(
+                f"Duplicate rule ids found across start and stop rules: {duplicates}"
+            )
 
         return self
 

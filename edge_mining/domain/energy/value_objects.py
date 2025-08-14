@@ -4,7 +4,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from edge_mining.domain.common import Percentage, Timestamp, ValueObject, WattHours, Watts
+from edge_mining.domain.common import (
+    Percentage,
+    Timestamp,
+    ValueObject,
+    WattHours,
+    Watts,
+)
 
 
 @dataclass(frozen=True)

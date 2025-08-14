@@ -22,7 +22,9 @@ class CustomRuleEngine(RuleEngine):
         # Store the rules
         self.rules = rules
 
-        self.logger.debug(f"Successfully loaded {len(rules)} rules into CustomRuleEngine")
+        self.logger.debug(
+            f"Successfully loaded {len(rules)} rules into CustomRuleEngine"
+        )
 
     def evaluate(self, context: DecisionalContext) -> bool:
         """

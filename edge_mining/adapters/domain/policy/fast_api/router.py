@@ -175,7 +175,9 @@ async def get_policy_rules(
         elif rule_type == RuleTypeSchema.stop:
             rule_type = RuleType.STOP
 
-        rules: List[AutomationRule] = config_service.get_policy_rules(policy_id, rule_type)
+        rules: List[AutomationRule] = config_service.get_policy_rules(
+            policy_id, rule_type
+        )
 
         response: List[AutomationRuleResponseSchema] = []
         for rule in rules:

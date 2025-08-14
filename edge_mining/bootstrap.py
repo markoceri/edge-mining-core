@@ -24,7 +24,10 @@ from edge_mining.adapters.domain.miner.repositories import (
     SqliteMinerControllerRepository,
     SqliteMinerRepository,
 )
-from edge_mining.adapters.domain.notification.repositories import InMemoryNotifierRepository, SqliteNotifierRepository
+from edge_mining.adapters.domain.notification.repositories import (
+    InMemoryNotifierRepository,
+    SqliteNotifierRepository,
+)
 from edge_mining.adapters.domain.optimization_unit.repositories import (
     InMemoryOptimizationUnitRepository,
     SqliteOptimizationUnitRepository,
@@ -38,7 +41,10 @@ from edge_mining.adapters.domain.policy.repositories import (
     SqliteOptimizationPolicyRepository,
     YamlOptimizationPolicyRepository,
 )
-from edge_mining.adapters.domain.user.repositories import InMemorySettingsRepository, SqliteSettingsRepository
+from edge_mining.adapters.domain.user.repositories import (
+    InMemorySettingsRepository,
+    SqliteSettingsRepository,
+)
 from edge_mining.adapters.infrastructure.external_services.repositories import (
     InMemoryExternalServiceRepository,
     SqliteExternalServiceRepository,
@@ -50,7 +56,10 @@ from edge_mining.application.services.adapter_service import AdapterService
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.application.services.miner_action_service import MinerActionService
 from edge_mining.application.services.optimization_service import OptimizationService
-from edge_mining.domain.energy.ports import EnergyMonitorRepository, EnergySourceRepository
+from edge_mining.domain.energy.ports import (
+    EnergyMonitorRepository,
+    EnergySourceRepository,
+)
 from edge_mining.domain.forecast.ports import ForecastProviderRepository
 from edge_mining.domain.home_load.ports import (
     HomeForecastProviderPort,
@@ -70,14 +79,20 @@ from edge_mining.shared.settings.ports import SettingsRepository
 from edge_mining.shared.settings.settings import AppSettings
 
 
-def configure_persistence(logger: LoggerPort, settings: AppSettings) -> PersistenceSettings:
+def configure_persistence(
+    logger: LoggerPort, settings: AppSettings
+) -> PersistenceSettings:
     """
     Configures the persistence layer based on the settings.
     """
     logger.debug("Configuring persistence...")
 
-    persistence_adapter: PersistenceAdapter = PersistenceAdapter(settings.persistence_adapter)
-    policies_persistence_adapter: PersistenceAdapter = PersistenceAdapter(settings.policies_persistence_adapter)
+    persistence_adapter: PersistenceAdapter = PersistenceAdapter(
+        settings.persistence_adapter
+    )
+    policies_persistence_adapter: PersistenceAdapter = PersistenceAdapter(
+        settings.policies_persistence_adapter
+    )
 
     # Initialize SQLite DB base repository if needed
     if PersistenceAdapter.SQLITE in [
@@ -91,7 +106,9 @@ def configure_persistence(logger: LoggerPort, settings: AppSettings) -> Persiste
             os.makedirs(db_dir, exist_ok=True)
 
         logger.debug(f"Using SQLite persistence adapter (DB: {db_path}).")
-        sqlite_db: BaseSqliteRepository = BaseSqliteRepository(db_path=db_path, logger=logger)
+        sqlite_db: BaseSqliteRepository = BaseSqliteRepository(
+            db_path=db_path, logger=logger
+        )
 
     # Initialize repositories based on the selected persistence adapter
     if persistence_adapter == PersistenceAdapter.IN_MEMORY:
@@ -99,48 +116,82 @@ def configure_persistence(logger: LoggerPort, settings: AppSettings) -> Persiste
         energy_source_repo: EnergySourceRepository = InMemoryEnergySourceRepository()
         energy_monitor_repo: EnergyMonitorRepository = InMemoryEnergyMonitorRepository()
         miner_repo: MinerRepository = InMemoryMinerRepository()
-        miner_controller_repo: InMemoryMinerControllerRepository = InMemoryMinerControllerRepository()
-        forecast_provider_repo: ForecastProviderRepository = InMemoryForecastProviderRepository()
+        miner_controller_repo: InMemoryMinerControllerRepository = (
+            InMemoryMinerControllerRepository()
+        )
+        forecast_provider_repo: ForecastProviderRepository = (
+            InMemoryForecastProviderRepository()
+        )
         notifier_repo: NotifierRepository = InMemoryNotifierRepository()
         mining_performance_tracker_repo: MiningPerformanceTrackerRepository = (
             InMemoryMiningPerformanceTrackerRepository()
         )
         settings_repo: SettingsRepository = InMemorySettingsRepository()
-        home_profile_repo: HomeLoadsProfileRepository = InMemoryHomeLoadsProfileRepository()
-        home_forecast_provider_repo: HomeForecastProviderPort = InMemoryHomeForecastProviderRepository()
-        optimization_unit_repo: EnergyOptimizationUnitRepository = InMemoryOptimizationUnitRepository()
-        external_service_repo: ExternalServiceRepository = InMemoryExternalServiceRepository()
+        home_profile_repo: HomeLoadsProfileRepository = (
+            InMemoryHomeLoadsProfileRepository()
+        )
+        home_forecast_provider_repo: HomeForecastProviderPort = (
+            InMemoryHomeForecastProviderRepository()
+        )
+        optimization_unit_repo: EnergyOptimizationUnitRepository = (
+            InMemoryOptimizationUnitRepository()
+        )
+        external_service_repo: ExternalServiceRepository = (
+            InMemoryExternalServiceRepository()
+        )
 
         logger.debug("Using InMemory persistence adapters.")
     elif persistence_adapter == PersistenceAdapter.SQLITE:
         # Instantiate all SQLite repositories passing the DB base
-        energy_source_repo: EnergySourceRepository = SqliteEnergySourceRepository(db=sqlite_db)
-        energy_monitor_repo: EnergyMonitorRepository = SqliteEnergyMonitorRepository(db=sqlite_db)
-        miner_repo: MinerRepository = SqliteMinerRepository(db=sqlite_db)
-        miner_controller_repo: SqliteMinerControllerRepository = SqliteMinerControllerRepository(db=sqlite_db)
-        forecast_provider_repo: ForecastProviderRepository = SqliteForecastProviderRepository(db=sqlite_db)
-        notifier_repo: NotifierRepository = SqliteNotifierRepository(db=sqlite_db)
-        mining_performance_tracker_repo: MiningPerformanceTrackerRepository = SqliteMiningPerformanceTrackerRepository(
+        energy_source_repo: EnergySourceRepository = SqliteEnergySourceRepository(
             db=sqlite_db
         )
+        energy_monitor_repo: EnergyMonitorRepository = SqliteEnergyMonitorRepository(
+            db=sqlite_db
+        )
+        miner_repo: MinerRepository = SqliteMinerRepository(db=sqlite_db)
+        miner_controller_repo: SqliteMinerControllerRepository = (
+            SqliteMinerControllerRepository(db=sqlite_db)
+        )
+        forecast_provider_repo: ForecastProviderRepository = (
+            SqliteForecastProviderRepository(db=sqlite_db)
+        )
+        notifier_repo: NotifierRepository = SqliteNotifierRepository(db=sqlite_db)
+        mining_performance_tracker_repo: MiningPerformanceTrackerRepository = (
+            SqliteMiningPerformanceTrackerRepository(db=sqlite_db)
+        )
         settings_repo: SettingsRepository = SqliteSettingsRepository(db=sqlite_db)
-        home_profile_repo: HomeLoadsProfileRepository = SqliteHomeLoadsProfileRepository(db=sqlite_db)
-        home_forecast_provider_repo: HomeForecastProviderRepository = SqliteHomeForecastProviderRepository(db=sqlite_db)
-        optimization_unit_repo: EnergyOptimizationUnitRepository = SqliteOptimizationUnitRepository(db=sqlite_db)
-        external_service_repo: ExternalServiceRepository = SqliteExternalServiceRepository(db=sqlite_db)
+        home_profile_repo: HomeLoadsProfileRepository = (
+            SqliteHomeLoadsProfileRepository(db=sqlite_db)
+        )
+        home_forecast_provider_repo: HomeForecastProviderRepository = (
+            SqliteHomeForecastProviderRepository(db=sqlite_db)
+        )
+        optimization_unit_repo: EnergyOptimizationUnitRepository = (
+            SqliteOptimizationUnitRepository(db=sqlite_db)
+        )
+        external_service_repo: ExternalServiceRepository = (
+            SqliteExternalServiceRepository(db=sqlite_db)
+        )
 
         # user_repo: UserRepository = SqliteUserRepository(
         #   db_path=db_path, logger=logger
         # ) # If implemented
     else:
-        raise ValueError(f"Unsupported persistence_adapter: {settings.persistence_adapter}")
+        raise ValueError(
+            f"Unsupported persistence_adapter: {settings.persistence_adapter}"
+        )
 
     # Initialize specific policies repositories based on the selected persistence adapter
     if policies_persistence_adapter == PersistenceAdapter.IN_MEMORY:
-        policy_repo: OptimizationPolicyRepository = InMemoryOptimizationPolicyRepository()
+        policy_repo: OptimizationPolicyRepository = (
+            InMemoryOptimizationPolicyRepository()
+        )
         logger.debug("Using InMemory policies persistence adapter.")
     elif policies_persistence_adapter == PersistenceAdapter.SQLITE:
-        policy_repo: OptimizationPolicyRepository = SqliteOptimizationPolicyRepository(db=sqlite_db)
+        policy_repo: OptimizationPolicyRepository = SqliteOptimizationPolicyRepository(
+            db=sqlite_db
+        )
         logger.debug("Using SQLite policies persistence adapter.")
     elif policies_persistence_adapter == PersistenceAdapter.YAML:
         policy_repo: OptimizationPolicyRepository = YamlOptimizationPolicyRepository(
@@ -214,7 +265,9 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings) -> Service
         logger=logger,
     )
 
-    config_service = ConfigurationService(persistence_settings=persistence_settings, logger=logger)
+    config_service = ConfigurationService(
+        persistence_settings=persistence_settings, logger=logger
+    )
 
     services = Services(
         adapter_service=adapter_service,

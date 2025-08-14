@@ -6,13 +6,23 @@ for the energy provisioning of Edge Mining Application using the Home Assistant 
 from datetime import datetime
 from typing import Optional
 
-from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import ServiceHomeAssistantAPI
+from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import (
+    ServiceHomeAssistantAPI,
+)
 from edge_mining.domain.common import Timestamp, Watts
 from edge_mining.domain.energy.common import EnergyMonitorAdapter
 from edge_mining.domain.energy.entities import EnergySource
-from edge_mining.domain.energy.exceptions import EnergyMonitorConfigurationError, EnergyMonitorError
+from edge_mining.domain.energy.exceptions import (
+    EnergyMonitorConfigurationError,
+    EnergyMonitorError,
+)
 from edge_mining.domain.energy.ports import EnergyMonitorPort
-from edge_mining.domain.energy.value_objects import BatteryState, EnergyStateSnapshot, GridState, LoadState
+from edge_mining.domain.energy.value_objects import (
+    BatteryState,
+    EnergyStateSnapshot,
+    GridState,
+    LoadState,
+)
 from edge_mining.shared.adapter_configs.energy import EnergyMonitorHomeAssistantConfig
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.ports import ExternalServicePort
@@ -45,10 +55,18 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
 
         # Needs to have the Home Assistant API service as external_service
         if not external_service:
-            raise EnergyMonitorError("HomeAssistantAPI Service is required " "for HomeAssistantAPI energy monitor.")
+            raise EnergyMonitorError(
+                "HomeAssistantAPI Service is required "
+                "for HomeAssistantAPI energy monitor."
+            )
 
-        if not external_service.external_service_type == ExternalServiceAdapter.HOME_ASSISTANT_API:
-            raise EnergyMonitorError("External service must be of type HomeAssistantAPI")
+        if (
+            not external_service.external_service_type
+            == ExternalServiceAdapter.HOME_ASSISTANT_API
+        ):
+            raise EnergyMonitorError(
+                "External service must be of type HomeAssistantAPI"
+            )
 
         if not isinstance(config, EnergyMonitorHomeAssistantConfig):
             raise EnergyMonitorConfigurationError(
@@ -62,7 +80,9 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
         # Use builder pattern to create the adapter, in this way
         # we can easily add more configuration options in the future
         # based on the config provided by the user.
-        builder = HomeAssistantAPIEnergyMonitorBuilder(home_assistant=external_service, logger=logger)
+        builder = HomeAssistantAPIEnergyMonitorBuilder(
+            home_assistant=external_service, logger=logger
+        )
 
         # --- Production ---
         if energy_monitor_config.entity_production:
@@ -72,7 +92,9 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
                     unit=energy_monitor_config.unit_production,
                 )
             else:
-                builder.set_production_entity(entity_id=energy_monitor_config.entity_production)
+                builder.set_production_entity(
+                    entity_id=energy_monitor_config.entity_production
+                )
 
         # --- Consumption ---
         if energy_monitor_config.entity_consumption:
@@ -82,7 +104,9 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
                     unit=energy_monitor_config.unit_consumption,
                 )
             else:
-                builder.set_consumption_entity(entity_id=energy_monitor_config.entity_consumption)
+                builder.set_consumption_entity(
+                    entity_id=energy_monitor_config.entity_consumption
+                )
 
         # --- Grid ---
         if energy_monitor_config.entity_grid:
@@ -96,7 +120,10 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
                 builder.set_grid_entity(entity_id=energy_monitor_config.entity_grid)
 
         # --- Battery ---
-        if energy_monitor_config.entity_battery_soc and energy_monitor_config.entity_battery_power:
+        if (
+            energy_monitor_config.entity_battery_soc
+            and energy_monitor_config.entity_battery_power
+        ):
             if energy_monitor_config.unit_battery_power:
                 builder.set_battery_entities(
                     soc_entity_id=energy_monitor_config.entity_battery_soc,
@@ -144,13 +171,17 @@ class HomeAssistantAPIEnergyMonitorBuilder:
         self.grid_positive_export: bool = False
         self.battery_positive_charge: bool = True
 
-    def set_production_entity(self, entity_id: str, unit: str = "W") -> "HomeAssistantAPIEnergyMonitorBuilder":
+    def set_production_entity(
+        self, entity_id: str, unit: str = "W"
+    ) -> "HomeAssistantAPIEnergyMonitorBuilder":
         """Set entity for monitoring the production"""
         self.entity_production = entity_id
         self.unit_production = unit.lower()
         return self
 
-    def set_consumption_entity(self, entity_id: str, unit: str = "W") -> "HomeAssistantAPIEnergyMonitorBuilder":
+    def set_consumption_entity(
+        self, entity_id: str, unit: str = "W"
+    ) -> "HomeAssistantAPIEnergyMonitorBuilder":
         """Set entity for monitoring the consumption"""
         self.entity_consumption = entity_id
         self.unit_consumption = unit.lower()
@@ -196,7 +227,9 @@ class HomeAssistantAPIEnergyMonitorBuilder:
             raise EnergyMonitorError("Consumption entity is required")
 
         if self.entity_battery_soc and not self.entity_battery_power:
-            raise EnergyMonitorError("Battery power entity is required when battery SOC is configured")
+            raise EnergyMonitorError(
+                "Battery power entity is required when battery SOC is configured"
+            )
 
         monitor = HomeAssistantAPIEnergyMonitor(
             home_assistant=self.home_assistant,
@@ -300,7 +333,9 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
 
         # --- Production ---
         if self.entity_production:
-            state_production, _ = self.home_assistant.get_entity_state(self.entity_production)
+            state_production, _ = self.home_assistant.get_entity_state(
+                self.entity_production
+            )
             production_watts = self.home_assistant.parse_power(
                 state_production,
                 self.unit_production,
@@ -311,7 +346,9 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
 
         # --- Consumption ---
         if self.entity_consumption:
-            state_consumption, _ = self.home_assistant.get_entity_state(self.entity_consumption)
+            state_consumption, _ = self.home_assistant.get_entity_state(
+                self.entity_consumption
+            )
             consumption_watts = self.home_assistant.parse_power(
                 state_consumption,
                 self.unit_consumption,
@@ -323,15 +360,23 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
         # --- Grid ---
         if self.entity_grid:
             state_grid, _ = self.home_assistant.get_entity_state(self.entity_grid)
-            grid_watts_raw = self.home_assistant.parse_power(state_grid, self.unit_grid, self.entity_grid or "N/A")
+            grid_watts_raw = self.home_assistant.parse_power(
+                state_grid, self.unit_grid, self.entity_grid or "N/A"
+            )
         else:
             grid_watts_raw = None
 
         # --- Battery ---
         if self.entity_battery_soc and self.entity_battery_power:
-            state_battery_soc, _ = self.home_assistant.get_entity_state(self.entity_battery_soc)
-            state_battery_power, _ = self.home_assistant.get_entity_state(self.entity_battery_power)
-            battery_soc = self.home_assistant.parse_percentage(state_battery_soc, self.entity_battery_soc or "N/A")
+            state_battery_soc, _ = self.home_assistant.get_entity_state(
+                self.entity_battery_soc
+            )
+            state_battery_power, _ = self.home_assistant.get_entity_state(
+                self.entity_battery_power
+            )
+            battery_soc = self.home_assistant.parse_percentage(
+                state_battery_soc, self.entity_battery_soc or "N/A"
+            )
             battery_power_raw = self.home_assistant.parse_power(
                 state_battery_power,
                 self.unit_battery_power,
@@ -356,7 +401,9 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
         # --- Apply Conventions ---
         # Grid: We want positive for IMPORTING, negative for EXPORTING
         if grid_watts_raw is not None:
-            grid_watts = -grid_watts_raw if self.grid_positive_export else grid_watts_raw
+            grid_watts = (
+                -grid_watts_raw if self.grid_positive_export else grid_watts_raw
+            )
         else:
             grid_watts = None
             if self.entity_grid:
@@ -364,7 +411,11 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
 
         # Battery: We want positive for CHARGING, negative for DISCHARGING
         if battery_power_raw is not None:
-            battery_power = battery_power_raw if self.battery_positive_charge else -battery_power_raw
+            battery_power = (
+                battery_power_raw
+                if self.battery_positive_charge
+                else -battery_power_raw
+            )
         else:
             battery_power = None
             # Only critical if battery SOC is also configured
@@ -373,10 +424,16 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
 
         # Check if essential values are missing
         if production_watts is None and self.entity_production:
-            self.logger.error(f"Missing critical value: " f"Production (Entity: {self.entity_production})")
+            self.logger.error(
+                f"Missing critical value: "
+                f"Production (Entity: {self.entity_production})"
+            )
             has_critical_error = True
         if consumption_watts is None and self.entity_consumption:
-            self.logger.error(f"Missing critical value: " f"House Consumption (Entity: {self.entity_consumption})")
+            self.logger.error(
+                f"Missing critical value: "
+                f"House Consumption (Entity: {self.entity_consumption})"
+            )
             has_critical_error = True
 
         if has_critical_error:
@@ -388,15 +445,23 @@ class HomeAssistantAPIEnergyMonitor(EnergyMonitorPort):
         reading_timestamp = now
 
         # Fill defaults if entities weren't configured
-        production_watts = production_watts if production_watts is not None else Watts(0.0)
-        consumption_watts = consumption_watts if consumption_watts is not None else Watts(0.0)
+        production_watts = (
+            production_watts if production_watts is not None else Watts(0.0)
+        )
+        consumption_watts = (
+            consumption_watts if consumption_watts is not None else Watts(0.0)
+        )
 
-        consumption_state = LoadState(current_power=consumption_watts, timestamp=reading_timestamp)
+        consumption_state = LoadState(
+            current_power=consumption_watts, timestamp=reading_timestamp
+        )
 
         # Create GridState if relevant entities are available
         grid_state: Optional[GridState] = None
         if grid_watts is not None:
-            grid_state = GridState(current_power=grid_watts, timestamp=reading_timestamp)
+            grid_state = GridState(
+                current_power=grid_watts, timestamp=reading_timestamp
+            )
 
         # Construct BatteryState if relevant entities are available
         battery_state: Optional[BatteryState] = None

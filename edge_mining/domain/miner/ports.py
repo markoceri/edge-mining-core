@@ -101,6 +101,8 @@ class MinerControllerRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(self, external_service_id: EntityId) -> List[MinerController]:
+    def get_by_external_service_id(
+        self, external_service_id: EntityId
+    ) -> List[MinerController]:
         """Retrieves a list of miner controlles by its associated external service ID."""
         raise NotImplementedError

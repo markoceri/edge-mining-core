@@ -36,7 +36,9 @@ class AutomationScheduler(SchedulerPort):
     async def start(self):
         """Adds the job and starts the scheduler."""
         interval = self.settings.scheduler_interval_seconds
-        self.logger.info(f"Starting scheduler. job |{self._job_id}| will run every {interval} seconds.")
+        self.logger.info(
+            f"Starting scheduler. job |{self._job_id}| will run every {interval} seconds."
+        )
 
         self.scheduler.add_job(
             self._run_evaluation_job,

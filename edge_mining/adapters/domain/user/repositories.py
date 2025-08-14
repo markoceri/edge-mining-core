@@ -19,10 +19,14 @@ from edge_mining.shared.settings.ports import SettingsRepository
 class InMemorySettingsRepository(SettingsRepository):
     """In-Memory implementation of the SettingsRepository."""
 
-    _SETTINGS_ID = "global_settings"  # We dont have different users, so we use a single ID.
+    _SETTINGS_ID = (
+        "global_settings"  # We dont have different users, so we use a single ID.
+    )
 
     def __init__(self, initial_settings: Optional[Dict[UserId, SystemSettings]] = None):
-        self._settings: Dict[UserId, SystemSettings] = copy.deepcopy(initial_settings) if initial_settings else {}
+        self._settings: Dict[UserId, SystemSettings] = (
+            copy.deepcopy(initial_settings) if initial_settings else {}
+        )
 
     def get_settings(self, user_id: Optional[UserId]) -> Optional[SystemSettings]:
         user_id = user_id or self._SETTINGS_ID
@@ -30,7 +34,9 @@ class InMemorySettingsRepository(SettingsRepository):
             return copy.deepcopy(self._settings[user_id])
         return None
 
-    def save_settings(self, user_id: Optional[UserId], settings: SystemSettings) -> None:
+    def save_settings(
+        self, user_id: Optional[UserId], settings: SystemSettings
+    ) -> None:
         user_id = user_id or self._SETTINGS_ID
         self._settings[user_id] = copy.deepcopy(settings)
 
@@ -38,7 +44,9 @@ class InMemorySettingsRepository(SettingsRepository):
 class SqliteSettingsRepository(SettingsRepository):
     """SQLite implementation of the SettingsRepository."""
 
-    _SETTINGS_ID: UserId = "global_settings"  # We dont have different users, so we use a single ID.
+    _SETTINGS_ID: UserId = (
+        "global_settings"  # We dont have different users, so we use a single ID.
+    )
 
     def __init__(self, db: BaseSqliteRepository):
         self._db = db
@@ -48,7 +56,10 @@ class SqliteSettingsRepository(SettingsRepository):
 
     def _create_tables(self):
         """Create the necessary tables for the Settings domain if they do not exist."""
-        self.logger.debug(f"Ensuring SQLite tables exist " f"for Settings Repository in {self._db.db_path}...")
+        self.logger.debug(
+            f"Ensuring SQLite tables exist "
+            f"for Settings Repository in {self._db.db_path}..."
+        )
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS settings (
@@ -96,13 +107,17 @@ class SqliteSettingsRepository(SettingsRepository):
             if conn:
                 conn.close()
 
-    def save_settings(self, user_id: Optional[UserId], settings: SystemSettings) -> None:
+    def save_settings(
+        self, user_id: Optional[UserId], settings: SystemSettings
+    ) -> None:
         self.logger.debug("Saving settings to SQLite.")
         user_id = user_id or self._SETTINGS_ID
         sql = "INSERT OR REPLACE INTO settings (id, settings_json) VALUES (?, ?)"
         conn = self._db.get_connection()
         try:
-            settings_json = json.dumps(settings.settings)  # Serialize the inner dictionary
+            settings_json = json.dumps(
+                settings.settings
+            )  # Serialize the inner dictionary
             with conn:
                 conn.execute(sql, (user_id, settings_json))
         except sqlite3.Error as e:

@@ -67,29 +67,45 @@ class MiningOrchestratorService:
         if self.logger:
             self.logger.info("Starting evaluation cycle...")
 
-        active_policy: Optional[OptimizationPolicy] = self.policy_repo.get_active_policy()
+        active_policy: Optional[OptimizationPolicy] = (
+            self.policy_repo.get_active_policy()
+        )
         if not active_policy:
             if self.logger:
-                self.logger.warning("No active optimization policy found. Skipping evaluation.")
+                self.logger.warning(
+                    "No active optimization policy found. Skipping evaluation."
+                )
             return
 
-        energy_state: Optional[EnergyStateSnapshot] = self.energy_monitor.get_current_energy_state()
+        energy_state: Optional[EnergyStateSnapshot] = (
+            self.energy_monitor.get_current_energy_state()
+        )
         if not energy_state:
             if self.logger:
-                self.logger.error("Could not retrieve current energy state. Skipping evaluation.")
+                self.logger.error(
+                    "Could not retrieve current energy state. Skipping evaluation."
+                )
             self._notify("Edge Mining Error", "Failed to retrieve energy state.")
             return
 
-        solar_forecast: Optional[ForecastData] = self.forecast_provider.get_solar_forecast()
+        solar_forecast: Optional[ForecastData] = (
+            self.forecast_provider.get_solar_forecast()
+        )
         if not solar_forecast:
             if self.logger:
-                self.logger.warning("Could not retrieve solar forecast. Proceeding without it.")
+                self.logger.warning(
+                    "Could not retrieve solar forecast. Proceeding without it."
+                )
             # Decide if this is critical or not - maybe policy needs forecast?
 
-        home_load_forecast: Optional[Watts] = self.home_forecast_provider.get_home_consumption_forecast()
+        home_load_forecast: Optional[Watts] = (
+            self.home_forecast_provider.get_home_consumption_forecast()
+        )
         if not home_load_forecast:
             if self.logger:
-                self.logger.warning("Could not retrieve home load forecast. Proceeding without it.")
+                self.logger.warning(
+                    "Could not retrieve home load forecast. Proceeding without it."
+                )
 
         # Apply policy to each targeted miner
         for miner_id in active_policy.target_miner_ids:
@@ -97,17 +113,23 @@ class MiningOrchestratorService:
                 miner = self.miner_repo.get_by_id(miner_id)
                 if not miner:
                     if self.logger:
-                        self.logger.error(f"Miner {miner_id} targeted by policy not found in repository.")
+                        self.logger.error(
+                            f"Miner {miner_id} targeted by policy not found in repository."
+                        )
                     continue
 
                 if not miner.active:
                     if self.logger:
-                        self.logger.warning(f"Miner {miner_id} is not active. Skipping.")
+                        self.logger.warning(
+                            f"Miner {miner_id} is not active. Skipping."
+                        )
                     continue
 
                 if not miner.controller:
                     if self.logger:
-                        self.logger.warning(f"Miner {miner_id} has no configured controller. Skipping.")
+                        self.logger.warning(
+                            f"Miner {miner_id} has no configured controller. Skipping."
+                        )
                     continue
 
                 # Get current *actual* status from controller, not just repo's last known state
@@ -156,7 +178,9 @@ class MiningOrchestratorService:
     ):
         """Executes the start/stop command based on the policy decision."""
         if self.logger:
-            self.logger.info(f"Miner {miner_id}: Current Status={current_status}, Decision={decision.name}")
+            self.logger.info(
+                f"Miner {miner_id}: Current Status={current_status}, Decision={decision.name}"
+            )
 
         if decision == MiningDecision.START_MINING and current_status != MinerStatus.ON:
             if self.logger:
@@ -171,13 +195,17 @@ class MiningOrchestratorService:
                 self._notify("Edge Mining Info", f"Miner {miner_id} started.")
             else:
                 if self.logger:
-                    self.logger.error(f"Failed to send START command to miner {miner_id}")
+                    self.logger.error(
+                        f"Failed to send START command to miner {miner_id}"
+                    )
                 self._notify(
                     "Edge Mining Error",
                     f"Failed START command for miner {miner_id}.",
                 )
 
-        elif decision == MiningDecision.STOP_MINING and current_status == MinerStatus.ON:
+        elif (
+            decision == MiningDecision.STOP_MINING and current_status == MinerStatus.ON
+        ):
             if self.logger:
                 self.logger.info(f"Executing STOP command for miner {miner_id}")
             success = self.miner_controller.stop_miner(miner_id)
@@ -189,7 +217,9 @@ class MiningOrchestratorService:
                 self._notify("Edge Miner Info", f"Miner {miner_id} stopped.")
             else:
                 if self.logger:
-                    self.logger.error(f"Failed to send STOP command to miner {miner_id}")
+                    self.logger.error(
+                        f"Failed to send STOP command to miner {miner_id}"
+                    )
                 self._notify(
                     "Edge Miner Error",
                     f"Failed STOP command for miner {miner_id}.",
@@ -197,8 +227,12 @@ class MiningOrchestratorService:
 
         elif decision == MiningDecision.MAINTAIN_STATE:
             if self.logger:
-                self.logger.debug(f"Miner {miner_id}: Maintaining current state ({current_status.name}).")
+                self.logger.debug(
+                    f"Miner {miner_id}: Maintaining current state ({current_status.name})."
+                )
 
         else:
             if self.logger:
-                self.logger.warning(f"Unhandled decision '{decision.name}' for miner {miner_id}")
+                self.logger.warning(
+                    f"Unhandled decision '{decision.name}' for miner {miner_id}"
+                )

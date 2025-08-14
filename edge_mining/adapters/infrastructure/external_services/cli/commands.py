@@ -6,7 +6,9 @@ import click
 
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.domain.common import EntityId
-from edge_mining.shared.adapter_configs.external_services import ExternalServiceHomeAssistantConfig
+from edge_mining.shared.adapter_configs.external_services import (
+    ExternalServiceHomeAssistantConfig,
+)
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import ExternalServiceConfig
@@ -24,17 +26,25 @@ def select_external_service_type() -> Optional[ExternalServiceAdapter]:
     choice: str = click.prompt("Choose an external service", type=str, default="")
     choice = choice.strip().lower()
 
-    if not choice.isdigit() or int(choice) < 0 or int(choice) >= len(ExternalServiceAdapter):
+    if (
+        not choice.isdigit()
+        or int(choice) < 0
+        or int(choice) >= len(ExternalServiceAdapter)
+    ):
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
 
-    es_type_values = [controller_type.value for controller_type in ExternalServiceAdapter]
+    es_type_values = [
+        controller_type.value for controller_type in ExternalServiceAdapter
+    ]
 
     selected_type = ExternalServiceAdapter(es_type_values[int(choice)])
     return selected_type
 
 
-def handle_external_service_home_assistant_api_config() -> Optional[ExternalServiceConfig]:
+def handle_external_service_home_assistant_api_config() -> (
+    Optional[ExternalServiceConfig]
+):
     """Prompt user for Home Assistant API configuration."""
     click.echo(click.style("\n--- Home Assistant API Configuration ---", fg="yellow"))
 
@@ -69,7 +79,9 @@ def handle_add_external_service(
     adapter_type: ExternalServiceAdapter = select_external_service_type()
 
     if adapter_type is None:
-        click.echo(click.style("Invalid external service type selected. Aborting.", fg="red"))
+        click.echo(
+            click.style("Invalid external service type selected. Aborting.", fg="red")
+        )
         return None
 
     config: ExternalServiceConfig = handle_external_service_configuration(adapter_type)
@@ -97,7 +109,9 @@ def handle_add_external_service(
     return created_service
 
 
-def handle_list_external_services(configuration_service: ConfigurationService, logger: LoggerPort) -> None:
+def handle_list_external_services(
+    configuration_service: ConfigurationService, logger: LoggerPort
+) -> None:
     """Menu to list all configured external services."""
     click.echo(click.style("\n--- Configured External Services ---", fg="yellow"))
 
@@ -137,7 +151,8 @@ def select_external_service(
             filter_type = [filter_type]
 
         click.echo(
-            "Filtering services by types: " + click.style(f"{', '.join([t.name for t in filter_type])}", fg="blue")
+            "Filtering services by types: "
+            + click.style(f"{', '.join([t.name for t in filter_type])}", fg="blue")
         )
         services = [s for s in services if s.adapter_type in filter_type]
 
@@ -163,7 +178,9 @@ def select_external_service(
 
     click.echo("\nb. Back to menu\n")
 
-    choice: str = click.prompt("Choose an external service by index", type=str, default=default_idx)
+    choice: str = click.prompt(
+        "Choose an external service by index", type=str, default=default_idx
+    )
     choice = choice.strip().lower()
     if choice == "b":
         return None
@@ -177,13 +194,17 @@ def select_external_service(
 
 def print_external_service_config(external_service: ExternalService) -> None:
     """Print the configuration of a selected External Service."""
-    configuration_class = external_service.config.__class__.__name__ if external_service.config else "---"
+    configuration_class = (
+        external_service.config.__class__.__name__ if external_service.config else "---"
+    )
     click.echo("| Configuration: " + click.style(f"{configuration_class}", fg="cyan"))
     for key, value in external_service.config.to_dict().items():
         if isinstance(value, dict):
             click.echo(f"|-- {key}:")
             for sub_key, sub_value in value.items():
-                click.echo(f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue"))
+                click.echo(
+                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
+                )
         else:
             # For other types, just print the value directly
             if value is None:
@@ -209,7 +230,9 @@ def print_external_service_details(
     click.echo("")
 
     if show_linked_instances:
-        external_service_linked_entities = configuration_service.get_entities_by_external_service(service.id)
+        external_service_linked_entities = (
+            configuration_service.get_entities_by_external_service(service.id)
+        )
 
         if external_service_linked_entities.energy_monitors:
             click.echo("Energy Monitors assigned:")
@@ -248,8 +271,12 @@ def update_single_external_service(
     logger: LoggerPort,
 ) -> Optional[ExternalService]:
     """Menu to update an external service"""
-    name: str = click.prompt("New name of the external service", type=str, default=service.name)
-    config: ExternalServiceConfig = handle_external_service_configuration(adapter_type=service.adapter_type)
+    name: str = click.prompt(
+        "New name of the external service", type=str, default=service.name
+    )
+    config: ExternalServiceConfig = handle_external_service_configuration(
+        adapter_type=service.adapter_type
+    )
 
     if config is None:
         click.echo(click.style("Invalid configuration. Aborting.", fg="red"))
@@ -290,7 +317,9 @@ def delete_single_external_service(
         return False
 
     try:
-        removed_external_service = configuration_service.remove_external_service(service.id)
+        removed_external_service = configuration_service.remove_external_service(
+            service.id
+        )
         click.echo(
             click.style(
                 f"External Service '{removed_external_service.name}' successfully deleted.",
@@ -315,9 +344,14 @@ def manage_single_external_service_menu(
 ) -> str:
     """Menu to manage a single external service."""
     while True:
-        click.echo("\n" + click.style("--- MANAGE EXTERNAL SERVICE ---", fg="yellow", bold=True))
+        click.echo(
+            "\n"
+            + click.style("--- MANAGE EXTERNAL SERVICE ---", fg="yellow", bold=True)
+        )
 
-        print_external_service_details(selected_service, configuration_service, show_linked_instances=True)
+        print_external_service_details(
+            selected_service, configuration_service, show_linked_instances=True
+        )
 
         click.echo("1. Update External Service")
         click.echo("2. Delete External Service")
@@ -364,10 +398,14 @@ def manage_single_external_service_menu(
     return choice
 
 
-def external_services_menu(configuration_service: ConfigurationService, logger: LoggerPort) -> str:
+def external_services_menu(
+    configuration_service: ConfigurationService, logger: LoggerPort
+) -> str:
     """Menu for managing External Services."""
     while True:
-        click.echo("\n" + click.style("--- EXTERNAL SERVICES ---", fg="blue", bold=True))
+        click.echo(
+            "\n" + click.style("--- EXTERNAL SERVICES ---", fg="blue", bold=True)
+        )
         click.echo("1. Add an External Service")
         click.echo("2. List all External Services")
         click.echo("3. Manage an External Service")
@@ -382,13 +420,19 @@ def external_services_menu(configuration_service: ConfigurationService, logger: 
         click.clear()
 
         if choice == "1":
-            handle_add_external_service(configuration_service=configuration_service, logger=logger)
+            handle_add_external_service(
+                configuration_service=configuration_service, logger=logger
+            )
         elif choice == "2":
-            handle_list_external_services(configuration_service=configuration_service, logger=logger)
+            handle_list_external_services(
+                configuration_service=configuration_service, logger=logger
+            )
         elif choice == "3":
             service = select_external_service(configuration_service, logger)
             if service is None:
-                click.echo(click.style("No external service selected. Aborting.", fg="red"))
+                click.echo(
+                    click.style("No external service selected. Aborting.", fg="red")
+                )
                 continue
 
             sub_choice = manage_single_external_service_menu(

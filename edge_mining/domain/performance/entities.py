@@ -6,7 +6,10 @@ from typing import Optional
 
 from edge_mining.domain.common import Entity, Timestamp
 from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter, Satoshi
+from edge_mining.domain.performance.common import (
+    MiningPerformanceTrackerAdapter,
+    Satoshi,
+)
 from edge_mining.shared.interfaces.config import MiningPerformanceTrackerConfig
 
 
@@ -15,7 +18,9 @@ class MiningPerformanceTracker(Entity):
     """Entity for tracking mining performance."""
 
     name: str = ""
-    adapter_type: MiningPerformanceTrackerAdapter = MiningPerformanceTrackerAdapter.DUMMY
+    adapter_type: MiningPerformanceTrackerAdapter = (
+        MiningPerformanceTrackerAdapter.DUMMY
+    )
     config: Optional[MiningPerformanceTrackerConfig] = None
     external_service_id: Optional[str] = None
 
