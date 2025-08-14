@@ -465,7 +465,8 @@ class ConfigurationService:
                     f"adapter type {provider.adapter_type} for Energy Source {energy_source.name}."
                 )
 
-            # Checks if the forecast provider configuration is compatible with the source type
+            # Checks if the forecast provider configuration is compatible with the
+            # source type
             required_classes = ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP.get(
                 energy_source.type, None
             )
@@ -1678,7 +1679,8 @@ class ConfigurationService:
                     f"External Service with ID {notifier.external_service_id} not found."
                 )
 
-            # Checks if the external service is compatible with the notifier's adapter type
+            # Checks if the external service is compatible with the notifier's adapter
+            # type
             requied_external_service_type = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(
                 notifier.adapter_type, None
             )

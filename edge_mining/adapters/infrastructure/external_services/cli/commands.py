@@ -19,7 +19,7 @@ def select_external_service_type() -> Optional[ExternalServiceAdapter]:
     """Prompt user to select an external service adapter type."""
     click.echo("Select an External Service Type:")
     for idx, es_type in enumerate(ExternalServiceAdapter):
-        if not es_type is ExternalServiceAdapter.UNKNOWN:
+        if es_type is not ExternalServiceAdapter.UNKNOWN:
             click.echo(f"{idx}. {es_type.name}")
 
     click.echo("")

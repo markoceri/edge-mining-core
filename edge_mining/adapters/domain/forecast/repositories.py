@@ -304,7 +304,8 @@ class SqliteForecastProviderRepository(ForecastProviderRepository):
                     self.logger.warning(
                         f"Attempted to remove non-existent forecast provider {forecast_provider_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error removing forecast provider {forecast_provider_id}: {e}"

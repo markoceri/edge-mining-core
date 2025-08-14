@@ -213,7 +213,8 @@ class OptimizationService:
                     optimization_unit.home_forecast_provider_id
                 )
             )
-        # Home forecast provider is optional, so log a warning if it's missing but continue
+        # Home forecast provider is optional, so log a warning if it's missing but
+        # continue
         if not home_forecast_provider:
             if self.logger:
                 self.logger.warning(
@@ -228,7 +229,8 @@ class OptimizationService:
                     optimization_unit.performance_tracker_id
                 )
             )
-        # Mining performance tracker is optional, so log a warning if it's missing but continue
+        # Mining performance tracker is optional, so log a warning if it's missing
+        # but continue
         if not mining_performance_tracker:
             if self.logger:
                 self.logger.warning(
@@ -446,7 +448,8 @@ class OptimizationService:
 
             # Creates a copy of the context with the miner included, so that the policy
             # can access miner-specific data, without modifying the original context.
-            # This is important to keep the context consistent across all miners in the unit.
+            # This is important to keep the context consistent across all miners in
+            # the unit.
             decisional_context = copy.deepcopy(context)
             decisional_context.miner = miner  # Add the miner to the context
 

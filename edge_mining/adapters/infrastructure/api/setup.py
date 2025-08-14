@@ -5,16 +5,9 @@ from typing import Optional
 from fastapi import Depends, HTTPException
 
 from edge_mining.application.services.adapter_service import AdapterService
-from edge_mining.application.services.configuration_service import (
-    ConfigurationService
-)
-from edge_mining.application.services.miner_action_service import (
-    MinerActionService
-)
-from edge_mining.application.services.optimization_service import (
-    OptimizationService
-)
-
+from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.services.miner_action_service import MinerActionService
+from edge_mining.application.services.optimization_service import OptimizationService
 from edge_mining.shared.infrastructure import Services
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -22,12 +15,12 @@ from edge_mining.shared.logging.port import LoggerPort
 class ServiceContainer:
     """Container for application services - thread-safe singleton pattern."""
 
-    _instance: Optional['ServiceContainer'] = None
+    _instance: Optional["ServiceContainer"] = None
     _services: Optional[Services] = None
     _logger: Optional[LoggerPort] = None
     _initialized: bool = False
 
-    def __new__(cls) -> 'ServiceContainer':
+    def __new__(cls) -> "ServiceContainer":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -51,7 +44,7 @@ class ServiceContainer:
         if not self._initialized or self._services is None:
             raise HTTPException(
                 status_code=500,
-                detail="Services not initialized. Application startup failed."
+                detail="Services not initialized. Application startup failed.",
             )
         return self._services
 
@@ -61,7 +54,7 @@ class ServiceContainer:
         if not self._initialized or self._logger is None:
             raise HTTPException(
                 status_code=500,
-                detail="Logger not initialized. Application startup failed."
+                detail="Logger not initialized. Application startup failed.",
             )
         return self._logger
 
@@ -77,35 +70,35 @@ async def get_service_container() -> ServiceContainer:
 
 
 async def get_adapter_service(
-    container: ServiceContainer = Depends(get_service_container)
+    container: ServiceContainer = Depends(get_service_container),
 ) -> AdapterService:
     """Get AdapterService via dependency injection."""
     return container.services.adapter_service
 
 
 async def get_config_service(
-    container: ServiceContainer = Depends(get_service_container)
+    container: ServiceContainer = Depends(get_service_container),
 ) -> ConfigurationService:
     """Get ConfigurationService via dependency injection."""
     return container.services.configuration_service
 
 
 async def get_miner_action_service(
-    container: ServiceContainer = Depends(get_service_container)
+    container: ServiceContainer = Depends(get_service_container),
 ) -> MinerActionService:
     """Get MinerActionService via dependency injection."""
     return container.services.miner_action_service
 
 
 async def get_optimization_service(
-    container: ServiceContainer = Depends(get_service_container)
+    container: ServiceContainer = Depends(get_service_container),
 ) -> OptimizationService:
     """Get OptimizationService via dependency injection."""
     return container.services.optimization_service
 
 
 async def get_logger(
-    container: ServiceContainer = Depends(get_service_container)
+    container: ServiceContainer = Depends(get_service_container),
 ) -> LoggerPort:
     """Get LoggerPort via dependency injection."""
     return container.logger

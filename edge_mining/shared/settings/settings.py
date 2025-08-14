@@ -49,7 +49,8 @@ class AppSettings(BaseSettings):
     # mqtt_grid_positive_export: bool = False
     # mqtt_battery_positive_charge: bool = True
     # # --- Data Staleness ---
-    # mqtt_max_data_age_seconds: int = 300 # Max age in seconds before data is considered stale (5 min)
+    # mqtt_max_data_age_seconds: int = 300 # Max age in seconds before data is
+    # considered stale (5 min)
 
     model_config = SettingsConfigDict(
         env_file=".env",  # Load .env file if exists

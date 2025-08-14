@@ -112,7 +112,8 @@ def configure_persistence(
 
     # Initialize repositories based on the selected persistence adapter
     if persistence_adapter == PersistenceAdapter.IN_MEMORY:
-        # Pre-populate in-memory repos with some test data (used for debug or development)
+        # Pre-populate in-memory repos with some test data
+        # (used for debug or development)
         energy_source_repo: EnergySourceRepository = InMemoryEnergySourceRepository()
         energy_monitor_repo: EnergyMonitorRepository = InMemoryEnergyMonitorRepository()
         miner_repo: MinerRepository = InMemoryMinerRepository()
@@ -182,7 +183,8 @@ def configure_persistence(
             f"Unsupported persistence_adapter: {settings.persistence_adapter}"
         )
 
-    # Initialize specific policies repositories based on the selected persistence adapter
+    # Initialize specific policies repositories based on the selected
+    # persistence adapter
     if policies_persistence_adapter == PersistenceAdapter.IN_MEMORY:
         policy_repo: OptimizationPolicyRepository = (
             InMemoryOptimizationPolicyRepository()

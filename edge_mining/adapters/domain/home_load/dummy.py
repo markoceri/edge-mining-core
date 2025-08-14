@@ -29,7 +29,8 @@ class DummyHomeForecastProvider(HomeForecastProviderPort):
         self, hours_ahead: int = 3
     ) -> Optional[ConsumptionForecast]:
         """Get the home consumption forecast."""
-        # Super simple: return a random average load expected soon for next hours_ahead horhs.
+        # Super simple: return a random average load expected soon for next
+        # hours_ahead horhs.
         if self.logger:
             self.logger.debug(
                 f"DummyHomeForecastProvider: "

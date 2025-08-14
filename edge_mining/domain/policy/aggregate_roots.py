@@ -71,7 +71,8 @@ class OptimizationPolicy(AggregateRoot):
                 # If any STOP rule matches, return STOP_MINING decision
                 return MiningDecision.STOP_MINING
         else:
-            # For STARTING/STOPPING states, usually maintain state until confirmed ON/OFF
+            # For STARTING/STOPPING states, usually maintain state until confirmed
+            # ON/OFF
             return MiningDecision.MAINTAIN_STATE
 
         # If no rules matched, maintain the current state

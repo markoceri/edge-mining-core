@@ -132,10 +132,12 @@ class MiningOrchestratorService:
                         )
                     continue
 
-                # Get current *actual* status from controller, not just repo's last known state
+                # Get current *actual* status from controller, not just repo's last
+                # known state
                 current_status = miner_controller.get_miner_status(miner_id)
 
-                # Maybe fetch power and hashrate too if needed by policy and they are provided by the miner
+                # Maybe fetch power and hashrate too if needed by policy and they are
+                # provided by the miner
                 current_power = self.miner_controller.get_miner_power(miner_id)
                 hash_rate = self.miner_controller.get_miner_hashrate(miner_id)
                 miner.update_status(

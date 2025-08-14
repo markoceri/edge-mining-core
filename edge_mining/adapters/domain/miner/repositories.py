@@ -330,7 +330,8 @@ class SqliteMinerRepository(MinerRepository):
                     self.logger.warning(
                         f"Attempt to remove non-existent miner with ID {miner_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error removing miner {miner_id}: {e}")
             raise MinerError(f"DB error removing miner: {e}") from e
@@ -659,7 +660,8 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                     self.logger.warning(
                         f"Attempt to remove non-existent miner controller with ID {miner_controller_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error removing miner controller {miner_controller_id}: {e}"

@@ -626,7 +626,8 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                     self.logger.warning(
                         f"Attempt to remove non-existent energy monitor with ID {energy_monitor_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error removing energy monitor {energy_monitor_id}: {e}"

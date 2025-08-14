@@ -119,7 +119,8 @@ class MqttEnergyMonitor(EnergyMonitorPort):
                 logger.info("Configuring TLS for MQTT connection (port 8883 detected).")
                 # Usare certs di default del sistema operativo
                 self._client.tls_set(tls_version=ssl.PROTOCOL_TLS_CLIENT)
-                # Per certs custom: self._client.tls_set(ca_certs="ca.crt", certfile="client.crt", keyfile="client.key")
+                # Per certs custom: self._client.tls_set(ca_certs="ca.crt",
+                # certfile="client.crt", keyfile="client.key")
 
             logger.info(
                 f"Connecting MQTT client to {self.broker_host}:{self.broker_port}..."
@@ -147,7 +148,8 @@ class MqttEnergyMonitor(EnergyMonitorPort):
                     logger.warning(
                         f"MQTT loop returned error code: {rc}. Attempting to handle."
                     )
-                    # Paho tenta di riconnettersi automaticamente, ma potremmo aggiungere logica qui
+                    # Paho tenta di riconnettersi automaticamente, ma potremmo
+                    # aggiungere logica qui
                     time.sleep(5)  # Aspetta prima di riprovare il loop
             except Exception as e:
                 logger.error(f"Exception in MQTT loop: {e}")
@@ -203,7 +205,8 @@ class MqttEnergyMonitor(EnergyMonitorPort):
             for internal_name, topic in self.topics_map.items():
                 if topic:
                     logger.info(f"Subscribing to topic '{topic}' for '{internal_name}'")
-                    # Usare QoS 1 per maggiore affidabilità se il broker lo supporta bene
+                    # Usare QoS 1 per maggiore affidabilità se il broker lo supporta
+                    # bene
                     result, mid = client.subscribe(topic, qos=1)
                     if result != mqtt.MQTT_ERR_SUCCESS:
                         logger.error(
@@ -235,7 +238,8 @@ class MqttEnergyMonitor(EnergyMonitorPort):
             # Trova a quale sensore interno corrisponde questo topic
             internal_name = None
             for name, configured_topic in self.topics_map.items():
-                # Usare `mqtt.topic_matches_sub` per gestire wildcard se necessario in futuro
+                # Usare `mqtt.topic_matches_sub` per gestire wildcard se necessario in
+                # futuro
                 if configured_topic == topic:
                     internal_name = name
                     break

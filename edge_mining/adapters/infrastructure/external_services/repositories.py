@@ -282,7 +282,8 @@ class SqliteExternalServiceRepository(ExternalServiceRepository):
                     self.logger.warning(
                         f"Attempted to remove non-existent external service {external_service_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error removing external service {external_service_id}: {e}"

@@ -6,22 +6,20 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from edge_mining.application.services.optimization_service import (
-    OptimizationService,
-)
+# Import routers after DI setup functions are defined
+from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
+from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
 
 # Import dependency injection setup functions
 from edge_mining.adapters.infrastructure.api.setup import (
     get_logger,
     get_optimization_service,
-    get_service_container
+    get_service_container,
 )
-
+from edge_mining.application.services.optimization_service import (
+    OptimizationService,
+)
 from edge_mining.shared.logging.port import LoggerPort
-
-# Import routers after DI setup functions are defined
-from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
-from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
 
 
 @asynccontextmanager
@@ -87,9 +85,7 @@ async def health_check():
 # Example endpoint using dependency injection
 @app.post("/api/v1/evaluate", tags=["system"])
 async def trigger_evaluation(
-    logger: Annotated[
-        LoggerPort,  Depends(get_logger)
-    ],  # Inject logger
+    logger: Annotated[LoggerPort, Depends(get_logger)],  # Inject logger
     optimization_service: Annotated[
         OptimizationService, Depends(get_optimization_service)
     ],  # Inject service

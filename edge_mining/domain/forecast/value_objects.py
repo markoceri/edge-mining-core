@@ -11,7 +11,8 @@ from edge_mining.domain.common import Timestamp, ValueObject, WattHours, Watts
 class Sun(ValueObject):
     """Value Object for sunrise and sunset times."""
 
-    # The time in the morning when the sun is a specific number of degrees below the horizon.
+    # The time in the morning when the sun is a specific number of degrees
+    # below the horizon.
     dawn: datetime
     # The time in the morning when the top of the sun breaks the horizon.
     sunrise: datetime
@@ -21,7 +22,8 @@ class Sun(ValueObject):
     midnight: datetime
     # The time in the evening when the sun is about to disappear below the horizon.
     sunset: datetime
-    # The time in the evening when the sun is a specific number of degrees below the horizon.
+    # The time in the evening when the sun is a specific number of degrees
+    # below the horizon.
     dusk: datetime
     # The time when the sun is up i.e. between sunrise and sunset.
     daylight: datetime

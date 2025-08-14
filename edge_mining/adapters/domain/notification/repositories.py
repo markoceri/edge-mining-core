@@ -270,7 +270,8 @@ class SqliteNotifierRepository(NotifierRepository):
                     self.logger.warning(
                         f"Attempted to remove non-existent notifier {notifier_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error removing notifier {notifier_id}: {e}")
             raise NotifierError(f"DB error removing notifier: {e}") from e

@@ -152,7 +152,8 @@ class SqliteHomeLoadsProfileRepository(HomeLoadsProfileRepository):
                 }
             )
             with conn:
-                # Usa sempre l'UUID fisso per salvare/sovrascrivere il profilo di default
+                # Usa sempre l'UUID fisso per salvare/sovrascrivere il profilo di
+                # default
                 conn.execute(
                     sql,
                     (self._DEFAULT_PROFILE_UUID, profile.name, devices_json),
@@ -468,7 +469,8 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
                     self.logger.warning(
                         f"Attempted to remove non-existent home forecast provider {home_forecast_provider_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error removing home forecast provider {home_forecast_provider_id}: {e}"

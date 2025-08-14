@@ -354,7 +354,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                     self.logger.warning(
                         f"Attempt to remove non-existent optimization unit with ID {optimization_unit_id}."
                     )
-                    # There is no need to raise an exception here, removing a non-existent is idempotent.
+                    # There is no need to raise an exception here, removing a
+                    # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
                 f"SQLite error removing optimization unit {optimization_unit_id}: {e}"
