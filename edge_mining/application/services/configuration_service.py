@@ -611,6 +611,39 @@ class ConfigurationService:
 
         return energy_source
 
+    def set_forecast_provider_to_energy_source(
+        self, energy_source_id: EntityId, forecast_provider_id: EntityId
+    ) -> EnergySource:
+        """Set a forecast provider to an energy source."""
+        self.logger.debug(
+            f"Setting forecast provider {forecast_provider_id} "
+            f"to energy source {energy_source_id}"
+        )
+
+        energy_source: EnergySource = self.energy_source_repo.get_by_id(
+            energy_source_id
+        )
+
+        if not energy_source:
+            raise EnergySourceNotFoundError(
+                f"Energy Source with ID {energy_source_id} not found."
+            )
+
+        forecast_provider: ForecastProvider = self.forecast_provider_repo.get_by_id(
+            forecast_provider_id
+        )
+
+        if not forecast_provider:
+            raise ForecastProviderNotFoundError(
+                f"Forecast Provider with ID {forecast_provider_id} not found."
+            )
+
+        energy_source.forecast_provider_id = forecast_provider_id
+
+        self.energy_source_repo.update(energy_source)
+
+        return energy_source
+
     def list_energy_sources_by_monitor(
         self, monitor_id: EntityId
     ) -> List[EnergySource]:
