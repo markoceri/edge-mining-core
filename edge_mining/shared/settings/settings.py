@@ -16,9 +16,9 @@ class AppSettings(BaseSettings):
     timezome: str = "Europe/Rome" # Default timezone
 
     # Adapters Configuration (select which ones to use)
-    energy_monitor_adapter: str = "home_assistant" # Options: "dummy", "home_assistant"
+    energy_monitor_adapter: str = "dummy" # Options: "dummy", "home_assistant"
     miner_controller_adapter: str = "dummy" # Options: "dummy", "vnish"
-    forecast_provider_adapter: str = "home_assistant" # Options: "dummy", "home_assistant"
+    forecast_provider_adapter: str = "dummy" # Options: "dummy", "home_assistant"
     home_forecast_adapter: str = "dummy" # Options: "dummy", "ml_model"
     persistence_adapter: str = "sqlite" # Options: "in_memory", "sqlite"
     notification_adapter: str = "dummy" # Options: "dummy", "telegram"
