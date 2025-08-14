@@ -1,5 +1,5 @@
 # Core Dependencies
-pydantic==2.9
+pydantic==2.8.2
 pyyaml==6.0.2
 pydantic-settings==2.8.1
 apscheduler==3.11.0
