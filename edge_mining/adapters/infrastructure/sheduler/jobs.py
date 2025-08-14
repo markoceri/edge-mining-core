@@ -20,7 +20,7 @@ class AutomationScheduler(SchedulerPort):
         self.optimization_service = optimization_service
         self.logger = logger
         self.settings = settings
-        self.scheduler = AsyncIOScheduler(timezone=self.settings.timezome)
+        self.scheduler = AsyncIOScheduler(timezone=self.settings.timezone)
 
         self._job_id = "evaluate_mining"
 
