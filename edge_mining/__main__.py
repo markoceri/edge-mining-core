@@ -7,7 +7,7 @@ import sys
 import uvicorn
 
 from edge_mining.adapters.infrastructure.api.main_api import app as fastapi_app
-from edge_mining.adapters.infrastructure.api.main_api import set_api_services
+from edge_mining.adapters.infrastructure.api.setup import init_api_dependencies
 from edge_mining.adapters.infrastructure.cli.main_cli import run_interactive_cli
 from edge_mining.adapters.infrastructure.logging.terminal_logging import TerminalLogger
 from edge_mining.adapters.infrastructure.sheduler.jobs import AutomationScheduler
@@ -37,7 +37,8 @@ async def main_async():
         sys.exit(1)
 
     # Inject services into CLI and API
-    set_api_services(services, logger)
+    init_api_dependencies(services, logger)
+    logger.debug("API dependencies initialized successfully")
 
     # --- Determine Run Mode ---
     # Example: Use command-line argument to choose mode

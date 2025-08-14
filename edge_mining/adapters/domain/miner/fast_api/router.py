@@ -11,8 +11,8 @@ from edge_mining.adapters.domain.miner.fast_api.schemas import (
     MinerUpdateSchema,
 )
 
-# Import the dependency injection function defined in main_api.py
-from edge_mining.adapters.infrastructure.api.main_api import (
+# Import dependency injection setup functions
+from edge_mining.adapters.infrastructure.api.setup import (
     get_config_service,
     get_miner_action_service,
 )

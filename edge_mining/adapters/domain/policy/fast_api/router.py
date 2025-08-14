@@ -13,7 +13,7 @@ from edge_mining.adapters.domain.policy.fast_api.schemas import (
 )
 
 # Import the dependency injection function defined in main_api.py
-from edge_mining.adapters.infrastructure.api.main_api import get_config_service
+from edge_mining.adapters.infrastructure.api.setup import get_config_service
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.common import RuleType

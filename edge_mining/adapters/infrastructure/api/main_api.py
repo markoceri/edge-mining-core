@@ -6,107 +6,58 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from edge_mining.application.services.adapter_service import AdapterService
-from edge_mining.application.services.configuration_service import (
-    ConfigurationService,
-)
-from edge_mining.application.services.miner_action_service import (
-    MinerActionService,
-)
 from edge_mining.application.services.optimization_service import (
     OptimizationService,
 )
-from edge_mining.shared.infrastructure import Services
+
+# Import dependency injection setup functions
+from edge_mining.adapters.infrastructure.api.setup import (
+    get_logger,
+    get_optimization_service,
+    get_service_container
+)
+
 from edge_mining.shared.logging.port import LoggerPort
 
-# --- Dependency Injection with FastAPI ---
-# This is a common pattern using FastAPI's dependency injection system
-
-# Define functions that provide the initialized service instances
-# These would be created in __main__.py or a dedicated DI setup file
-
-
-def get_adapter_service():
-    """Dependency injection function to get the AdapterService."""
-    # In a real app, this returns the already initialized instance
-    if _api_adapter_service is None:
-        raise RuntimeError("Adapter Service not initialized for API")
-    return _api_adapter_service
-
-
-def get_config_service():
-    """Dependency injection function to get the ConfigurationService."""
-    # In a real app, this returns the already initialized instance
-    if _api_config_service is None:
-        raise RuntimeError("Config Service not initialized for API")
-    return _api_config_service
-
-
-def get_miner_action_service():
-    """Dependency injection function to get the ActionService."""
-    if _api_miner_action_service is None:
-        raise RuntimeError("Action Service not initialized for API")
-    return _api_miner_action_service
-
-
-def get_optimization_service():
-    """Dependency injection function to get the OptimizationService."""
-    if _api_optimization_service is None:
-        raise RuntimeError("Optimization Service not initialized for API")
-    return _api_optimization_service
-
-
-# Global placeholders - Set these during app startup
-_api_adapter_service: AdapterService = None
-_api_config_service: ConfigurationService = None
-_api_miner_action_service: MinerActionService = None
-_api_optimization_service: OptimizationService = None
-_api_logger: LoggerPort = None
-
-
-def set_api_services(services: Services, logger: LoggerPort):
-    """Set the API services using Dependency Injection."""
-
-    _api_adapter_service = services.adapter_service
-    _api_optimization_service = services.optimization_service
-    _api_miner_action_service = services.miner_action_service
-    _api_configuration_service = services.configuration_service
-    _api_logger = logger
-
-
-# --- End Dependency Injection ---
-
-
-from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
-
 # Import routers after DI setup functions are defined
+from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
 from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
 
 
 @asynccontextmanager
-async def check_services(api_app: FastAPI):
-    """Check if services are initialized before app startup."""
-    # This is where we *should* initialize the services and adapters
-    # For this example, we assume they are set via set_api_services() beforehand
-    _api_logger.debug("FastAPI application startup...")
+async def app_lifespan(api_app: FastAPI):
+    """Application lifespan - startup and shutdown logic."""
+    # Startup
+    try:
+        container = await get_service_container()
+        if not container.is_initialized():
+            # This should not happen if properly initialized in main
+            raise RuntimeError("Services not initialized before FastAPI startup!")
 
-    if (
-        _api_config_service is None
-        or _api_optimization_service is None
-        or _api_adapter_service is None
-        or _api_miner_action_service is None
-    ):
-        _api_logger.error("API Services were not initialized before startup!")
+        container.logger.info("FastAPI application started successfully")
 
-    yield
-    # Cleanup logic can go here if needed
+        # We can add other startup logic here
+        # e.g., database connections, external service checks, etc.
+
+    except Exception as e:
+        print(f"Failed to start FastAPI application: {e}")
+        raise
+
+    yield  # Application is running
+
+    # Shutdown
+    try:
+        container.logger.info("FastAPI application shutting down...")
+        # Add cleanup logic here if needed
+    except Exception as e:
+        print(f"Error during shutdown: {e}")
 
 
 app = FastAPI(
     title="Edge Mining API",
     description="API for managing and monitoring the bitcoin mining energy optimization system.",
     version="0.1.0",
-    lifespan=check_services,  # Use async context manager for service checks
+    lifespan=app_lifespan,
 )
 
 # TODO: set only localhost origins
@@ -136,17 +87,20 @@ async def health_check():
 # Example endpoint using dependency injection
 @app.post("/api/v1/evaluate", tags=["system"])
 async def trigger_evaluation(
+    logger: Annotated[
+        LoggerPort,  Depends(get_logger)
+    ],  # Inject logger
     optimization_service: Annotated[
         OptimizationService, Depends(get_optimization_service)
     ],  # Inject service
 ):
     """Manually run all enabled optimization units."""
-    _api_logger.info("API run all enabled optimization units...")
+    logger.info("API run all enabled optimization units...")
     try:
         optimization_service.run_all_enabled_units()
         return {"message": "All optimization units run successfully."}
     except Exception as e:
-        _api_logger.error("Error during API run optimization units.")
+        logger.error("Error during API run optimization units.")
         raise HTTPException(status_code=500, detail=f"Evaluation failed: {e}") from e
 
 
