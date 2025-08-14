@@ -605,6 +605,15 @@ class ConfigurationService:
                 f"Energy Source with ID {energy_source_id} not found."
             )
 
+        energy_monitor: EnergyMonitor = self.energy_monitor_repo.get_by_id(
+            energy_monitor_id
+        )
+
+        if not energy_monitor:
+            raise EnergyMonitorNotFoundError(
+                f"Energy Monitor with ID {energy_monitor_id} not found."
+            )
+
         energy_source.energy_monitor_id = energy_monitor_id
 
         self.energy_source_repo.update(energy_source)
