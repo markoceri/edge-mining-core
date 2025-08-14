@@ -477,7 +477,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
             if metadata:
                 # Add metadata if provided
-                policy_schema.metadata = metadata.model_dump()
+                policy_schema.metadata = metadata
 
             # Convert schema to dict for YAML serialization
             yaml_content = policy_schema.model_dump(
