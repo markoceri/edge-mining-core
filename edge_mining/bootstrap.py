@@ -78,7 +78,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings):
         raise ValueError(f"Unsupported persistence_adapter: {settings.persistence_adapter}")
     
     # --- External Services ---
-    if ExternalServiceAdapter.HOME_ASSISTANT in [ExternalServiceAdapter(settings.energy_monitor_adapter), ExternalServiceAdapter(settings.forecast_provider_adapter)]:
+    if ExternalServiceAdapter.HOME_ASSISTANT.value in [settings.energy_monitor_adapter, settings.forecast_provider_adapter]:
         # Initialize Home Assistant API service
         try:
             home_assistant_api = ServiceHomeAssistantAPI(
