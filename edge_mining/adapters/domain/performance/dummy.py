@@ -8,10 +8,7 @@ from typing import List, Optional
 
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.performance.ports import (
-    MiningPerformanceTrackerPort,
-    MiningReward,
-)
+from edge_mining.domain.performance.ports import MiningPerformanceTrackerPort, MiningReward
 
 
 class DummyMiningPerformanceTracker(MiningPerformanceTrackerPort):
@@ -20,18 +17,12 @@ class DummyMiningPerformanceTracker(MiningPerformanceTrackerPort):
     def get_current_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
         # Requires miner status knowledge - should ideally integrate with controller or miner repo
         # Or query pool API
-        print(
-            f"DummyMiningPerformanceTracker: Getting hashrate for {miner_id} (Not Implemented Yet)"
-        )
+        print(f"DummyMiningPerformanceTracker: Getting hashrate for {miner_id} (Not Implemented Yet)")
         # Simulate based on a known power? Needs more info.
 
         return HashRate(value=random.uniform(90.0, 110.0), unit="TH/s")
 
-    def get_recent_rewards(
-        self, miner_id: Optional[EntityId] = None, limit: int = 10
-    ) -> List[MiningReward]:
-        print(
-            f"DummyPerformanceTracker: Getting rewards for {miner_id} (Not Implemented Yet)"
-        )
+    def get_recent_rewards(self, miner_id: Optional[EntityId] = None, limit: int = 10) -> List[MiningReward]:
+        print(f"DummyPerformanceTracker: Getting rewards for {miner_id} (Not Implemented Yet)")
         # Would query pool API
         return []

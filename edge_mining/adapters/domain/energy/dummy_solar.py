@@ -45,9 +45,7 @@ class DummySolarEnergyMonitor(EnergyMonitorPort):
         self.storage = storage
         self.grid = grid
         self.external_source = external_source
-        self.max_consumption_power = (
-            max_consumption_power if max_consumption_power else 3000
-        )
+        self.max_consumption_power = max_consumption_power if max_consumption_power else 3000
 
         # --- Storage ---
         self.current_soc = None
@@ -56,9 +54,7 @@ class DummySolarEnergyMonitor(EnergyMonitorPort):
         self.storage_max_discharging_power = Watts(3000)
 
         if self.storage:
-            self.current_soc = Percentage(
-                random.uniform(40.0, 90.0)
-            )  # Start with random SOC
+            self.current_soc = Percentage(random.uniform(40.0, 90.0))  # Start with random SOC
             self.remaining_capacity = WattHours(
                 self.storage.nominal_capacity * (self.current_soc / 100.0)
             )  # Calculate remaining capacity
@@ -71,9 +67,7 @@ class DummySolarEnergyMonitor(EnergyMonitorPort):
         if 6 < hour < 20:
             # Peak around 1 PM (hour 13)
             solar_factor = max(0, 1 - abs(hour - 13) / 7)
-            production = Watts(
-                random.uniform(500, self.nominal_max_power) * solar_factor
-            )
+            production = Watts(random.uniform(500, self.nominal_max_power) * solar_factor)
         else:
             production = Watts(0.0)
 
@@ -92,32 +86,22 @@ class DummySolarEnergyMonitor(EnergyMonitorPort):
             battery_power = Watts(0.0)
 
             if net_power > 0 and self.current_soc < 100.0:  # Charging
-                charge_power = min(
-                    net_power, self.storage_max_charging_power
-                )  # Limit charge power
+                charge_power = min(net_power, self.storage_max_charging_power)  # Limit charge power
                 self.current_soc = min(
                     100.0,
-                    self.current_soc
-                    + (charge_power / self.storage.nominal_capacity * 100 / 60),
+                    self.current_soc + (charge_power / self.storage.nominal_capacity * 100 / 60),
                 )  # Wh adjustment per minute approx
-                self.remaining_capacity = WattHours(
-                    self.storage.nominal_capacity * (self.current_soc / 100.0)
-                )
+                self.remaining_capacity = WattHours(self.storage.nominal_capacity * (self.current_soc / 100.0))
                 battery_power = charge_power
 
                 grid_power = net_power - charge_power  # Export excess
             elif net_power < 0 and self.current_soc > 20.0:  # Discharging (with buffer)
-                discharge_power = min(
-                    abs(net_power), self.storage_max_discharging_power
-                )  # Limit discharge power
+                discharge_power = min(abs(net_power), self.storage_max_discharging_power)  # Limit discharge power
                 self.current_soc = max(
                     0.0,
-                    self.current_soc
-                    - (discharge_power / self.storage.nominal_capacity * 100 / 60),
+                    self.current_soc - (discharge_power / self.storage.nominal_capacity * 100 / 60),
                 )
-                self.remaining_capacity = WattHours(
-                    self.storage.nominal_capacity * (self.current_soc / 100.0)
-                )
+                self.remaining_capacity = WattHours(self.storage.nominal_capacity * (self.current_soc / 100.0))
                 battery_power = -discharge_power
 
                 grid_power = net_power - battery_power  # Import remaining deficit
@@ -169,23 +153,17 @@ class DummySolarEnergyMonitorBuilder:
         self.external_source: Optional[Watts] = (None,)
         self.max_consumption_power: Optional[Watts] = None
 
-    def set_nominal_max_power(
-        self, nominal_max_power: Watts
-    ) -> "DummySolarEnergyMonitorBuilder":
+    def set_nominal_max_power(self, nominal_max_power: Watts) -> "DummySolarEnergyMonitorBuilder":
         """Set nominal max inverter power."""
         self.nominal_max_power = nominal_max_power
         return self
 
-    def set_max_consumption_power(
-        self, max_consumption_power: Watts
-    ) -> "DummySolarEnergyMonitorBuilder":
+    def set_max_consumption_power(self, max_consumption_power: Watts) -> "DummySolarEnergyMonitorBuilder":
         """Set max load consumption power."""
         self.max_consumption_power = max_consumption_power
         return self
 
-    def has_external_source(
-        self, external_source: Watts
-    ) -> "DummySolarEnergyMonitorBuilder":
+    def has_external_source(self, external_source: Watts) -> "DummySolarEnergyMonitorBuilder":
         """Add an external source."""
         self.external_source = external_source
         return self
@@ -241,8 +219,7 @@ class DummySolarEnergyMonitorFactory(EnergyMonitorAdapterFactory):
 
         if not isinstance(config, EnergyMonitorDummySolarConfig):
             raise ValueError(
-                "Invalid configuration type for Dummy Solar energy monitor. "
-                "Expected EnergyMonitorDummySolarConfig."
+                "Invalid configuration type for Dummy Solar energy monitor. " "Expected EnergyMonitorDummySolarConfig."
             )
 
         # Get the config from the energy monitor config
@@ -251,9 +228,7 @@ class DummySolarEnergyMonitorFactory(EnergyMonitorAdapterFactory):
         builder.set_nominal_max_power(self._energy_source.nominal_power_max)
 
         if energy_monitor_config.max_consumption_power:
-            builder.set_max_consumption_power(
-                energy_monitor_config.max_consumption_power
-            )
+            builder.set_max_consumption_power(energy_monitor_config.max_consumption_power)
 
         # If energy source has a battery connected, we expect to produce data for it
         if self._energy_source.storage:

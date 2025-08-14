@@ -12,11 +12,7 @@ from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.notification.ports import NotificationPort
-from edge_mining.domain.policy.aggregate_roots import (
-    AutomationRule,
-    MiningDecision,
-    OptimizationPolicy,
-)
+from edge_mining.domain.policy.aggregate_roots import AutomationRule, MiningDecision, OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.domain.policy.value_objects import Sun
@@ -27,9 +23,7 @@ class AdapterServiceInterface(ABC):
     """Base interface for all adapter services in the Edge Mining application."""
 
     @abstractmethod
-    def get_energy_monitor(
-        self, energy_source: EnergySource
-    ) -> Optional[EnergyMonitorPort]:
+    def get_energy_monitor(self, energy_source: EnergySource) -> Optional[EnergyMonitorPort]:
         """Get an energy monitor adapter instance."""
         pass
 
@@ -54,30 +48,22 @@ class AdapterServiceInterface(ABC):
         pass
 
     @abstractmethod
-    def get_forecast_provider(
-        self, energy_source: EnergySource
-    ) -> Optional[ForecastProviderPort]:
+    def get_forecast_provider(self, energy_source: EnergySource) -> Optional[ForecastProviderPort]:
         """Get a forecast provider adapter instance."""
         pass
 
     @abstractmethod
-    def get_home_load_forecast_provider(
-        self, home_forecast_provider_id: EntityId
-    ) -> Optional[ForecastProviderPort]:
+    def get_home_load_forecast_provider(self, home_forecast_provider_id: EntityId) -> Optional[ForecastProviderPort]:
         """Get an home load forecast provider adapter instance."""
         pass
 
     @abstractmethod
-    def get_mining_performace_tracker(
-        self, tracker_id: EntityId
-    ) -> Optional[ForecastProviderPort]:
+    def get_mining_performace_tracker(self, tracker_id: EntityId) -> Optional[ForecastProviderPort]:
         """Get a mining performace tracker adapter instance."""
         pass
 
     @abstractmethod
-    def get_external_service(
-        self, external_service_id: EntityId
-    ) -> Optional[ExternalServicePort]:
+    def get_external_service(self, external_service_id: EntityId) -> Optional[ExternalServicePort]:
         """Get a specific external service instance by ID."""
         pass
 
@@ -120,16 +106,12 @@ class ActionServiceInterface(ABC):
     """Base interface for action services in the Edge Mining application."""
 
     @abstractmethod
-    async def start_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def start_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Start a specific miner."""
         pass
 
     @abstractmethod
-    async def stop_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def stop_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Stop a specific miner."""
         pass
 
@@ -229,16 +211,12 @@ class ConfigurationServiceInterface(ABC):
         pass
 
     @abstractmethod
-    def get_policy_rules(
-        self, policy_id: EntityId, rule_type: RuleType
-    ) -> List[AutomationRule]:
+    def get_policy_rules(self, policy_id: EntityId, rule_type: RuleType) -> List[AutomationRule]:
         """Get all rules of a policy."""
         pass
 
     @abstractmethod
-    def get_policy_rule(
-        self, policy_id: EntityId, rule_id: EntityId
-    ) -> Optional[AutomationRule]:
+    def get_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> Optional[AutomationRule]:
         """Get a rule by its ID."""
         pass
 
@@ -255,9 +233,7 @@ class ConfigurationServiceInterface(ABC):
         pass
 
     @abstractmethod
-    def delete_policy_rule(
-        self, policy_id: EntityId, rule_id: EntityId
-    ) -> AutomationRule:
+    def delete_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
         """Delete a rule from a policy."""
         pass
 

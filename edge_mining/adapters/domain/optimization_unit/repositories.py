@@ -21,7 +21,8 @@ class InMemoryOptimizationUnitRepository(EnergyOptimizationUnitRepository):
     """In-Memory implementation for the Optimization Unit Repository."""
 
     def __init__(
-        self, initial_units: Optional[Dict[EntityId, EnergyOptimizationUnit]] = None
+        self,
+        initial_units: Optional[Dict[EntityId, EnergyOptimizationUnit]] = None,
     ):
         self._optimization_units: Dict[EntityId, EnergyOptimizationUnit] = (
             copy.deepcopy(initial_units) if initial_units else {}
@@ -31,24 +32,16 @@ class InMemoryOptimizationUnitRepository(EnergyOptimizationUnitRepository):
         """Add an optimization unit to the In-Memory repository."""
         if optimization_unit.id in self._optimization_units:
             # Handle update or raise error depending on desired behavior
-            print(
-                f"Warning: Optimization Unit {optimization_unit.id} already exists, overwriting."
-            )
-        self._optimization_units[optimization_unit.id] = copy.deepcopy(
-            optimization_unit
-        )
+            print(f"Warning: Optimization Unit {optimization_unit.id} already exists, overwriting.")
+        self._optimization_units[optimization_unit.id] = copy.deepcopy(optimization_unit)
 
-    def get_by_id(
-        self, optimization_unit_id: EntityId
-    ) -> Optional[EnergyOptimizationUnit]:
+    def get_by_id(self, optimization_unit_id: EntityId) -> Optional[EnergyOptimizationUnit]:
         """Get an optimization unit by ID from the In-Memory repository."""
         return copy.deepcopy(self._optimization_units.get(optimization_unit_id))
 
     def get_all_enabled(self) -> List[EnergyOptimizationUnit]:
         """Get all enabled optimization units from the In-Memory repository."""
-        return [
-            copy.deepcopy(u) for u in self._optimization_units.values() if u.is_enabled
-        ]
+        return [copy.deepcopy(u) for u in self._optimization_units.values() if u.is_enabled]
 
     def get_all(self) -> List[EnergyOptimizationUnit]:
         """Get all optimization units from the In-Memory repository."""
@@ -57,12 +50,8 @@ class InMemoryOptimizationUnitRepository(EnergyOptimizationUnitRepository):
     def update(self, optimization_unit: EnergyOptimizationUnit) -> None:
         """Update an optimization unit in the In-Memory repository."""
         if optimization_unit.id not in self._optimization_units:
-            raise ValueError(
-                f"Optimization Unit {optimization_unit.id} not found for update."
-            )
-        self._optimization_units[optimization_unit.id] = copy.deepcopy(
-            optimization_unit
-        )
+            raise ValueError(f"Optimization Unit {optimization_unit.id} not found for update.")
+        self._optimization_units[optimization_unit.id] = copy.deepcopy(optimization_unit)
 
     def remove(self, optimization_unit_id: EntityId) -> None:
         """Remove an optimization unit from the In-Memory repository."""
@@ -81,10 +70,7 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
 
     def _create_tables(self):
         """Create the necessary tables for the Optimization Unit domain if they do not exist."""
-        self.logger.debug(
-            f"Ensuring SQLite tables exist "
-            f"for Optimization Unit Repository in {self._db.db_path}..."
-        )
+        self.logger.debug(f"Ensuring SQLite tables exist " f"for Optimization Unit Repository in {self._db.db_path}...")
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS optimization_units (
@@ -110,21 +96,15 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 for statement in sql_statements:
                     cursor.execute(statement)
 
-                self.logger.debug(
-                    "Optimization Units tables checked/created successfully."
-                )
+                self.logger.debug("Optimization Units tables checked/created successfully.")
         except sqlite3.Error as e:
             self.logger.error(f"Error creating SQLite tables: {e}")
-            raise OptimizationUnitConfigurationError(
-                f"DB error creating tables: {e}"
-            ) from e
+            raise OptimizationUnitConfigurationError(f"DB error creating tables: {e}") from e
         finally:
             if conn:
                 conn.close()
 
-    def _row_to_optimization_unit(
-        self, row: sqlite3.Row
-    ) -> Optional[EnergyOptimizationUnit]:
+    def _row_to_optimization_unit(self, row: sqlite3.Row) -> Optional[EnergyOptimizationUnit]:
         """Deserialize a row from the database into a EnergyOptimizationUnit object."""
         if not row:
             return None
@@ -141,29 +121,19 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 name=row["name"],
                 description=row["description"],
                 is_enabled=bool(row["is_enabled"]),
-                policy_id=EntityId(row["policy_id"]) if row["policy_id"] else None,
+                policy_id=(EntityId(row["policy_id"]) if row["policy_id"] else None),
                 target_miner_ids=target_miner_ids,
-                energy_source_id=(
-                    EntityId(row["energy_source_id"])
-                    if row["energy_source_id"]
-                    else None
-                ),
+                energy_source_id=(EntityId(row["energy_source_id"]) if row["energy_source_id"] else None),
                 home_forecast_provider_id=(
-                    EntityId(row["home_forecast_provider_id"])
-                    if row["home_forecast_provider_id"]
-                    else None
+                    EntityId(row["home_forecast_provider_id"]) if row["home_forecast_provider_id"] else None
                 ),
                 performance_tracker_id=(
-                    EntityId(row["performance_tracker_id"])
-                    if row["performance_tracker_id"]
-                    else None
+                    EntityId(row["performance_tracker_id"]) if row["performance_tracker_id"] else None
                 ),
                 notifier_ids=notifier_ids,
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(
-                f"Error deserializing Optimization Unit from DB row: {row}. Errorr: {e}"
-            )
+            self.logger.error(f"Error deserializing Optimization Unit from DB row: {row}. Errorr: {e}")
             return None
 
     def add(self, optimization_unit: EnergyOptimizationUnit) -> None:
@@ -176,12 +146,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
         conn = self._db.get_connection()
         try:
             # Serialize JSON lists of target IDs
-            target_ids_json = json.dumps(
-                [str(tid) for tid in optimization_unit.target_miner_ids]
-            )
-            notifier_ids_json = json.dumps(
-                [str(nid) for nid in optimization_unit.notifier_ids]
-            )
+            target_ids_json = json.dumps([str(tid) for tid in optimization_unit.target_miner_ids])
+            notifier_ids_json = json.dumps([str(nid) for nid in optimization_unit.notifier_ids])
 
             with conn:
                 conn.execute(
@@ -200,28 +166,20 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                     ),
                 )
         except sqlite3.IntegrityError as e:
-            self.logger.error(
-                f"Integrity error adding optimization unit '{optimization_unit.name}': {e}"
-            )
+            self.logger.error(f"Integrity error adding optimization unit '{optimization_unit.name}': {e}")
             raise OptimizationUnitAlreadyExistsError(
                 f"Optimization Unit with ID {optimization_unit.id} or name '{optimization_unit.name}' already exists: {e}"
             ) from e
         except Exception as e:
-            self.logger.error(
-                f"Error adding optimization unit '{optimization_unit.name}': {e}"
-            )
+            self.logger.error(f"Error adding optimization unit '{optimization_unit.name}': {e}")
             raise
         finally:
             if conn:
                 conn.close()
 
-    def get_by_id(
-        self, optimization_unit_id: EntityId
-    ) -> Optional[EnergyOptimizationUnit]:
+    def get_by_id(self, optimization_unit_id: EntityId) -> Optional[EnergyOptimizationUnit]:
         """Get an optimization unit by ID from the SQLite database."""
-        self.logger.debug(
-            f"Getting optimization unit {optimization_unit_id} from SQLite."
-        )
+        self.logger.debug(f"Getting optimization unit {optimization_unit_id} from SQLite.")
         sql = "SELECT * FROM optimization_units WHERE id = ?"
         conn = self._db.get_connection()
         try:
@@ -230,9 +188,7 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
             row = cursor.fetchone()
             return self._row_to_optimization_unit(row)
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error getting optimization unit {optimization_unit_id}: {e}"
-            )
+            self.logger.error(f"SQLite error getting optimization unit {optimization_unit_id}: {e}")
             return None
         finally:
             if conn:
@@ -253,9 +209,7 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 if optimization_unit:
                     optimization_units.append(optimization_unit)
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error getting all enabled optimization units: {e}"
-            )
+            self.logger.error(f"SQLite error getting all enabled optimization units: {e}")
             return []
         finally:
             if conn:
@@ -277,9 +231,7 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 if optimization_unit:
                     optimization_units.append(optimization_unit)
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error getting all enabled optimization units: {e}"
-            )
+            self.logger.error(f"SQLite error getting all enabled optimization units: {e}")
             return []
         finally:
             if conn:
@@ -288,9 +240,7 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
 
     def update(self, optimization_unit: EnergyOptimizationUnit) -> None:
         """Update an optimization unit in the SQLite database."""
-        self.logger.debug(
-            f"Updating optimization unit {optimization_unit.id} in SQLite."
-        )
+        self.logger.debug(f"Updating optimization unit {optimization_unit.id} in SQLite.")
         sql = """
             UPDATE optimization_units
             SET name = ?, description = ?, is_enabled = ?, policy_id = ?, target_miner_ids = ?, energy_source_id = ?, home_forecast_provider_id = ?, performance_tracker_id = ?, notifier_ids = ?
@@ -299,12 +249,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
         conn = self._db.get_connection()
         try:
             # Serialize JSON lists of target IDs
-            target_ids_json = json.dumps(
-                [str(tid) for tid in optimization_unit.target_miner_ids]
-            )
-            notifier_ids_json = json.dumps(
-                [str(nid) for nid in optimization_unit.notifier_ids]
-            )
+            target_ids_json = json.dumps([str(tid) for tid in optimization_unit.target_miner_ids])
+            notifier_ids_json = json.dumps([str(nid) for nid in optimization_unit.notifier_ids])
 
             with conn:
                 cursor = conn.cursor()
@@ -328,21 +274,15 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                         f"No optimization unit found with ID {optimization_unit.id} for update."
                     )
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error updating optimization unit {optimization_unit.id}: {e}"
-            )
-            raise OptimizationUnitError(
-                f"DB error updating optimization unit: {e}"
-            ) from e
+            self.logger.error(f"SQLite error updating optimization unit {optimization_unit.id}: {e}")
+            raise OptimizationUnitError(f"DB error updating optimization unit: {e}") from e
         finally:
             if conn:
                 conn.close()
 
     def remove(self, optimization_unit_id: EntityId) -> None:
         """Remove an optimization unit from the SQLite database."""
-        self.logger.debug(
-            f"Removing optimization unit {optimization_unit_id} from SQLite."
-        )
+        self.logger.debug(f"Removing optimization unit {optimization_unit_id} from SQLite.")
         sql = "DELETE FROM optimization_units WHERE id = ?"
         conn = self._db.get_connection()
         try:
@@ -355,12 +295,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                     )
                     # There is no need to raise an exception here, removing a non-existent is idempotent.
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error removing optimization unit {optimization_unit_id}: {e}"
-            )
-            raise OptimizationUnitError(
-                f"DB error removing optimization unit: {e}"
-            ) from e
+            self.logger.error(f"SQLite error removing optimization unit {optimization_unit_id}: {e}")
+            raise OptimizationUnitError(f"DB error removing optimization unit: {e}") from e
         finally:
             if conn:
                 conn.close()

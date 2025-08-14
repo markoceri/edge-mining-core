@@ -12,10 +12,7 @@ from edge_mining.adapters.domain.miner.fast_api.schemas import (
 )
 
 # Import the dependency injection function defined in main_api.py
-from edge_mining.adapters.infrastructure.api.main_api import (
-    get_config_service,
-    get_miner_action_service,
-)
+from edge_mining.adapters.infrastructure.api.main_api import get_config_service, get_miner_action_service
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.application.services.miner_action_service import MinerActionService
 from edge_mining.domain.common import EntityId
@@ -24,9 +21,7 @@ from edge_mining.domain.miner.exceptions import MinerNotFoundError
 router = APIRouter()
 
 
-@router.get(
-    "/miners", response_model=List[MinerResponseSchema]
-)  # Use DTOs directly or a Pydantic schema
+@router.get("/miners", response_model=List[MinerResponseSchema])  # Use DTOs directly or a Pydantic schema
 async def get_miners_list(
     config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):

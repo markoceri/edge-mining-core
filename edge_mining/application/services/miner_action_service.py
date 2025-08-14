@@ -2,10 +2,7 @@
 
 from typing import List, Optional
 
-from edge_mining.application.interfaces import (
-    ActionServiceInterface,
-    AdapterServiceInterface,
-)
+from edge_mining.application.interfaces import ActionServiceInterface, AdapterServiceInterface
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.exceptions import MinerNotFoundError
@@ -45,9 +42,7 @@ class MinerActionService(ActionServiceInterface):
                         self.logger.error(f"Failed to send notification: {e}")
 
     # --- Miner Actions ---
-    async def start_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def start_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Starts the specified miner."""
         if self.logger:
             self.logger.info(f"Starting miner {miner_id}")
@@ -58,9 +53,7 @@ class MinerActionService(ActionServiceInterface):
             raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
 
         # Get the miner controller from the adapter service
-        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(
-            miner
-        )
+        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(miner)
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status(miner_id)
@@ -75,9 +68,7 @@ class MinerActionService(ActionServiceInterface):
 
         if success:
             if self.logger:
-                self.logger.info(
-                    f"Miner {miner.id} ({miner.name}) started successfully."
-                )
+                self.logger.info(f"Miner {miner.id} ({miner.name}) started successfully.")
 
             # Update domain state
             miner.turn_on()
@@ -92,9 +83,7 @@ class MinerActionService(ActionServiceInterface):
 
         return success
 
-    async def stop_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def stop_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Stops the specified miner."""
         if self.logger:
             self.logger.info(f"Stopping miner {miner_id}")
@@ -105,9 +94,7 @@ class MinerActionService(ActionServiceInterface):
             raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
 
         # Get the miner controller from the adapter service
-        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(
-            miner
-        )
+        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(miner)
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status(miner_id)
@@ -122,9 +109,7 @@ class MinerActionService(ActionServiceInterface):
 
         if success:
             if self.logger:
-                self.logger.info(
-                    f"Miner {miner.id} ({miner.name}) stopped successfully."
-                )
+                self.logger.info(f"Miner {miner.id} ({miner.name}) stopped successfully.")
 
             # Update domain state
             miner.turn_off()
@@ -150,9 +135,7 @@ class MinerActionService(ActionServiceInterface):
             raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
 
         # Get the miner controller from the adapter service
-        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(
-            miner
-        )
+        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(miner)
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status(miner_id)
@@ -175,9 +158,7 @@ class MinerActionService(ActionServiceInterface):
             raise MinerNotFoundError(f"Miner with ID {miner_id} not found.")
 
         # Get the miner controller from the adapter service
-        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(
-            miner
-        )
+        miner_controller: MinerControlPort = self.adapter_service.get_miner_controller(miner)
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status(miner_id)

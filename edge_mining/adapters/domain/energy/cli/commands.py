@@ -22,10 +22,7 @@ from edge_mining.domain.energy.exceptions import EnergyMonitorNotFoundError
 from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.domain.forecast.entities import ForecastProvider
 from edge_mining.domain.forecast.exceptions import ForecastProviderNotFoundError
-from edge_mining.shared.adapter_configs.energy import (
-    EnergyMonitorDummySolarConfig,
-    EnergyMonitorHomeAssistantConfig,
-)
+from edge_mining.shared.adapter_configs.energy import EnergyMonitorDummySolarConfig, EnergyMonitorHomeAssistantConfig
 from edge_mining.shared.adapter_maps.energy import (
     ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP,
     ENERGY_SOURCE_TYPE_ENERGY_MONITOR_MAP,
@@ -63,9 +60,7 @@ def select_energy_source_type() -> Optional[EnergySourceType]:
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
 
-    energy_source_type_values = [
-        energy_source_type.value for energy_source_type in EnergySourceType
-    ]
+    energy_source_type_values = [energy_source_type.value for energy_source_type in EnergySourceType]
 
     selected_type = EnergySourceType(energy_source_type_values[int(choice)])
     return selected_type
@@ -95,9 +90,7 @@ def select_energy_monitors(
             "Filtering energy monitor by types: "
             + click.style(f"{', '.join([c.name for c in filter_type])}", fg="blue")
         )
-        energy_monitors = [
-            em for em in energy_monitors if em.adapter_type in filter_type
-        ]
+        energy_monitors = [em for em in energy_monitors if em.adapter_type in filter_type]
 
     if filter_config:
         # If one element is passed, convert it to Pa list
@@ -106,9 +99,7 @@ def select_energy_monitors(
 
         click.echo(
             "Filtering nergy monitors by config: "
-            + click.style(
-                f"{', '.join([c.__name__ for c in filter_config])}", fg="blue"
-            )
+            + click.style(f"{', '.join([c.__name__ for c in filter_config])}", fg="blue")
         )
         filtered_energy_monitors: List[EnergyMonitor] = []
         for fp in energy_monitors:
@@ -135,9 +126,7 @@ def select_energy_monitors(
 
     click.echo("\nb. Back to menu\n")
 
-    em_idx: str = click.prompt(
-        "Choose a Energy Monitor index", type=str, default=default_idx
-    )
+    em_idx: str = click.prompt("Choose a Energy Monitor index", type=str, default=default_idx)
     em_idx = em_idx.strip().lower()
     if em_idx == "b":
         return None
@@ -150,31 +139,23 @@ def select_energy_monitors(
     return selected_em
 
 
-def handle_add_energy_source(
-    configuration_service: ConfigurationService, logger: LoggerPort
-) -> None:
+def handle_add_energy_source(configuration_service: ConfigurationService, logger: LoggerPort) -> None:
     """Menu to add a new energy source."""
     click.echo(click.style("\n--- Add Energy Source ---", fg="yellow"))
     name: str = click.prompt("Name of the energy source", type=str)
     source_type: EnergySourceType = select_energy_source_type()
 
     if source_type is None:
-        click.echo(
-            click.style("Invalid energy source type selected. Aborting.", fg="red")
-        )
+        click.echo(click.style("Invalid energy source type selected. Aborting.", fg="red"))
         return
 
-    nominal_power_max: int = click.prompt(
-        "Max nominal power (Watt, eg. 5000)", type=int, default=5000
-    )
+    nominal_power_max: int = click.prompt("Max nominal power (Watt, eg. 5000)", type=int, default=5000)
     storage_nominal_capacity: int = click.prompt(
         "Battery nominal capacity (Watt. Insert 0 for No Battery)",
         type=int,
         default="0",
     )
-    grid_contracted_power: int = click.prompt(
-        "Max power contracted on grid (Watt, eg. 3000)", type=int, default=3200
-    )
+    grid_contracted_power: int = click.prompt("Max power contracted on grid (Watt, eg. 3000)", type=int, default=3200)
     external_source_power: int = click.prompt(
         "Max power from the external source (Watt. Insert 0 for No external source)",
         type=int,
@@ -186,18 +167,10 @@ def handle_add_energy_source(
     new_energy_source.type = source_type
     new_energy_source.nominal_power_max = Watts(nominal_power_max)
     new_energy_source.storage = (
-        Battery(nominal_capacity=WattHours(storage_nominal_capacity))
-        if storage_nominal_capacity > 0
-        else None
+        Battery(nominal_capacity=WattHours(storage_nominal_capacity)) if storage_nominal_capacity > 0 else None
     )
-    new_energy_source.grid = (
-        Grid(contracted_power=Watts(grid_contracted_power))
-        if grid_contracted_power > 0
-        else None
-    )
-    new_energy_source.external_source = (
-        Watts(external_source_power) if external_source_power > 0 else None
-    )
+    new_energy_source.grid = Grid(contracted_power=Watts(grid_contracted_power)) if grid_contracted_power > 0 else None
+    new_energy_source.external_source = Watts(external_source_power) if external_source_power > 0 else None
     new_energy_source.energy_monitor_id = None
     new_energy_source.forecast_provider_id = None
 
@@ -221,7 +194,9 @@ def handle_add_energy_source(
         )
 
         add_energy_monitor: bool = click.confirm(
-            "Do you want to add an energy monitor now?", default=True, abort=False
+            "Do you want to add an energy monitor now?",
+            default=True,
+            abort=False,
         )
 
         if add_energy_monitor:
@@ -243,7 +218,8 @@ def handle_add_energy_source(
         else:
             click.echo(
                 click.style(
-                    "No energy monitor configured for this energy source.", fg="yellow"
+                    "No energy monitor configured for this energy source.",
+                    fg="yellow",
                 )
             )
             click.echo(click.style("Aborting energy source update.", fg="red"))
@@ -255,9 +231,7 @@ def handle_add_energy_source(
         forecast_provider = select_forecast_providers(
             configuration_service=configuration_service,
             logger=logger,
-            filter_type=ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(
-                source_type, None
-            ),
+            filter_type=ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(source_type, None),
         )
         if forecast_provider:
             new_energy_source.forecast_provider_id = forecast_provider.id
@@ -266,13 +240,13 @@ def handle_add_energy_source(
         click.echo(click.style("No forecast providers configured.", fg="yellow"))
 
         add_forecast_provider: bool = click.confirm(
-            "Do you want to add a forecast provider now?", default=True, abort=False
+            "Do you want to add a forecast provider now?",
+            default=True,
+            abort=False,
         )
 
         if add_forecast_provider:
-            forecast_provider = handle_add_forecast_provider(
-                configuration_service=configuration_service, logger=logger
-            )
+            forecast_provider = handle_add_forecast_provider(configuration_service=configuration_service, logger=logger)
             if forecast_provider:
                 click.echo(
                     click.style(
@@ -314,9 +288,7 @@ def handle_add_energy_source(
     click.pause("Press any key to return to the menu...")
 
 
-def handle_list_energy_sources(
-    configuration_service: ConfigurationService, logger: LoggerPort
-) -> None:
+def handle_list_energy_sources(configuration_service: ConfigurationService, logger: LoggerPort) -> None:
     """List all energy sources."""
     click.echo(click.style("\n--- List Energy Sources ---", fg="yellow"))
 
@@ -360,8 +332,7 @@ def select_energy_source(
             filter_type = [filter_type]
 
         click.echo(
-            "Filtering energy source by types: "
-            + click.style(f"{', '.join([t.name for t in filter_type])}", fg="blue")
+            "Filtering energy source by types: " + click.style(f"{', '.join([t.name for t in filter_type])}", fg="blue")
         )
         energy_sources = [s for s in energy_sources if s.type in filter_type]
 
@@ -383,9 +354,7 @@ def select_energy_source(
 
     click.echo("\nb. Back to menu\n")
 
-    es_idx: str = click.prompt(
-        "Choose an Energy Source index", type=str, default=default_idx
-    )
+    es_idx: str = click.prompt("Choose an Energy Source index", type=str, default=default_idx)
     es_idx = es_idx.strip().lower()
     if es_idx == "b":
         return None
@@ -400,17 +369,13 @@ def select_energy_source(
 
 def print_energy_monitor_config(energy_monitor: EnergyMonitor) -> None:
     """Print the configuration of an energy monitor."""
-    configuration_class = (
-        energy_monitor.config.__class__.__name__ if energy_monitor.config else "---"
-    )
+    configuration_class = energy_monitor.config.__class__.__name__ if energy_monitor.config else "---"
     click.echo("| Configuration: " + click.style(f"{configuration_class}", fg="cyan"))
     for key, value in energy_monitor.config.to_dict().items():
         if isinstance(value, dict):
             click.echo(f"|-- {key}:")
             for sub_key, sub_value in value.items():
-                click.echo(
-                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
-                )
+                click.echo(f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue"))
         else:
             # For other types, just print the value directly
             if value is None:
@@ -430,17 +395,13 @@ def print_energy_monitor_details(
     click.echo("")
     click.echo("| Name: " + click.style(energy_monitor.name, fg="blue"))
     click.echo("| ID: " + click.style(energy_monitor.id, fg="yellow"))
-    click.echo(
-        "| Adapter: " + click.style(energy_monitor.adapter_type.name, fg="green")
-    )
+    click.echo("| Adapter: " + click.style(energy_monitor.adapter_type.name, fg="green"))
     print_energy_monitor_config(energy_monitor)
     click.echo("")
 
     if show_external_service:
         if energy_monitor.external_service_id:
-            external_service = configuration_service.get_external_service(
-                energy_monitor.external_service_id
-            )
+            external_service = configuration_service.get_external_service(energy_monitor.external_service_id)
             if external_service:
                 click.echo("EXTERNAL SERVICE DETAILS:")
                 print_external_service_details(
@@ -460,13 +421,9 @@ def print_energy_monitor_details(
         click.echo("")
 
     if show_energy_source_list:
-        energy_sources: List[EnergySource] = (
-            configuration_service.list_energy_sources_by_monitor(energy_monitor.id)
-        )
+        energy_sources: List[EnergySource] = configuration_service.list_energy_sources_by_monitor(energy_monitor.id)
         if not energy_sources:
-            click.echo(
-                click.style("No energy sources assigned to this monitor.", fg="yellow")
-            )
+            click.echo(click.style("No energy sources assigned to this monitor.", fg="yellow"))
         else:
             click.echo("Energy sources assigned to this monitor:")
             for es in energy_sources:
@@ -498,36 +455,18 @@ def print_energy_source_details(
     click.echo("| Type: " + click.style(energy_source.type.name, fg="green"))
     click.echo("| Max power: " + str(energy_source.nominal_power_max) + " W")
     click.echo(
-        "| Storage: "
-        + (
-            (str(energy_source.storage.nominal_capacity) + " Wh")
-            if energy_source.storage
-            else "None"
-        )
+        "| Storage: " + ((str(energy_source.storage.nominal_capacity) + " Wh") if energy_source.storage else "None")
     )
-    click.echo(
-        "| Grid: "
-        + (
-            (str(energy_source.grid.contracted_power) + " W")
-            if energy_source.grid
-            else "None"
-        )
-    )
+    click.echo("| Grid: " + ((str(energy_source.grid.contracted_power) + " W") if energy_source.grid else "None"))
     click.echo(
         "| External source: "
-        + (
-            (str(energy_source.external_source) + " W")
-            if energy_source.external_source
-            else "None"
-        )
+        + ((str(energy_source.external_source) + " W") if energy_source.external_source else "None")
     )
 
     if show_energy_monitor_list:
         if energy_source.energy_monitor_id:
             try:
-                energy_monitor = configuration_service.get_energy_monitor(
-                    energy_source.energy_monitor_id
-                )
+                energy_monitor = configuration_service.get_energy_monitor(energy_source.energy_monitor_id)
             except EnergyMonitorNotFoundError:
                 energy_monitor = None
 
@@ -541,18 +480,14 @@ def print_energy_source_details(
                 )
             else:
                 click.echo(
-                    "| Energy monitor: "
-                    + click.style(str(energy_source.energy_monitor_id), fg="red")
-                    + " (not found)"
+                    "| Energy monitor: " + click.style(str(energy_source.energy_monitor_id), fg="red") + " (not found)"
                 )
             click.echo("")
 
     if show_forecast_provider_list:
         if energy_source.forecast_provider_id:
             try:
-                forecast_provider = configuration_service.get_forecast_provider(
-                    energy_source.forecast_provider_id
-                )
+                forecast_provider = configuration_service.get_forecast_provider(energy_source.forecast_provider_id)
             except ForecastProviderNotFoundError:
                 forecast_provider = None
 
@@ -579,9 +514,7 @@ def update_single_energy_source(
 ) -> Optional[EnergySource]:
     """Update a single energy source."""
     click.echo(click.style("\n--- Update Energy Source ---", fg="yellow"))
-    name: str = click.prompt(
-        "New name of the energy source", type=str, default=energy_source.name
-    )
+    name: str = click.prompt("New name of the energy source", type=str, default=energy_source.name)
     nominal_power_max: int = click.prompt(
         "Max nominal power (Watt, eg. 5000)",
         type=int,
@@ -590,17 +523,17 @@ def update_single_energy_source(
     storage_nominal_capacity: int = click.prompt(
         "Battery nominal capacity (Watt. Insert 0 for No Battery)",
         type=int,
-        default=energy_source.storage.nominal_capacity if energy_source.storage else 0,
+        default=(energy_source.storage.nominal_capacity if energy_source.storage else 0),
     )
     grid_contracted_power: int = click.prompt(
         "Max power contracted on grid (Watt, eg. 3000)",
         type=int,
-        default=energy_source.grid.contracted_power if energy_source.grid else 3200,
+        default=(energy_source.grid.contracted_power if energy_source.grid else 3200),
     )
     external_source_power: int = click.prompt(
         "Max power from the external source (Watt. Insert 0 for No external source)",
         type=int,
-        default=energy_source.external_source if energy_source.external_source else 0,
+        default=(energy_source.external_source if energy_source.external_source else 0),
     )
 
     new_energy_source: EnergySource = EnergySource()
@@ -609,18 +542,10 @@ def update_single_energy_source(
     new_energy_source.type = energy_source.type
     new_energy_source.nominal_power_max = Watts(nominal_power_max)
     new_energy_source.storage = (
-        Battery(nominal_capacity=WattHours(storage_nominal_capacity))
-        if storage_nominal_capacity > 0
-        else None
+        Battery(nominal_capacity=WattHours(storage_nominal_capacity)) if storage_nominal_capacity > 0 else None
     )
-    new_energy_source.grid = (
-        Grid(contracted_power=Watts(grid_contracted_power))
-        if grid_contracted_power > 0
-        else None
-    )
-    new_energy_source.external_source = (
-        Watts(external_source_power) if external_source_power > 0 else None
-    )
+    new_energy_source.grid = Grid(contracted_power=Watts(grid_contracted_power)) if grid_contracted_power > 0 else None
+    new_energy_source.external_source = Watts(external_source_power) if external_source_power > 0 else None
     new_energy_source.energy_monitor_id = energy_source.energy_monitor_id
     new_energy_source.forecast_provider_id = energy_source.forecast_provider_id
 
@@ -643,7 +568,9 @@ def update_single_energy_source(
         )
 
         add_energy_monitor: bool = click.confirm(
-            "Do you want to add an energy monitor now?", default=True, abort=False
+            "Do you want to add an energy monitor now?",
+            default=True,
+            abort=False,
         )
 
         if add_energy_monitor:
@@ -673,9 +600,7 @@ def update_single_energy_source(
             configuration_service=configuration_service,
             logger=logger,
             default_id=new_energy_source.forecast_provider_id,
-            filter_type=ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(
-                energy_source.type, None
-            ),
+            filter_type=ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP.get(energy_source.type, None),
         )
         if forecast_provider:
             new_energy_source.forecast_provider_id = forecast_provider.id
@@ -702,7 +627,8 @@ def update_single_energy_source(
     except Exception as e:
         logger.error(f"Error updating energy source: {e}")
         click.echo(
-            click.style(f"Error updating energy source: {e}", fg="red"), err=True
+            click.style(f"Error updating energy source: {e}", fg="red"),
+            err=True,
         )
         return None
 
@@ -713,24 +639,19 @@ def assign_energy_monitor_to_energy_source(
     logger: LoggerPort,
 ) -> Optional[EnergySource]:
     """Assign an energy monitor to an energy source."""
-    click.echo(
-        click.style("\n--- Assign Energy Monitor to Energy Source ---", fg="yellow")
-    )
+    click.echo(click.style("\n--- Assign Energy Monitor to Energy Source ---", fg="yellow"))
 
     energy_monitor = select_energy_monitors(configuration_service, logger)
 
     if energy_monitor is None:
-        click.echo(
-            click.style("No energy monitor selected. Aborting assignment.", fg="red")
-        )
+        click.echo(click.style("No energy monitor selected. Aborting assignment.", fg="red"))
         click.pause("Press any key to return to the menu...")
         return None
 
     try:
-        updated_energy_source = (
-            configuration_service.set_energy_monitor_to_energy_source(
-                energy_source_id=energy_source.id, energy_monitor_id=energy_monitor.id
-            )
+        updated_energy_source = configuration_service.set_energy_monitor_to_energy_source(
+            energy_source_id=energy_source.id,
+            energy_monitor_id=energy_monitor.id,
         )
         click.echo(
             click.style(
@@ -742,7 +663,8 @@ def assign_energy_monitor_to_energy_source(
     except Exception as e:
         logger.error(f"Error assigning energy monitor: {e}")
         click.echo(
-            click.style(f"Error assigning energy monitor: {e}", fg="red"), err=True
+            click.style(f"Error assigning energy monitor: {e}", fg="red"),
+            err=True,
         )
         return None
 
@@ -764,12 +686,8 @@ def delete_single_energy_source(
         return False
 
     try:
-        removed_energy_source = configuration_service.remove_energy_source(
-            energy_source.id
-        )
-        logger.debug(
-            f"Energy Source {removed_energy_source.name} deleted successfully."
-        )
+        removed_energy_source = configuration_service.remove_energy_source(energy_source.id)
+        logger.debug(f"Energy Source {removed_energy_source.name} deleted successfully.")
         click.echo(
             click.style(
                 f"Energy Source '{removed_energy_source.name}' deleted successfully.",
@@ -780,7 +698,8 @@ def delete_single_energy_source(
     except Exception as e:
         logger.error(f"Error deleting energy source: {e}")
         click.echo(
-            click.style(f"Error deleting energy source: {e}", fg="red"), err=True
+            click.style(f"Error deleting energy source: {e}", fg="red"),
+            err=True,
         )
         return False
 
@@ -791,21 +710,15 @@ def assign_forecast_provider_to_energy_source(
     logger: LoggerPort,
 ) -> Optional[EnergySource]:
     """Assign a forecast provider to an energy source."""
-    click.echo(
-        click.style("\n--- Assign Forecast Provider to Energy Source ---", fg="yellow")
-    )
+    click.echo(click.style("\n--- Assign Forecast Provider to Energy Source ---", fg="yellow"))
     forecast_provider = select_forecast_providers(configuration_service, logger)
     if forecast_provider is None:
-        click.echo(
-            click.style("No forecast provider selected. Aborting assignment.", fg="red")
-        )
+        click.echo(click.style("No forecast provider selected. Aborting assignment.", fg="red"))
         return None
     try:
-        updated_energy_source = (
-            configuration_service.set_forecast_provider_to_energy_source(
-                energy_source_id=energy_source.id,
-                forecast_provider_id=forecast_provider.id,
-            )
+        updated_energy_source = configuration_service.set_forecast_provider_to_energy_source(
+            energy_source_id=energy_source.id,
+            forecast_provider_id=forecast_provider.id,
         )
         click.echo(
             click.style(
@@ -817,7 +730,8 @@ def assign_forecast_provider_to_energy_source(
     except Exception as e:
         logger.error(f"Error assigning forecast provider: {e}")
         click.echo(
-            click.style(f"Error assigning forecast provider: {e}", fg="red"), err=True
+            click.style(f"Error assigning forecast provider: {e}", fg="red"),
+            err=True,
         )
         return None
 
@@ -829,9 +743,7 @@ def manage_single_energy_source_menu(
 ) -> str:
     """Menu for managing a single energy source."""
     while True:
-        click.echo(
-            "\n" + click.style("--- MANAGE ENERGY SOURCE ---", fg="blue", bold=True)
-        )
+        click.echo("\n" + click.style("--- MANAGE ENERGY SOURCE ---", fg="blue", bold=True))
 
         print_energy_source_details(
             energy_source=energy_source,
@@ -913,11 +825,7 @@ def select_energy_monitor_adapter() -> Optional[EnergyMonitorAdapter]:
     choice: str = click.prompt("Choose an energy monitor adapter", type=str)
     choice = choice.strip().lower()
 
-    if (
-        not choice.isdigit()
-        or int(choice) < 0
-        or int(choice) >= len(EnergyMonitorAdapter)
-    ):
+    if not choice.isdigit() or int(choice) < 0 or int(choice) >= len(EnergyMonitorAdapter):
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
 
@@ -932,9 +840,7 @@ def handle_energy_monitor_dummy_solar_configuration(
     energy_source: Optional[EnergySource] = None,
 ) -> Optional[EnergyMonitorConfig]:
     """Handle the configuration for the Dummy Solar energy monitor adapter."""
-    click.echo(
-        click.style("\n--- Dummy Solar Energy Monitor Configuration ---", fg="yellow")
-    )
+    click.echo(click.style("\n--- Dummy Solar Energy Monitor Configuration ---", fg="yellow"))
 
     default_max_consumption_power = 3200
     if energy_monitor:
@@ -947,9 +853,7 @@ def handle_energy_monitor_dummy_solar_configuration(
         default=default_max_consumption_power,
     )
 
-    return EnergyMonitorDummySolarConfig(
-        max_consumption_power=Watts(max_consumption_power)
-    )
+    return EnergyMonitorDummySolarConfig(max_consumption_power=Watts(max_consumption_power))
 
 
 def handle_energy_monitor_home_assistant_configuration(
@@ -959,7 +863,8 @@ def handle_energy_monitor_home_assistant_configuration(
     """Handle the configuration for the Home Assistant energy monitor adapter."""
     click.echo(
         click.style(
-            "\n--- Home Assistant Energy Monitor Configuration ---", fg="yellow"
+            "\n--- Home Assistant Energy Monitor Configuration ---",
+            fg="yellow",
         )
     )
 
@@ -983,20 +888,14 @@ def handle_energy_monitor_home_assistant_configuration(
             default_entity_grid = energy_monitor.config.entity_grid
             default_entity_battery_soc = energy_monitor.config.entity_battery_soc
             default_entity_battery_power = energy_monitor.config.entity_battery_power
-            default_entity_battery_remaining_capacity = (
-                energy_monitor.config.entity_battery_remaining_capacity
-            )
+            default_entity_battery_remaining_capacity = energy_monitor.config.entity_battery_remaining_capacity
             default_unit_production = energy_monitor.config.unit_production
             default_unit_consumption = energy_monitor.config.unit_consumption
             default_unit_grid = energy_monitor.config.unit_grid
             default_unit_battery_power = energy_monitor.config.unit_battery_power
-            default_unit_battery_remaining_capacity = (
-                energy_monitor.config.unit_battery_remaining_capacity
-            )
+            default_unit_battery_remaining_capacity = energy_monitor.config.unit_battery_remaining_capacity
             default_grid_positive_export = energy_monitor.config.grid_positive_export
-            default_battery_positive_charge = (
-                energy_monitor.config.battery_positive_charge
-            )
+            default_battery_positive_charge = energy_monitor.config.battery_positive_charge
 
     entity_production: str = click.prompt(
         "Entity ID for production (e.g. sensor.solar_production)",
@@ -1038,17 +937,19 @@ def handle_energy_monitor_home_assistant_configuration(
         )
 
     unit_production: str = click.prompt(
-        "Unit for production (default: W)", type=str, default=default_unit_production
+        "Unit for production (default: W)",
+        type=str,
+        default=default_unit_production,
     )
     unit_consumption: str = click.prompt(
-        "Unit for consumption (default: W)", type=str, default=default_unit_consumption
+        "Unit for consumption (default: W)",
+        type=str,
+        default=default_unit_consumption,
     )
 
     unit_grid: str = default_unit_grid
     if energy_source and energy_source.grid:
-        unit_grid: str = click.prompt(
-            "Unit for grid (default: W)", type=str, default=default_unit_grid
-        )
+        unit_grid: str = click.prompt("Unit for grid (default: W)", type=str, default=default_unit_grid)
 
     unit_battery_power: str = default_unit_battery_power
     unit_battery_remaining_capacity: str = "Wh"
@@ -1109,7 +1010,8 @@ def handle_energy_monitor_configuration(
     else:
         click.echo(
             click.style(
-                "Unsupported energy monitor adapter type selected. Aborting.", fg="red"
+                "Unsupported energy monitor adapter type selected. Aborting.",
+                fg="red",
             )
         )
         return None
@@ -1128,7 +1030,8 @@ def handle_add_energy_monitor(
     if adapter_type is None:
         click.echo(
             click.style(
-                "Invalid energy monitor adapter type selected. Aborting.", fg="red"
+                "Invalid energy monitor adapter type selected. Aborting.",
+                fg="red",
             )
         )
         return None
@@ -1151,15 +1054,11 @@ def handle_add_energy_monitor(
 
     new_energy_monitor.config = config
 
-    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
-        new_energy_monitor.adapter_type, None
-    )
+    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(new_energy_monitor.adapter_type, None)
     # If an external service is required for the selected adapter type
     if needed_external_service:
         # If external service is needed, check if some one is already configured
-        external_services: List[ExternalService] = (
-            configuration_service.list_external_services()
-        )
+        external_services: List[ExternalService] = configuration_service.list_external_services()
         if external_services:
             external_service: Optional[ExternalService] = select_external_service(
                 configuration_service=configuration_service,
@@ -1167,9 +1066,7 @@ def handle_add_energy_monitor(
                 filter_type=[needed_external_service],
             )
             if external_service:
-                new_energy_monitor.external_service_id = (
-                    external_service.id if external_service else None
-                )
+                new_energy_monitor.external_service_id = external_service.id if external_service else None
         else:
             click.echo("")
             click.echo(
@@ -1180,13 +1077,14 @@ def handle_add_energy_monitor(
                 )
             )
             add_external_service: bool = click.confirm(
-                "Do you want to add an external service now?", default=True, abort=False
+                "Do you want to add an external service now?",
+                default=True,
+                abort=False,
             )
             if add_external_service:
-                external_service: Optional[ExternalService] = (
-                    handle_add_external_service(
-                        configuration_service=configuration_service, logger=logger
-                    )
+                external_service: Optional[ExternalService] = handle_add_external_service(
+                    configuration_service=configuration_service,
+                    logger=logger,
                 )
                 if external_service:
                     click.echo(
@@ -1218,14 +1116,15 @@ def handle_add_energy_monitor(
     except Exception as e:
         added = None
         logger.error(f"Error adding energy monitor: {e}")
-        click.echo(click.style(f"Error adding energy monitor: {e}", fg="red"), err=True)
+        click.echo(
+            click.style(f"Error adding energy monitor: {e}", fg="red"),
+            err=True,
+        )
     click.pause("Press any key to return to the menu...")
     return added
 
 
-def handle_list_energy_monitors(
-    configuration_service: ConfigurationService, logger: LoggerPort
-) -> None:
+def handle_list_energy_monitors(configuration_service: ConfigurationService, logger: LoggerPort) -> None:
     """List all energy monitors."""
     click.echo(click.style("\n--- List Energy Monitors ---", fg="yellow"))
 
@@ -1277,9 +1176,7 @@ def select_energy_monitor(
 
     click.echo("\nb. Back to menu\n")
 
-    em_idx: str = click.prompt(
-        "Choose a Energy Monitor index", type=str, default=default_idx
-    )
+    em_idx: str = click.prompt("Choose a Energy Monitor index", type=str, default=default_idx)
     em_idx = em_idx.strip().lower()
     if em_idx == "b":
         return None
@@ -1299,9 +1196,7 @@ def update_single_energy_monitor(
 ) -> Optional[EnergyMonitor]:
     """Update a single energy monitor."""
     click.echo(click.style("\n--- Update Energy Monitor ---", fg="yellow"))
-    name: str = click.prompt(
-        "New name of the energy monitor", type=str, default=monitor.name
-    )
+    name: str = click.prompt("New name of the energy monitor", type=str, default=monitor.name)
 
     new_energy_monitor: Optional[EnergyMonitor] = EnergyMonitor()
     new_energy_monitor.id = monitor.id
@@ -1311,32 +1206,27 @@ def update_single_energy_monitor(
     new_energy_monitor.external_service_id = monitor.external_service_id
 
     config: EnergyMonitorConfig = handle_energy_monitor_configuration(
-        adapter_type=new_energy_monitor.adapter_type, energy_monitor=new_energy_monitor
+        adapter_type=new_energy_monitor.adapter_type,
+        energy_monitor=new_energy_monitor,
     )
 
     if config is None:
         click.echo(click.style("Invalid configuration. Aborting.", fg="red"))
         return None
 
-    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
-        new_energy_monitor.adapter_type, None
-    )
+    needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(new_energy_monitor.adapter_type, None)
 
     if new_energy_monitor.external_service_id:
         click.echo("\nCurrent external service: ")
         print_external_service_details(
-            service=configuration_service.get_external_service(
-                new_energy_monitor.external_service_id
-            ),
+            service=configuration_service.get_external_service(new_energy_monitor.external_service_id),
             configuration_service=configuration_service,
             show_linked_instances=False,
         )
 
     if needed_external_service:
         # If external service is needed, check if some one is already configured
-        external_services: List[ExternalService] = (
-            configuration_service.list_external_services()
-        )
+        external_services: List[ExternalService] = configuration_service.list_external_services()
         if external_services:
             if new_energy_monitor.external_service_id:
                 # Ask to change the external service
@@ -1346,16 +1236,12 @@ def update_single_energy_monitor(
                         fg="yellow",
                     )
                 )
-                change_external_service: bool = click.confirm(
-                    "Change external service", default=True, prompt_suffix=""
-                )
+                change_external_service: bool = click.confirm("Change external service", default=True, prompt_suffix="")
                 if change_external_service:
-                    external_service: Optional[ExternalService] = (
-                        select_external_service(
-                            configuration_service=configuration_service,
-                            logger=logger,
-                            filter_type=[needed_external_service],
-                        )
+                    external_service: Optional[ExternalService] = select_external_service(
+                        configuration_service=configuration_service,
+                        logger=logger,
+                        filter_type=[needed_external_service],
                     )
 
                     if external_service is None:
@@ -1369,10 +1255,8 @@ def update_single_energy_monitor(
                         new_energy_monitor.external_service_id = external_service.id
                 else:
                     # Check if external service exists
-                    current_external_service = (
-                        configuration_service.get_external_service(
-                            new_energy_monitor.external_service_id
-                        )
+                    current_external_service = configuration_service.get_external_service(
+                        new_energy_monitor.external_service_id
                     )
 
                     # If currest external service not exists, ask to select a new one
@@ -1383,12 +1267,10 @@ def update_single_energy_monitor(
                                 fg="red",
                             )
                         )
-                        external_service: Optional[ExternalService] = (
-                            select_external_service(
-                                configuration_service=configuration_service,
-                                logger=logger,
-                                filter_type=[needed_external_service],
-                            )
+                        external_service: Optional[ExternalService] = select_external_service(
+                            configuration_service=configuration_service,
+                            logger=logger,
+                            filter_type=[needed_external_service],
                         )
                         if external_service is None:
                             click.echo(
@@ -1408,12 +1290,10 @@ def update_single_energy_monitor(
                                 fg="red",
                             )
                         )
-                        external_service: Optional[ExternalService] = (
-                            select_external_service(
-                                configuration_service=configuration_service,
-                                logger=logger,
-                                filter_type=[needed_external_service],
-                            )
+                        external_service: Optional[ExternalService] = select_external_service(
+                            configuration_service=configuration_service,
+                            logger=logger,
+                            filter_type=[needed_external_service],
                         )
                         if external_service is None:
                             click.echo(
@@ -1432,16 +1312,12 @@ def update_single_energy_monitor(
                         fg="yellow",
                     )
                 )
-                add_external_service: bool = click.confirm(
-                    "Add external service", default=True, prompt_suffix=""
-                )
+                add_external_service: bool = click.confirm("Add external service", default=True, prompt_suffix="")
                 if add_external_service:
-                    external_service: Optional[ExternalService] = (
-                        select_external_service(
-                            configuration_service=configuration_service,
-                            logger=logger,
-                            filter_type=[needed_external_service],
-                        )
+                    external_service: Optional[ExternalService] = select_external_service(
+                        configuration_service=configuration_service,
+                        logger=logger,
+                        filter_type=[needed_external_service],
                     )
                     if external_service is None:
                         click.echo(
@@ -1463,13 +1339,14 @@ def update_single_energy_monitor(
                 )
             )
             add_external_service: bool = click.confirm(
-                "Do you want to add an external service now?", default=True, abort=False
+                "Do you want to add an external service now?",
+                default=True,
+                abort=False,
             )
             if add_external_service:
-                external_service: Optional[ExternalService] = (
-                    handle_add_external_service(
-                        configuration_service=configuration_service, logger=logger
-                    )
+                external_service: Optional[ExternalService] = handle_add_external_service(
+                    configuration_service=configuration_service,
+                    logger=logger,
                 )
                 if external_service:
                     click.echo(
@@ -1504,7 +1381,8 @@ def update_single_energy_monitor(
     except Exception as e:
         logger.error(f"Error updating energy monitor: {e}")
         click.echo(
-            click.style(f"Error updating energy monitor: {e}", fg="red"), err=True
+            click.style(f"Error updating energy monitor: {e}", fg="red"),
+            err=True,
         )
         return None
 
@@ -1528,19 +1406,19 @@ def delete_single_energy_monitor(
 
     try:
         removed_energy_monitor = configuration_service.remove_energy_monitor(monitor.id)
-        logger.debug(
-            f"Energy Monitor {removed_energy_monitor.name} deleted successfully."
-        )
+        logger.debug(f"Energy Monitor {removed_energy_monitor.name} deleted successfully.")
         click.echo(
             click.style(
-                f"Energy Monitor '{monitor.name}' deleted successfully.", fg="green"
+                f"Energy Monitor '{monitor.name}' deleted successfully.",
+                fg="green",
             )
         )
         return True
     except Exception as e:
         logger.error(f"Error deleting energy monitor: {e}")
         click.echo(
-            click.style(f"Error deleting energy monitor: {e}", fg="red"), err=True
+            click.style(f"Error deleting energy monitor: {e}", fg="red"),
+            err=True,
         )
         return False
 
@@ -1552,9 +1430,7 @@ def manage_single_energy_monitor_menu(
 ) -> str:
     """Menu for managing a single energy monitor."""
     while True:
-        click.echo(
-            "\n" + click.style("--- MANAGE ENERGY MONITOR ---", fg="blue", bold=True)
-        )
+        click.echo("\n" + click.style("--- MANAGE ENERGY MONITOR ---", fg="blue", bold=True))
 
         print_energy_monitor_details(
             energy_monitor=monitor,
@@ -1629,21 +1505,15 @@ def energy_menu(configuration_service: ConfigurationService, logger: LoggerPort)
         click.clear()
 
         if choice == "1":
-            handle_add_energy_source(
-                configuration_service=configuration_service, logger=logger
-            )
+            handle_add_energy_source(configuration_service=configuration_service, logger=logger)
 
         elif choice == "2":
-            handle_list_energy_sources(
-                configuration_service=configuration_service, logger=logger
-            )
+            handle_list_energy_sources(configuration_service=configuration_service, logger=logger)
 
         elif choice == "3":
             energy_source = select_energy_source(configuration_service, logger)
             if energy_source is None:
-                click.echo(
-                    click.style("No energy source selected. Aborting.", fg="red")
-                )
+                click.echo(click.style("No energy source selected. Aborting.", fg="red"))
                 continue
 
             sub_choice = manage_single_energy_source_menu(
@@ -1662,9 +1532,7 @@ def energy_menu(configuration_service: ConfigurationService, logger: LoggerPort)
             )
 
         elif choice == "5":
-            handle_list_energy_monitors(
-                configuration_service=configuration_service, logger=logger
-            )
+            handle_list_energy_monitors(configuration_service=configuration_service, logger=logger)
 
         elif choice == "6":
             monitor = select_energy_monitor(configuration_service, logger)

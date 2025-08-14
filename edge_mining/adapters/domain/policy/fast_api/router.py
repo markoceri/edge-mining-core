@@ -12,14 +12,13 @@ from edge_mining.adapters.domain.policy.fast_api.schemas import (
     RuleTypeSchema,
 )
 
+# Import the dependency injection function defined in main_api.py
+from edge_mining.adapters.infrastructure.api.main_api import get_config_service
 from edge_mining.application.services.configuration_service import ConfigurationService
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.exceptions import PolicyNotFoundError
-
-# Import the dependency injection function defined in main_api.py
-from edge_mining.adapters.infrastructure.api.main_api import get_config_service
 
 router = APIRouter()
 
@@ -176,9 +175,7 @@ async def get_policy_rules(
         elif rule_type == RuleTypeSchema.stop:
             rule_type = RuleType.STOP
 
-        rules: List[AutomationRule] = config_service.get_policy_rules(
-            policy_id, rule_type
-        )
+        rules: List[AutomationRule] = config_service.get_policy_rules(policy_id, rule_type)
 
         response: List[AutomationRuleResponseSchema] = []
         for rule in rules:
@@ -199,7 +196,8 @@ async def get_policy_rules(
 
 
 @router.get(
-    "/policies/{policy_id}/rules/{rule_id}", response_model=AutomationRuleResponseSchema
+    "/policies/{policy_id}/rules/{rule_id}",
+    response_model=AutomationRuleResponseSchema,
 )
 async def get_policy_rule(
     policy_id: EntityId,
@@ -226,7 +224,8 @@ async def get_policy_rule(
 
 
 @router.put(
-    "/policies/{policy_id}/rules/{rule_id}", response_model=AutomationRuleResponseSchema
+    "/policies/{policy_id}/rules/{rule_id}",
+    response_model=AutomationRuleResponseSchema,
 )
 async def update_policy_rule(
     policy_id: EntityId,

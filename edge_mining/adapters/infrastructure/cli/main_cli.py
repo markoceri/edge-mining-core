@@ -6,13 +6,9 @@ from edge_mining.adapters.domain.energy.cli.commands import energy_menu
 from edge_mining.adapters.domain.forecast.cli.commands import forecast_menu
 from edge_mining.adapters.domain.miner.cli.commands import miner_menu
 from edge_mining.adapters.domain.notification.cli.commands import notifier_menu
-from edge_mining.adapters.domain.optimization_unit.cli.commands import (
-    optimization_unit_menu,
-)
+from edge_mining.adapters.domain.optimization_unit.cli.commands import optimization_unit_menu
 from edge_mining.adapters.domain.policy.cli.commands import policy_menu
-from edge_mining.adapters.infrastructure.external_services.cli.commands import (
-    external_services_menu,
-)
+from edge_mining.adapters.infrastructure.external_services.cli.commands import external_services_menu
 from edge_mining.shared.infrastructure import Services
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -23,12 +19,9 @@ def cli(ctx: click.Context):
     """Edge Mining CLI"""
 
     if not isinstance(ctx.obj, dict) or not all(
-        isinstance(ctx.obj.get(k), v)
-        for k, v in {Services: Services, LoggerPort: LoggerPort}.items()
+        isinstance(ctx.obj.get(k), v) for k, v in {Services: Services, LoggerPort: LoggerPort}.items()
     ):
-        print(
-            "WARNING: ctx.obj does not contain expected pre-initialized dependencies."
-        )
+        print("WARNING: ctx.obj does not contain expected pre-initialized dependencies.")
         click.echo(click.style("Welcome to the Edge Mining CLI!", fg="red", bold=True))
 
 
@@ -224,49 +217,56 @@ def interactive(ctx: click.Context):
 
         if choice == "1":
             sub_choice = energy_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":
                 break
         elif choice == "2":
             sub_choice = forecast_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":
                 break
         elif choice == "3":
             sub_choice = miner_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":
                 break
         elif choice == "4":
             sub_choice = policy_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":
                 break
         elif choice == "5":
             sub_choice = notifier_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":
                 break
         elif choice == "6":
             sub_choice = optimization_unit_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":
                 break
         elif choice == "7":
             sub_choice = external_services_menu(
-                configuration_service=services.configuration_service, logger=logger
+                configuration_service=services.configuration_service,
+                logger=logger,
             )
 
             if sub_choice == "q":

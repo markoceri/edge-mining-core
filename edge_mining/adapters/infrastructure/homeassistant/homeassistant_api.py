@@ -17,14 +17,9 @@ from typing import Optional, Tuple
 from homeassistant_api import Client
 
 from edge_mining.domain.common import Percentage, WattHours, Watts
-from edge_mining.shared.adapter_configs.external_services import (
-    ExternalServiceHomeAssistantConfig,
-)
+from edge_mining.shared.adapter_configs.external_services import ExternalServiceHomeAssistantConfig
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
-from edge_mining.shared.external_services.exceptions import (
-    ExternalServiceConfigurationError,
-    ExternalServiceError,
-)
+from edge_mining.shared.external_services.exceptions import ExternalServiceConfigurationError, ExternalServiceError
 from edge_mining.shared.external_services.ports import ExternalServicePort
 from edge_mining.shared.interfaces.config import ExternalServiceConfig
 from edge_mining.shared.interfaces.factories import ExternalServiceFactory
@@ -39,9 +34,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
     """
 
     def __init__(self, api_url: str, token: str, logger: LoggerPort):
-        super().__init__(
-            external_service_type=ExternalServiceAdapter.HOME_ASSISTANT_API
-        )
+        super().__init__(external_service_type=ExternalServiceAdapter.HOME_ASSISTANT_API)
         self.logger = logger
 
         if not api_url or not token:
@@ -66,12 +59,8 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             self.client.get_config()
             self.logger.info("Successfully connected to Home Assistant API.")
         except Exception as e:
-            self.logger.error(
-                f"An unexpected error occurred connecting to Home Assistant: {e}"
-            )
-            raise ConnectionError(
-                f"Unexpected error connecting to Home Assistant: {e}"
-            ) from e
+            self.logger.error(f"An unexpected error occurred connecting to Home Assistant: {e}")
+            raise ConnectionError(f"Unexpected error connecting to Home Assistant: {e}") from e
 
     def disconnect(self) -> None:
         """Disconnect from the Home Assistant API."""
@@ -80,9 +69,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
         # The Client does not have a disconnect method, but we can clear the client
         self.client = None
 
-    def get_entity_state(
-        self, entity_id: Optional[str]
-    ) -> Tuple[Optional[str], Optional[str]]:
+    def get_entity_state(self, entity_id: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
         """Safely retrieves the state and unit of an entity."""
         if not entity_id:
             return None, None
@@ -91,25 +78,21 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             # Check if state is unavailable or unknown
             state = entity.state.state  # The actual value as a string
             if state is None or state.lower() in ["unavailable", "unknown"]:
-                self.logger.warning(
-                    f"Home Assistant entity '{entity_id}' "
-                    f"is unavailable or unknown."
-                )
+                self.logger.warning(f"Home Assistant entity '{entity_id}' " f"is unavailable or unknown.")
                 return None, None
 
             unit = entity.state.attributes.get("unit_of_measurement")
-            self.logger.debug(
-                f"Fetched HA entity '{entity_id}': State='{state}', Unit='{unit}'"
-            )
+            self.logger.debug(f"Fetched HA entity '{entity_id}': State='{state}', Unit='{unit}'")
             return state, unit
         except Exception as e:
-            self.logger.error(
-                f"Unexpected error getting Home Assistant entity '{entity_id}': {e}"
-            )
+            self.logger.error(f"Unexpected error getting Home Assistant entity '{entity_id}': {e}")
             return None, None
 
     def parse_power(
-        self, state: Optional[str], configured_unit: str, entity_id_for_log: str
+        self,
+        state: Optional[str],
+        configured_unit: str,
+        entity_id_for_log: str,
     ) -> Optional[Watts]:
         """Parses state string to Watts, handling units (W/kW) and errors."""
         if state is None:
@@ -118,8 +101,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             value = float(state)
             if math.isnan(value):
                 self.logger.warning(
-                    f"Parsed NaN value for entity '{entity_id_for_log}', "
-                    f"state='{state}'. Treating as missing."
+                    f"Parsed NaN value for entity '{entity_id_for_log}', " f"state='{state}'. Treating as missing."
                 )
                 return None
             if configured_unit.lower() == "kw":
@@ -134,13 +116,15 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             return Watts(value)
         except (ValueError, TypeError) as e:
             self.logger.error(
-                f"Could not parse power value for entity '{entity_id_for_log}' "
-                f"from state='{state}': {e}"
+                f"Could not parse power value for entity '{entity_id_for_log}' " f"from state='{state}': {e}"
             )
             return None
 
     def parse_energy(
-        self, state: Optional[str], configured_unit: str, entity_id_for_log: str
+        self,
+        state: Optional[str],
+        configured_unit: str,
+        entity_id_for_log: str,
     ) -> Optional[Watts]:
         """Parses state string to Watt Hours, handling units (Wh/kWh) and errors."""
         if state is None:
@@ -149,8 +133,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             value = float(state)
             if math.isnan(value):
                 self.logger.warning(
-                    f"Parsed NaN value for entity '{entity_id_for_log}', "
-                    f"state='{state}'. Treating as missing."
+                    f"Parsed NaN value for entity '{entity_id_for_log}', " f"state='{state}'. Treating as missing."
                 )
                 return None
             if configured_unit.lower() == "kwh":
@@ -165,14 +148,11 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             return WattHours(value)
         except (ValueError, TypeError) as e:
             self.logger.error(
-                f"Could not parse energy value for entity '{entity_id_for_log}' "
-                f"from state='{state}': {e}"
+                f"Could not parse energy value for entity '{entity_id_for_log}' " f"from state='{state}': {e}"
             )
             return None
 
-    def parse_percentage(
-        self, state: Optional[str], entity_id_for_log: str
-    ) -> Optional[Percentage]:
+    def parse_percentage(self, state: Optional[str], entity_id_for_log: str) -> Optional[Percentage]:
         """Parses state string to Percentage, handling errors."""
         if state is None:
             return None
@@ -180,15 +160,13 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             value = float(state)
             if math.isnan(value):
                 self.logger.warning(
-                    f"Parsed NaN value for entity '{entity_id_for_log}', "
-                    f"state='{state}'. Treating as missing."
+                    f"Parsed NaN value for entity '{entity_id_for_log}', " f"state='{state}'. Treating as missing."
                 )
                 return None
             return Percentage(max(0.0, min(100.0, value)))  # Clamp between 0 and 100
         except (ValueError, TypeError) as e:
             self.logger.error(
-                f"Could not parse percentage value for entity '{entity_id_for_log}' "
-                f"from state='{state}': {e}"
+                f"Could not parse percentage value for entity '{entity_id_for_log}' " f"from state='{state}': {e}"
             )
             return None
 
@@ -200,28 +178,20 @@ class ServiceHomeAssistantAPIFactory(ExternalServiceFactory):
     This factory aims to simplifying the building of Home Assistant API.
     """
 
-    def create(
-        self, config: ExternalServiceConfig, logger: LoggerPort
-    ) -> ExternalServicePort:
+    def create(self, config: ExternalServiceConfig, logger: LoggerPort) -> ExternalServicePort:
         """Create an Home Assistant API Service"""
 
         if not isinstance(config, ExternalServiceHomeAssistantConfig):
-            raise ExternalServiceError(
-                "Invalid configuration type for Home Assistant API service."
-            )
+            raise ExternalServiceError("Invalid configuration type for Home Assistant API service.")
 
         # Get the config from the external service config
         external_service_ha_config: ExternalServiceHomeAssistantConfig = config
 
         if external_service_ha_config.url is None:
-            raise ExternalServiceConfigurationError(
-                "URL is required for Home Assistant API service."
-            )
+            raise ExternalServiceConfigurationError("URL is required for Home Assistant API service.")
 
         if external_service_ha_config.token is None:
-            raise ExternalServiceConfigurationError(
-                "Token is required for Home Assistant API service."
-            )
+            raise ExternalServiceConfigurationError("Token is required for Home Assistant API service.")
 
         return ServiceHomeAssistantAPI(
             api_url=external_service_ha_config.url,

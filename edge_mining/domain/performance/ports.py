@@ -18,9 +18,7 @@ class MiningPerformanceTrackerPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_recent_rewards(
-        self, miner_id: Optional[EntityId] = None, limit: int = 10
-    ) -> List[MiningReward]:
+    def get_recent_rewards(self, miner_id: Optional[EntityId] = None, limit: int = 10) -> List[MiningReward]:
         """Gets recent mining rewards."""
         raise NotImplementedError
 
@@ -54,8 +52,6 @@ class MiningPerformanceTrackerRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[MiningPerformanceTracker]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[MiningPerformanceTracker]:
         """Retrieves a list of forecast providers by its associated external service ID."""
         raise NotImplementedError

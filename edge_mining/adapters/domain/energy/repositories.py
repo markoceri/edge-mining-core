@@ -17,10 +17,7 @@ from edge_mining.domain.energy.exceptions import (
     EnergySourceError,
     EnergySourceNotFoundError,
 )
-from edge_mining.domain.energy.ports import (
-    EnergyMonitorRepository,
-    EnergySourceRepository,
-)
+from edge_mining.domain.energy.ports import EnergyMonitorRepository, EnergySourceRepository
 from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.shared.adapter_maps.energy import ENERGY_MONITOR_CONFIG_TYPE_MAP
 from edge_mining.shared.interfaces.config import EnergyMonitorConfig
@@ -30,7 +27,8 @@ class InMemoryEnergySourceRepository(EnergySourceRepository):
     """In-Memory implementation for the Energy Source Repository."""
 
     def __init__(
-        self, initial_energy_sources: Optional[Dict[EntityId, EnergySource]] = None
+        self,
+        initial_energy_sources: Optional[Dict[EntityId, EnergySource]] = None,
     ):
         self._energy_sources: Dict[EntityId, EnergySource] = (
             copy.deepcopy(initial_energy_sources) if initial_energy_sources else {}
@@ -40,9 +38,7 @@ class InMemoryEnergySourceRepository(EnergySourceRepository):
         """Add an energy source to the In-Memory repository."""
         if energy_source.id in self._energy_sources:
             # Handle update or raise error depending on desired behavior
-            print(
-                f"Warning: Energy Source {energy_source.id} already exists, overwriting."
-            )
+            print(f"Warning: Energy Source {energy_source.id} already exists, overwriting.")
         self._energy_sources[energy_source.id] = copy.deepcopy(energy_source)
 
     def get_by_id(self, energy_source_id: EntityId) -> Optional[EnergySource]:
@@ -56,9 +52,7 @@ class InMemoryEnergySourceRepository(EnergySourceRepository):
     def update(self, energy_source: EnergySource) -> None:
         """Update an energy source in the In-Memory repository."""
         if energy_source.id not in self._energy_sources:
-            raise EnergySourceError(
-                f"Energy Source {energy_source.id} not found for update."
-            )
+            raise EnergySourceError(f"Energy Source {energy_source.id} not found for update.")
         self._energy_sources[energy_source.id] = copy.deepcopy(energy_source)
 
     def remove(self, energy_source_id: EntityId) -> None:
@@ -78,10 +72,7 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
 
     def _create_tables(self):
         """Create the tables for the Energy Source Repository."""
-        self.logger.debug(
-            f"Ensuring SQLite tables exist for "
-            f"Energy Source Repository in {self._db.db_path}..."
-        )
+        self.logger.debug(f"Ensuring SQLite tables exist for " f"Energy Source Repository in {self._db.db_path}...")
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS energy_sources (
@@ -106,9 +97,7 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
                 self.logger.debug("Energy Sources tables checked/created successfully.")
         except sqlite3.Error as e:
             self.logger.error(f"Error creating SQLite tables: {e}")
-            raise EnergySourceConfigurationError(
-                f"DB error creating tables: {e}"
-            ) from e
+            raise EnergySourceConfigurationError(f"DB error creating tables: {e}") from e
         finally:
             if conn:
                 conn.close()
@@ -129,42 +118,22 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
             energy_source_type = EnergySourceType(row["type"])
 
             # Deserialize the storage and grid from the database row
-            storage = (
-                self._dict_to_battery(json.loads(row["storage"]))
-                if row["storage"]
-                else None
-            )
+            storage = self._dict_to_battery(json.loads(row["storage"])) if row["storage"] else None
             grid = self._dict_to_grid(json.loads(row["grid"])) if row["grid"] else None
 
             return EnergySource(
                 id=EntityId(row["id"]),
                 name=row["name"],
                 type=energy_source_type,
-                nominal_power_max=(
-                    Watts(row["nominal_power_max"])
-                    if row["nominal_power_max"]
-                    else None
-                ),
+                nominal_power_max=(Watts(row["nominal_power_max"]) if row["nominal_power_max"] else None),
                 storage=storage,
                 grid=grid,
-                external_source=(
-                    Watts(row["external_source"]) if row["external_source"] else None
-                ),
-                energy_monitor_id=(
-                    EntityId(row["energy_monitor_id"])
-                    if row["energy_monitor_id"]
-                    else None
-                ),
-                forecast_provider_id=(
-                    EntityId(row["forecast_provider_id"])
-                    if row["forecast_provider_id"]
-                    else None
-                ),
+                external_source=(Watts(row["external_source"]) if row["external_source"] else None),
+                energy_monitor_id=(EntityId(row["energy_monitor_id"]) if row["energy_monitor_id"] else None),
+                forecast_provider_id=(EntityId(row["forecast_provider_id"]) if row["forecast_provider_id"] else None),
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(
-                f"Error deserializing EnergySource from DB row: {row}. Error: {e}"
-            )
+            self.logger.error(f"Error deserializing EnergySource from DB row: {row}. Error: {e}")
             return None
 
     def add(self, energy_source: EnergySource) -> None:
@@ -178,14 +147,8 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
         conn = self._db.get_connection()
         try:
             # Serialize the storage and grid to JSON for storage
-            storage_json = (
-                json.dumps(energy_source.storage.__dict__)
-                if energy_source.storage
-                else None
-            )
-            grid_json = (
-                json.dumps(energy_source.grid.__dict__) if energy_source.grid else None
-            )
+            storage_json = json.dumps(energy_source.storage.__dict__) if energy_source.storage else None
+            grid_json = json.dumps(energy_source.grid.__dict__) if energy_source.grid else None
 
             with conn:
                 cursor = conn.cursor()
@@ -204,17 +167,13 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
                     ),
                 )
         except sqlite3.IntegrityError as e:
-            self.logger.error(
-                f"Integrity error adding energy source {energy_source.id}: {e}"
-            )
+            self.logger.error(f"Integrity error adding energy source {energy_source.id}: {e}")
             # Could mean that the ID already exists
             raise EnergySourceAlreadyExistsError(
                 f"Energy Source with ID {energy_source.id} already exists or constraint violation: {e}"
             ) from e
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error adding energy source {energy_source.id}: {e}"
-            )
+            self.logger.error(f"SQLite error adding energy source {energy_source.id}: {e}")
             raise EnergySourceError(f"DB error adding energy source: {e}") from e
         finally:
             if conn:
@@ -232,9 +191,7 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
             row = cursor.fetchone()
             return self._row_to_energy_source(row)
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error getting energy source {energy_source_id}: {e}"
-            )
+            self.logger.error(f"SQLite error getting energy source {energy_source_id}: {e}")
             return None  # Or raise exception? Returning None is more forgiving
         finally:
             if conn:
@@ -275,14 +232,8 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
         conn = self._db.get_connection()
         try:
             # Serialize the storage and grid to JSON for storage
-            storage_json = (
-                json.dumps(energy_source.storage.__dict__)
-                if energy_source.storage
-                else None
-            )
-            grid_json = (
-                json.dumps(energy_source.grid.__dict__) if energy_source.grid else None
-            )
+            storage_json = json.dumps(energy_source.storage.__dict__) if energy_source.storage else None
+            grid_json = json.dumps(energy_source.grid.__dict__) if energy_source.grid else None
 
             with conn:
                 cursor = conn.cursor()
@@ -301,16 +252,10 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
                     ),
                 )
                 if cursor.rowcount == 0:
-                    raise EnergySourceNotFoundError(
-                        f"No energy source found with ID {energy_source.id} for update."
-                    )
+                    raise EnergySourceNotFoundError(f"No energy source found with ID {energy_source.id} for update.")
         except sqlite3.Error as e:
-            self.logger.error(
-                f"Error updating energy source {energy_source.id} in SQLite: {e}"
-            )
-            raise EnergySourceError(
-                f"DB error updating energy source {energy_source.id}: {e}"
-            ) from e
+            self.logger.error(f"Error updating energy source {energy_source.id} in SQLite: {e}")
+            raise EnergySourceError(f"DB error updating energy source {energy_source.id}: {e}") from e
         finally:
             if conn:
                 conn.close()
@@ -326,16 +271,10 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
                 cursor = conn.cursor()
                 cursor.execute(sql, (energy_source_id,))
                 if cursor.rowcount == 0:
-                    raise EnergySourceNotFoundError(
-                        f"No energy source found with ID {energy_source_id} for removal."
-                    )
+                    raise EnergySourceNotFoundError(f"No energy source found with ID {energy_source_id} for removal.")
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error removing energy source {energy_source_id}: {e}"
-            )
-            raise EnergySourceError(
-                f"DB error removing energy source {energy_source_id}: {e}"
-            ) from e
+            self.logger.error(f"SQLite error removing energy source {energy_source_id}: {e}")
+            raise EnergySourceError(f"DB error removing energy source {energy_source_id}: {e}") from e
         finally:
             if conn:
                 conn.close()
@@ -345,7 +284,8 @@ class InMemoryEnergyMonitorRepository(EnergyMonitorRepository):
     """In-Memory implementation for the Energy Monitor Repository."""
 
     def __init__(
-        self, initial_energy_monitors: Optional[Dict[EntityId, EnergyMonitor]] = None
+        self,
+        initial_energy_monitors: Optional[Dict[EntityId, EnergyMonitor]] = None,
     ):
         self._energy_monitors: Dict[EntityId, EnergyMonitor] = (
             copy.deepcopy(initial_energy_monitors) if initial_energy_monitors else {}
@@ -355,9 +295,7 @@ class InMemoryEnergyMonitorRepository(EnergyMonitorRepository):
         """Add an energy monitor to the In-Memory repository."""
         if energy_monitor.id in self._energy_monitors:
             # Handle update or raise error depending on desired behavior
-            print(
-                f"Warning: Energy Monitor {energy_monitor.id} already exists, overwriting."
-            )
+            print(f"Warning: Energy Monitor {energy_monitor.id} already exists, overwriting.")
         self._energy_monitors[energy_monitor.id] = copy.deepcopy(energy_monitor)
 
     def get_by_id(self, energy_monitor_id: EntityId) -> Optional[EnergyMonitor]:
@@ -378,14 +316,10 @@ class InMemoryEnergyMonitorRepository(EnergyMonitorRepository):
         if energy_monitor_id in self._energy_monitors:
             del self._energy_monitors[energy_monitor_id]
 
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[EnergyMonitor]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[EnergyMonitor]:
         """Get all energy monitors associated with a specific external service ID."""
         return [
-            copy.deepcopy(em)
-            for em in self._energy_monitors.values()
-            if em.external_service_id == external_service_id
+            copy.deepcopy(em) for em in self._energy_monitors.values() if em.external_service_id == external_service_id
         ]
 
 
@@ -400,10 +334,7 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
 
     def _create_tables(self):
         """Create the tables for the Energy Monitor Repository."""
-        self.logger.debug(
-            f"Ensuring SQLite tables exist "
-            f"for Energy Monitor Repository in {self._db.db_path}..."
-        )
+        self.logger.debug(f"Ensuring SQLite tables exist " f"for Energy Monitor Repository in {self._db.db_path}...")
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS energy_monitors (
@@ -423,9 +354,7 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 for statement in sql_statements:
                     cursor.execute(statement)
 
-                self.logger.debug(
-                    "Energy Monitors tables checked/created successfully."
-                )
+                self.logger.debug("Energy Monitors tables checked/created successfully.")
 
         except sqlite3.Error as e:
             self.logger.error(f"Error creating SQLite tables: {e}")
@@ -434,9 +363,7 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
             if conn:
                 conn.close()
 
-    def _deserialize_config(
-        self, adapter_type: EnergyMonitorAdapter, config_json: str
-    ) -> EnergyMonitorConfig:
+    def _deserialize_config(self, adapter_type: EnergyMonitorAdapter, config_json: str) -> EnergyMonitorConfig:
         """Deserialize a JSON string into EnergyMonitorConfig object."""
         data: dict = json.loads(config_json)
 
@@ -445,13 +372,9 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 f"Error reading EnergyMonitor configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: EnergyMonitorConfig = ENERGY_MONITOR_CONFIG_TYPE_MAP.get(
-            adapter_type
-        )
+        config_class: EnergyMonitorConfig = ENERGY_MONITOR_CONFIG_TYPE_MAP.get(adapter_type)
         if not config_class:
-            raise EnergyMonitorConfigurationError(
-                f"Error creating EnergyMonitor configuration. Type '{adapter_type}'"
-            )
+            raise EnergyMonitorConfigurationError(f"Error creating EnergyMonitor configuration. Type '{adapter_type}'")
 
         return config_class.from_dict(data)
 
@@ -463,25 +386,17 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
             energy_monitor_adapter_type = EnergyMonitorAdapter(row["adapter_type"])
 
             # Deserialize the config from the database row
-            config = self._deserialize_config(
-                energy_monitor_adapter_type, row["config"]
-            )
+            config = self._deserialize_config(energy_monitor_adapter_type, row["config"])
 
             return EnergyMonitor(
                 id=EntityId(row["id"]),
                 name=row["name"],
                 adapter_type=energy_monitor_adapter_type,
                 config=config,
-                external_service_id=(
-                    EntityId(row["external_service_id"])
-                    if row["external_service_id"]
-                    else None
-                ),
+                external_service_id=(EntityId(row["external_service_id"]) if row["external_service_id"] else None),
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(
-                f"Error deserializing EnergyMonitor from DB row: {row}. Error: {e}"
-            )
+            self.logger.error(f"Error deserializing EnergyMonitor from DB row: {row}. Error: {e}")
             return None
 
     def add(self, energy_monitor: EnergyMonitor) -> None:
@@ -510,17 +425,13 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                     ),
                 )
         except sqlite3.IntegrityError as e:
-            self.logger.error(
-                f"Error adding energy monitor {energy_monitor.id} to SQLite: {e}"
-            )
+            self.logger.error(f"Error adding energy monitor {energy_monitor.id} to SQLite: {e}")
             # Could mean that the ID already exists
             raise EnergySourceAlreadyExistsError(
                 f"Energy Monitor with ID {energy_monitor.id} already exists or constraint violation: {e}"
             ) from e
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error adding energy monitor {energy_monitor.id}: {e}"
-            )
+            self.logger.error(f"SQLite error adding energy monitor {energy_monitor.id}: {e}")
             raise EnergySourceError(f"DB error adding energy monitor: {e}") from e
         finally:
             if conn:
@@ -538,9 +449,7 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
             row = cursor.fetchone()
             return self._row_to_energy_monitor(row)
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error getting energy monitor {energy_monitor_id}: {e}"
-            )
+            self.logger.error(f"SQLite error getting energy monitor {energy_monitor_id}: {e}")
             return None  # Or raise exception? Returning None is more forgiving
         finally:
             if conn:
@@ -596,16 +505,10 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                     ),
                 )
                 if cursor.rowcount == 0:
-                    raise EnergySourceNotFoundError(
-                        f"No energy monitor found with ID {energy_monitor.id} for update."
-                    )
+                    raise EnergySourceNotFoundError(f"No energy monitor found with ID {energy_monitor.id} for update.")
         except sqlite3.Error as e:
-            self.logger.error(
-                f"Error updating energy monitor {energy_monitor.id} in SQLite: {e}"
-            )
-            raise EnergySourceError(
-                f"DB error updating energy monitor {energy_monitor.id}: {e}"
-            ) from e
+            self.logger.error(f"Error updating energy monitor {energy_monitor.id} in SQLite: {e}")
+            raise EnergySourceError(f"DB error updating energy monitor {energy_monitor.id}: {e}") from e
         finally:
             if conn:
                 conn.close()
@@ -621,28 +524,18 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 cursor = conn.cursor()
                 cursor.execute(sql, (energy_monitor_id,))
                 if cursor.rowcount == 0:
-                    self.logger.warning(
-                        f"Attempt to remove non-existent energy monitor with ID {energy_monitor_id}."
-                    )
+                    self.logger.warning(f"Attempt to remove non-existent energy monitor with ID {energy_monitor_id}.")
                     # There is no need to raise an exception here, removing a non-existent is idempotent.
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error removing energy monitor {energy_monitor_id}: {e}"
-            )
-            raise EnergyMonitorError(
-                f"DB error removing energy monitor {energy_monitor_id}: {e}"
-            ) from e
+            self.logger.error(f"SQLite error removing energy monitor {energy_monitor_id}: {e}")
+            raise EnergyMonitorError(f"DB error removing energy monitor {energy_monitor_id}: {e}") from e
         finally:
             if conn:
                 conn.close()
 
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[EnergyMonitor]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[EnergyMonitor]:
         """Get all energy monitors associated with a specific external service ID."""
-        self.logger.debug(
-            f"Getting energy monitors for external service {external_service_id} from SQLite."
-        )
+        self.logger.debug(f"Getting energy monitors for external service {external_service_id} from SQLite.")
 
         sql = "SELECT * FROM energy_monitors WHERE external_service_id = ?"
         conn = self._db.get_connection()
@@ -657,9 +550,7 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                     energy_monitors.append(energy_monitor)
             return energy_monitors
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error getting energy monitors for external service {external_service_id}: {e}"
-            )
+            self.logger.error(f"SQLite error getting energy monitors for external service {external_service_id}: {e}")
             return []
         finally:
             if conn:

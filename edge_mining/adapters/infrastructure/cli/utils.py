@@ -39,7 +39,8 @@ def requires_services(func):
             ]
         ):
             click.echo(
-                click.style("Error: Services not initialized.", fg="red"), err=True
+                click.style("Error: Services not initialized.", fg="red"),
+                err=True,
             )
             click.pause("Press any key to return to the menu...")
             return

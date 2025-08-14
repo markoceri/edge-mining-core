@@ -1,7 +1,5 @@
 """Settings module for Edge Mining application."""
 
-import os
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Using pydantic-settings for easy environment variable loading

@@ -92,6 +92,4 @@ class ForecastInterval(ValueObject):
             return Watts(0.0)
 
         total_power = sum(point.power for point in self.power_points)
-        return (
-            Watts(total_power / len(self.power_points)) if total_power else Watts(0.0)
-        )
+        return Watts(total_power / len(self.power_points)) if total_power else Watts(0.0)

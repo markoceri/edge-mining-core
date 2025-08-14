@@ -9,15 +9,9 @@ from edge_mining.application.interfaces import (
     ConfigurationServiceInterface,
     OptimizationServiceInterface,
 )
-from edge_mining.domain.energy.ports import (
-    EnergyMonitorRepository,
-    EnergySourceRepository,
-)
+from edge_mining.domain.energy.ports import EnergyMonitorRepository, EnergySourceRepository
 from edge_mining.domain.forecast.ports import ForecastProviderRepository
-from edge_mining.domain.home_load.ports import (
-    HomeForecastProviderRepository,
-    HomeLoadsProfileRepository,
-)
+from edge_mining.domain.home_load.ports import HomeForecastProviderRepository, HomeLoadsProfileRepository
 from edge_mining.domain.miner.ports import MinerControllerRepository, MinerRepository
 from edge_mining.domain.notification.ports import NotifierRepository
 from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository

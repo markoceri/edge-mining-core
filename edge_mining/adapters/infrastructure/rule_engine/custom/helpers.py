@@ -3,10 +3,7 @@
 import re
 from typing import Any, Union
 
-from edge_mining.adapters.domain.policy.schemas import (
-    LogicalGroupSchema,
-    RuleConditionSchema,
-)
+from edge_mining.adapters.domain.policy.schemas import LogicalGroupSchema, RuleConditionSchema
 from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 from edge_mining.domain.policy.value_objects import DecisionalContext
 
@@ -42,10 +39,7 @@ class RuleEvaluator:
                 # Check if conditions are a logical group or a single rule condition
                 conditions_dict_keys = set(conditions.keys())
 
-                if any(
-                    key in conditions_dict_keys
-                    for key in LogicalGroupSchema.model_fields.keys()
-                ):
+                if any(key in conditions_dict_keys for key in LogicalGroupSchema.model_fields.keys()):
                     # It's a logical group
                     return LogicalGroupSchema(**conditions)
                 elif conditions_dict_keys == RuleConditionSchema.model_fields.keys():
@@ -53,22 +47,16 @@ class RuleEvaluator:
                     return RuleConditionSchema(**conditions)
                 else:
                     # It's an unknown format, raise an error
-                    raise ValueError(
-                        f"Invalid conditions format in RuleEvaluator: {conditions}"
-                    )
+                    raise ValueError(f"Invalid conditions format in RuleEvaluator: {conditions}")
             else:
                 # If conditions is not a dict, raise an error
-                raise ValueError(
-                    f"Expected conditions to be a dict, got {type(conditions)}"
-                )
+                raise ValueError(f"Expected conditions to be a dict, got {type(conditions)}")
         except Exception as e:
             print(f"Error converting conditions to schema: {e}")
             raise
 
     @staticmethod
-    def _evaluate_single_condition(
-        context: DecisionalContext, condition: RuleConditionSchema
-    ) -> bool:
+    def _evaluate_single_condition(context: DecisionalContext, condition: RuleConditionSchema) -> bool:
         """Evaluate a single condition."""
         try:
             # Get field value from context using dot notation
@@ -79,32 +67,22 @@ class RuleEvaluator:
                 return False
 
             # Apply operator
-            return RuleEvaluator._apply_operator(
-                field_value, condition.operator, condition.value
-            )
+            return RuleEvaluator._apply_operator(field_value, condition.operator, condition.value)
 
         except Exception as e:
             print(f"Error evaluating condition '{condition.field}': {e}")
             return False
 
     @staticmethod
-    def _evaluate_logical_group(
-        context: DecisionalContext, group: LogicalGroupSchema
-    ) -> bool:
+    def _evaluate_logical_group(context: DecisionalContext, group: LogicalGroupSchema) -> bool:
         """Evaluate a logical group (AND/OR/NOT)."""
         if group.all_of:
             # ALL conditions must be true (AND)
-            return all(
-                RuleEvaluator.evaluate_rule_conditions(context, cond)
-                for cond in group.all_of
-            )
+            return all(RuleEvaluator.evaluate_rule_conditions(context, cond) for cond in group.all_of)
 
         elif group.any_of:
             # ANY condition must be true (OR)
-            return any(
-                RuleEvaluator.evaluate_rule_conditions(context, cond)
-                for cond in group.any_of
-            )
+            return any(RuleEvaluator.evaluate_rule_conditions(context, cond) for cond in group.any_of)
 
         elif group.not_:
             # NOT condition
@@ -127,9 +105,7 @@ class RuleEvaluator:
         return current
 
     @staticmethod
-    def _apply_operator(
-        field_value: Any, operator: OperatorType, expected_value: Any
-    ) -> bool:
+    def _apply_operator(field_value: Any, operator: OperatorType, expected_value: Any) -> bool:
         """Apply comparison operator."""
         try:
             if operator == OperatorType.EQ:

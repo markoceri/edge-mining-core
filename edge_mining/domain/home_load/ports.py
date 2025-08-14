@@ -13,9 +13,7 @@ class HomeForecastProviderPort(ABC):
     """Port for the Home Forecast Provider."""
 
     @abstractmethod
-    def get_home_consumption_forecast(
-        self, hours_ahead: int = 3
-    ) -> Optional[ConsumptionForecast]:
+    def get_home_consumption_forecast(self, hours_ahead: int = 3) -> Optional[ConsumptionForecast]:
         """
         Provides an aggregated forecast of home energy consumption
         for the specified period. Returns average Watts or a profile?
@@ -50,9 +48,7 @@ class HomeForecastProviderRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_id(
-        self, home_forecast_provider_id: EntityId
-    ) -> Optional[HomeForecastProvider]:
+    def get_by_id(self, home_forecast_provider_id: EntityId) -> Optional[HomeForecastProvider]:
         """Retrieves a home forecast provider by its ID."""
         raise NotImplementedError
 
@@ -72,9 +68,7 @@ class HomeForecastProviderRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[HomeForecastProvider]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[HomeForecastProvider]:
         """
         Retrieves all home forecast providers associated with a specific external service ID.
         """

@@ -36,22 +36,17 @@ class TelegramNotifierFactory(NotificationAdapterFactory):
 
         if not isinstance(config, TelegramNotificationConfig):
             raise NotifierConfigurationError(
-                "Invalid configuration type for Telegram notifier. "
-                "Expected TelegramNotificationConfig."
+                "Invalid configuration type for Telegram notifier. " "Expected TelegramNotificationConfig."
             )
 
         # Get the config from the energy monitor config
         notifier_config: TelegramNotificationConfig = config
 
         if not notifier_config.bot_token:
-            raise NotifierConfigurationError(
-                "Bot Token is required for Telegram notifier."
-            )
+            raise NotifierConfigurationError("Bot Token is required for Telegram notifier.")
 
         if not notifier_config.chat_id:
-            raise NotifierConfigurationError(
-                "Chat ID is required for Telegram notifier."
-            )
+            raise NotifierConfigurationError("Chat ID is required for Telegram notifier.")
 
         return TelegramNotifier(
             bot_token=notifier_config.bot_token,
@@ -107,29 +102,21 @@ class TelegramNotifier(NotificationPort):
         # Limit the message length (Telegram has a limit of 4096 characters)
         max_len = 4096
         if len(formatted_message) > max_len:
-            self.logger.warning(
-                f"Notification message exceeds Telegram limit ({max_len} chars). Truncating."
-            )
+            self.logger.warning(f"Notification message exceeds Telegram limit ({max_len} chars). Truncating.")
             # Truncate preserving the base format
             truncated_message = escape_markdown_v2(
                 message[: max_len - len(escaped_title) - 20]
             )  # Leave space for title and "..."
-            formatted_message = (
-                f"*{escaped_title}*\n\n{truncated_message}\n\n\\.\\.\\. \\(truncated\\)"
-            )
+            formatted_message = f"*{escaped_title}*\n\n{truncated_message}\n\n\\.\\.\\. \\(truncated\\)"
 
-        self.logger.debug(
-            f"Sending notification to Telegram chat {self.chat_id}: Title='{title}'"
-        )
+        self.logger.debug(f"Sending notification to Telegram chat {self.chat_id}: Title='{title}'")
         try:
             await self.bot.send_message(
                 chat_id=self.chat_id,
                 text=formatted_message,
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
-            self.logger.info(
-                f"Successfully sent notification to Telegram chat {self.chat_id}"
-            )
+            self.logger.info(f"Successfully sent notification to Telegram chat {self.chat_id}")
             return True
         except TelegramError as e:
             # Handle specific Telegram API errors
@@ -137,14 +124,10 @@ class TelegramNotifier(NotificationPort):
             if "chat not found" in str(e).lower():
                 self.logger.error(f"Invalid chat_id configured: {self.chat_id}")
             elif "bot was blocked by the user" in str(e).lower():
-                self.logger.warning(
-                    f"Bot was blocked by the user in chat {self.chat_id}."
-                )
+                self.logger.warning(f"Bot was blocked by the user in chat {self.chat_id}.")
             # Other specific errors can be handled here
             return False
         except Exception as e:
             # Handle other errors (e.g. network)
-            self.logger.error(
-                f"Unexpected error sending notification via Telegram: {e}"
-            )
+            self.logger.error(f"Unexpected error sending notification via Telegram: {e}")
             return False

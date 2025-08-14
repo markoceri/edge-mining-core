@@ -91,9 +91,7 @@ class TerminalLogger(LoggerPort):
         else:
             msg = pformat(msg)
 
-        log_method = getattr(
-            logger, level.lower(), logger.debug
-        )  # Default to debug if level is unknown
+        log_method = getattr(logger, level.lower(), logger.debug)  # Default to debug if level is unknown
 
         log_method(msg)
 
@@ -139,6 +137,4 @@ class TerminalLogger(LoggerPort):
         try:
             intentional_error()
         except Exception:
-            self.error(
-                "This error is just for demonstration purposes. Don't worry, I got it covered! 😉"
-            )
+            self.error("This error is just for demonstration purposes. Don't worry, I got it covered! 😉")
