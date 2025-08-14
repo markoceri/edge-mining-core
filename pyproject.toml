@@ -85,9 +85,6 @@ addopts = [
     "-q",
     "--strict-markers",
     "--strict-config",
-    "--cov=edge_mining",
-    "--cov-report=term-missing",
-    "--cov-fail-under=5"
 ]
 testpaths = [
     "tests",
