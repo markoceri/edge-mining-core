@@ -25,14 +25,14 @@ class ValueObject:
 class Entity:
     """Base class for entities."""
 
-    id: EntityId = field(default_factory=uuid.uuid4)
+    id: EntityId = field(default_factory=EntityId(uuid.uuid4()))
 
 
 @dataclass
 class AggregateRoot:
     """Base class for aggregate roots."""
 
-    id: EntityId = field(default_factory=uuid.uuid4)
+    id: EntityId = field(default_factory=EntityId(uuid.uuid4()))
 
 
 class AdapterType(Enum):
