@@ -22,7 +22,6 @@ class SystemSettings:
 
     id: UserId  # Or a fixed ID like 'global_settings'
     settings: Dict[str, Any] = field(default_factory=dict)
-    # e.g., {"notification_preferences": {"telegram_chat_id": "123"}, "default_pool": "..."}
 
     def get_setting(self, key: str, default: Any = None) -> Any:
         """Get a setting by its key."""
