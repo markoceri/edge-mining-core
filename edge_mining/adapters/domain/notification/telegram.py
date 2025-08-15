@@ -13,6 +13,7 @@ from telegram.error import TelegramError
 from edge_mining.adapters.infrastructure.logging.terminal_logging import TerminalLogger
 from edge_mining.domain.notification.exceptions import NotifierConfigurationError
 from edge_mining.domain.notification.ports import NotificationPort
+from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.adapter_configs.notification import TelegramNotificationConfig
 from edge_mining.shared.external_services.ports import ExternalServicePort
 from edge_mining.shared.interfaces.factories import NotificationAdapterFactory
@@ -28,7 +29,7 @@ class TelegramNotifierFactory(NotificationAdapterFactory):
 
     def create(
         self,
-        config: TelegramNotificationConfig,
+        config: Configuration,
         logger: LoggerPort,
         external_service: ExternalServicePort,
     ) -> NotificationPort:
