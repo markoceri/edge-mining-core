@@ -51,7 +51,9 @@ def handle_create_optimization_unit(
         created = configuration_service.create_optimization_unit(
             name=name,
             description=description if description else None,
-            energy_source_id=(EntityId(UUID(energy_source_id)) if energy_source_id else None),
+            energy_source_id=(
+                EntityId(UUID(energy_source_id)) if energy_source_id else None
+            ),
             target_miner_ids=target_miner_ids,
             policy_id=EntityId(UUID(policy_id)) if policy_id else None,
             home_forecast_provider_id=(
@@ -60,7 +62,9 @@ def handle_create_optimization_unit(
                 else None
             ),
             performance_tracker_id=(
-                EntityId(UUID(performance_tracker_id)) if performance_tracker_id else None
+                EntityId(UUID(performance_tracker_id))
+                if performance_tracker_id
+                else None
             ),
             notifier_ids=notifier_ids,
         )
@@ -79,7 +83,7 @@ def handle_create_optimization_unit(
 
 
 def list_optimization_units(
-    configuration_service: ConfigurationServiceInterface
+    configuration_service: ConfigurationServiceInterface,
 ) -> None:
     """List all configured optimization units."""
     units = configuration_service.list_optimization_units()
@@ -95,7 +99,7 @@ def list_optimization_units(
 
 
 def handle_list_optimization_units(
-    configuration_service: ConfigurationServiceInterface
+    configuration_service: ConfigurationServiceInterface,
 ) -> None:
     """Menu to list all configured optimization units."""
     click.echo(
@@ -134,9 +138,7 @@ def optimization_unit_menu(
                 configuration_service=configuration_service, logger=logger
             )
         elif choice == "2":
-            handle_list_optimization_units(
-                configuration_service=configuration_service
-            )
+            handle_list_optimization_units(configuration_service=configuration_service)
         elif choice == "b":
             break
         elif choice == "q":

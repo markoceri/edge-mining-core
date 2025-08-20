@@ -75,12 +75,7 @@ def escape_markdown_v2(text: str) -> str:
 class TelegramNotifier(NotificationPort):
     """Sends notifications to a specified Telegram chat using a bot."""
 
-    def __init__(
-        self,
-        bot_token: str,
-        chat_id: str,
-        logger: Optional[LoggerPort]
-    ):
+    def __init__(self, bot_token: str, chat_id: str, logger: Optional[LoggerPort]):
         self.logger = logger
 
         if not bot_token or not chat_id:
@@ -106,8 +101,9 @@ class TelegramNotifier(NotificationPort):
         """Sends a formatted notification message to the configured Telegram chat."""
         if not self.bot:
             if self.logger:
-                self.logger.error("Telegram Bot not initialized. "
-                                  "Cannot send notification.")
+                self.logger.error(
+                    "Telegram Bot not initialized. Cannot send notification."
+                )
             return False
 
         # Format the message using MarkdownV2 (make sure to escape!)

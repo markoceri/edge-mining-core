@@ -13,7 +13,9 @@ from edge_mining.shared.adapter_configs.notification import (
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import NotificationConfig
 
-NOTIFIER_CONFIG_TYPE_MAP: Dict[NotificationAdapter, Optional[type[NotificationConfig]]] = {
+NOTIFIER_CONFIG_TYPE_MAP: Dict[
+    NotificationAdapter, Optional[type[NotificationConfig]]
+] = {
     NotificationAdapter.DUMMY: DummyNotificationConfig,
     NotificationAdapter.TELEGRAM: TelegramNotificationConfig,
 }

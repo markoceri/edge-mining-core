@@ -20,7 +20,8 @@ from edge_mining.shared.interfaces.config import ExternalServiceConfig
 from edge_mining.shared.logging.port import LoggerPort
 
 from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters, print_configuration
+    process_filters,
+    print_configuration,
 )
 
 
@@ -51,9 +52,9 @@ def select_external_service_type() -> Optional[ExternalServiceAdapter]:
     return selected_type
 
 
-def handle_external_service_home_assistant_api_config() -> (
-    Optional[ExternalServiceConfig]
-):
+def handle_external_service_home_assistant_api_config() -> Optional[
+    ExternalServiceConfig
+]:
     """Prompt user for Home Assistant API configuration."""
     click.echo(click.style("\n--- Home Assistant API Configuration ---", fg="yellow"))
 
@@ -93,8 +94,8 @@ def handle_add_external_service(
         )
         return None
 
-    config: Optional[ExternalServiceConfig] = (
-        handle_external_service_configuration(adapter_type)
+    config: Optional[ExternalServiceConfig] = handle_external_service_configuration(
+        adapter_type
     )
 
     if config is None:
@@ -149,7 +150,9 @@ def select_external_service(
     configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
     default_id: Optional[EntityId] = None,
-    filter_type: Optional[Union[ExternalServiceAdapter, List[ExternalServiceAdapter]]] = None,
+    filter_type: Optional[
+        Union[ExternalServiceAdapter, List[ExternalServiceAdapter]]
+    ] = None,
 ) -> Optional[ExternalService]:
     """Select an external service from the list of configured services."""
     click.echo(click.style("\n--- Select External Service ---", fg="yellow"))
@@ -236,7 +239,7 @@ def print_external_service_details(
             MinerController,
             ForecastProvider,
             HomeForecastProvider,
-            Notifier
+            Notifier,
         ]
         if external_service_linked_entities.energy_monitors:
             click.echo("Energy Monitors assigned:")

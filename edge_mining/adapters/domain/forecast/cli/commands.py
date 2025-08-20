@@ -25,7 +25,8 @@ from edge_mining.shared.interfaces.config import ForecastProviderConfig
 from edge_mining.shared.logging.port import LoggerPort
 
 from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters, print_configuration
+    process_filters,
+    print_configuration,
 )
 
 

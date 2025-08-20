@@ -108,9 +108,7 @@ def configure_persistence(
             os.makedirs(db_dir, exist_ok=True)
 
         logger.debug(f"Using SQLite persistence adapter (DB: {db_path}).")
-        sqlite_db = BaseSqliteRepository(
-            db_path=db_path, logger=logger
-        )
+        sqlite_db = BaseSqliteRepository(db_path=db_path, logger=logger)
 
     if not sqlite_db:
         raise ValueError(
@@ -158,8 +156,8 @@ def configure_persistence(
         miner_controller_repo = SqliteMinerControllerRepository(db=sqlite_db)
         forecast_provider_repo = SqliteForecastProviderRepository(db=sqlite_db)
         notifier_repo = SqliteNotifierRepository(db=sqlite_db)
-        mining_performance_tracker_repo = (
-            SqliteMiningPerformanceTrackerRepository(db=sqlite_db)
+        mining_performance_tracker_repo = SqliteMiningPerformanceTrackerRepository(
+            db=sqlite_db
         )
         settings_repo = SqliteSettingsRepository(db=sqlite_db)
         home_profile_repo = SqliteHomeLoadsProfileRepository(db=sqlite_db)

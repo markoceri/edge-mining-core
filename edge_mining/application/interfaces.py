@@ -157,7 +157,6 @@ class ConfigurationServiceInterface(ABC):
         name: str,
         status: MinerStatus = MinerStatus.UNKNOWN,
         hash_rate_max: Optional[HashRate] = None,
-
         power_consumption_max: Optional[Watts] = None,
         controller_id: Optional[EntityId] = None,
         active: bool = True,
@@ -309,7 +308,7 @@ class ConfigurationServiceInterface(ABC):
         name: str,
         priority: int,
         conditions: Dict,
-        description: str = ""
+        description: str = "",
     ) -> AutomationRule:
         """Add a rule to a policy."""
 
@@ -334,7 +333,7 @@ class ConfigurationServiceInterface(ABC):
         priority: int,
         enabled: bool,
         conditions: Dict,
-        description: str = ""
+        description: str = "",
     ) -> AutomationRule:
         """Update a rule in a policy."""
 

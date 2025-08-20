@@ -113,7 +113,7 @@ class DummyMinerController(MinerControlPort):
             # Simulate hash rate
             hash_rate = HashRate(
                 value=random.uniform(0, self._hashrate_max.value),
-                unit=self._hashrate_max.unit
+                unit=self._hashrate_max.unit,
             )
             if self.logger:
                 self.logger.debug(

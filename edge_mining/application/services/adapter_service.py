@@ -95,14 +95,17 @@ class AdapterService(AdapterServiceInterface):
         self.external_service_repo = external_service_repo
         # Cache for already created instances
         self._instance_cache: Dict[
-            EntityId, Optional[Union[
-                EnergyMonitorPort,
-                MinerControlPort,
-                NotificationPort,
-                ForecastProviderPort,
-                HomeForecastProviderPort,
-                MiningPerformanceTrackerPort
-            ]]
+            EntityId,
+            Optional[
+                Union[
+                    EnergyMonitorPort,
+                    MinerControlPort,
+                    NotificationPort,
+                    ForecastProviderPort,
+                    HomeForecastProviderPort,
+                    MiningPerformanceTrackerPort,
+                ]
+            ],
         ] = {}
         # Cache for already created external services
         self._service_cache: Dict[EntityId, ExternalServicePort] = {}
@@ -216,10 +219,7 @@ class AdapterService(AdapterServiceInterface):
 
                 # Set energy source as reference
                 energy_monitor_adapter_factory.from_energy_source(energy_source)
-            elif (
-                energy_monitor.adapter_type
-                == EnergyMonitorAdapter.HOME_ASSISTANT_API
-            ):
+            elif energy_monitor.adapter_type == EnergyMonitorAdapter.HOME_ASSISTANT_API:
                 # --- Home Assistant API ---
                 if not energy_monitor.config:
                     raise ValueError(
@@ -525,10 +525,7 @@ class AdapterService(AdapterServiceInterface):
             return cached_instance
 
         try:
-            if (
-                home_forecast_provider.adapter_type
-                == HomeForecastProviderAdapter.DUMMY
-            ):
+            if home_forecast_provider.adapter_type == HomeForecastProviderAdapter.DUMMY:
                 # --- Dummy Home Forecast Provider ---
                 # TODO - Add configuration parameters for DummyHomeForecastProvider
                 # For now, we use a default load power max of 800W.
@@ -691,7 +688,9 @@ class AdapterService(AdapterServiceInterface):
         notifier = self.notifier_repo.get_by_id(notifier_id)
         if not notifier:
             if self.logger:
-                self.logger.error(f"Notifier ID {notifier_id} not found or not a Notifier.")
+                self.logger.error(
+                    f"Notifier ID {notifier_id} not found or not a Notifier."
+                )
             return None
         return self._initialize_notifier_adapter(notifier)
 

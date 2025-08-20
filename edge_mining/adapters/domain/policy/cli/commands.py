@@ -159,7 +159,7 @@ def handle_add_optimization_policy(
                         name=rule_name,
                         priority=rule_priority,
                         conditions=conditions,
-                        description=rule_description
+                        description=rule_description,
                     )
                     click.echo(
                         click.style(f"Start rule '{rule_name}' added!", fg="green")
@@ -190,7 +190,7 @@ def handle_add_optimization_policy(
                         name=rule_name,
                         priority=rule_priority,
                         conditions=conditions,
-                        description=rule_description
+                        description=rule_description,
                     )
                     click.echo(
                         click.style(f"Stop rule '{rule_name}' added!", fg="green")
@@ -373,12 +373,12 @@ def print_rule_condition_items(
                             condition_str = (
                                 f"{field_str} {operator_symbol_str} {value_str}"
                             )
-                            click.echo(f"{blocks_value}[{idx+1}] -> {condition_str}")
+                            click.echo(f"{blocks_value}[{idx + 1}] -> {condition_str}")
                         else:
                             print_rule_condition_items(item, step + 1, str(idx + 1))
                     else:
                         click.echo(
-                            f"{blocks_value}[{idx+1}] -> {click.style(str(item), fg='cyan')}"
+                            f"{blocks_value}[{idx + 1}] -> {click.style(str(item), fg='cyan')}"
                         )
             # click.echo(f"          {click.style(f'{key}', fg='yellow')}: {value}")
 
@@ -563,12 +563,8 @@ def add_rule_to_policy(
     click.echo(click.style(f"\n--- Add {type_name} Rule ---", fg="yellow"))
 
     rule_name = click.prompt("Rule name", type=str)
-    rule_description = click.prompt(
-        "Rule description (optional)", type=str, default=""
-    )
-    rule_priority = click.prompt(
-        "Rule priority (default is 10)", type=int, default=10
-    )
+    rule_description = click.prompt("Rule description (optional)", type=str, default="")
+    rule_priority = click.prompt("Rule priority (default is 10)", type=int, default=10)
     conditions = create_rule_conditions()
 
     if not conditions:
@@ -656,7 +652,7 @@ def edit_policy_rule(
             priority=new_rule_priority,
             conditions=new_conditions,
             description=new_description,
-            enabled=rule_enabled
+            enabled=rule_enabled,
         )
         click.echo(click.style(f"Rule '{new_name}' updated successfully!", fg="green"))
 
@@ -761,7 +757,9 @@ def optimization_policies_menu(
             click.pause("Press any key to continue...")
 
 
-def policy_menu(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
+def policy_menu(
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
+) -> str:
     """Main policy menu."""
     while True:
         click.echo("\n" + click.style("--- POLICY & RULE ---", fg="blue", bold=True))

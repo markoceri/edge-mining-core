@@ -77,9 +77,7 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
         # Get the config from the energy monitor config
         energy_monitor_config: EnergyMonitorHomeAssistantConfig = config
 
-        service_home_assistant_api = cast(
-            ServiceHomeAssistantAPI, external_service
-        )
+        service_home_assistant_api = cast(ServiceHomeAssistantAPI, external_service)
 
         # Use builder pattern to create the adapter, in this way
         # we can easily add more configuration options in the future
@@ -158,7 +156,9 @@ class HomeAssistantAPIEnergyMonitorFactory(EnergyMonitorAdapterFactory):
 class HomeAssistantAPIEnergyMonitorBuilder:
     """Builder class for constructing HomeAssistantAPIEnergyMonitor instances."""
 
-    def __init__(self, home_assistant: ServiceHomeAssistantAPI, logger: Optional[LoggerPort]):
+    def __init__(
+        self, home_assistant: ServiceHomeAssistantAPI, logger: Optional[LoggerPort]
+    ):
         self.home_assistant: ServiceHomeAssistantAPI = home_assistant
         self.logger: Optional[LoggerPort] = logger
         self.entity_production: Optional[str] = None

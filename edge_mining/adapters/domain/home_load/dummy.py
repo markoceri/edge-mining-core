@@ -17,7 +17,9 @@ from edge_mining.shared.logging.port import LoggerPort
 class DummyHomeForecastProvider(HomeForecastProviderPort):
     """Generates a very basic fake home load forecast."""
 
-    def __init__(self, load_power_max: float = 500.0, logger: Optional[LoggerPort] = None):
+    def __init__(
+        self, load_power_max: float = 500.0, logger: Optional[LoggerPort] = None
+    ):
         """Initializes the DummyHomeForecastProvider."""
         super().__init__(home_forecast_provider_type=HomeForecastProviderAdapter.DUMMY)
         self.logger = logger

@@ -46,7 +46,7 @@ from edge_mining.domain.notification.ports import NotifierRepository
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
 from edge_mining.domain.optimization_unit.exceptions import (
     OptimizationUnitNotFoundError,
-    OptimizationUnitConfigurationError
+    OptimizationUnitConfigurationError,
 )
 from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
 from edge_mining.domain.performance.exceptions import (
@@ -257,9 +257,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         """Remove an external service from the system."""
         self.logger.debug(f"Removing external service {service_id}")
 
-        external_service = self.external_service_repo.get_by_id(
-            service_id
-        )
+        external_service = self.external_service_repo.get_by_id(service_id)
 
         if not external_service:
             raise ExternalServiceNotFoundError(
@@ -284,9 +282,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         This method updates the name and configuration only of an existing external service.
         """
 
-        external_service = self.external_service_repo.get_by_id(
-            service_id
-        )
+        external_service = self.external_service_repo.get_by_id(service_id)
 
         if not external_service:
             raise ExternalServiceNotFoundError(
@@ -641,9 +637,7 @@ class ConfigurationService(ConfigurationServiceInterface):
                 f"Energy Source with ID {energy_source_id} not found."
             )
 
-        forecast_provider = self.forecast_provider_repo.get_by_id(
-            forecast_provider_id
-        )
+        forecast_provider = self.forecast_provider_repo.get_by_id(forecast_provider_id)
 
         if not forecast_provider:
             raise ForecastProviderNotFoundError(
@@ -1289,10 +1283,8 @@ class ConfigurationService(ConfigurationServiceInterface):
 
         # Check if the home forecast provider is valid
         if optimization_unit.home_forecast_provider_id:
-            home_forecast_provider = (
-                self.home_forecast_provider_repo.get_by_id(
-                    optimization_unit.home_forecast_provider_id
-                )
+            home_forecast_provider = self.home_forecast_provider_repo.get_by_id(
+                optimization_unit.home_forecast_provider_id
             )
             if not home_forecast_provider:
                 raise HomeForecastProviderNotFoundError(
@@ -1301,10 +1293,8 @@ class ConfigurationService(ConfigurationServiceInterface):
 
         # Check if the performance tracker is valid
         if optimization_unit.performance_tracker_id:
-            performance_tracker = (
-                self.mining_performance_tracker_repo.get_by_id(
-                    optimization_unit.performance_tracker_id
-                )
+            performance_tracker = self.mining_performance_tracker_repo.get_by_id(
+                optimization_unit.performance_tracker_id
             )
             if not performance_tracker:
                 raise MiningPerformanceTrackerNotFoundError(
@@ -1822,7 +1812,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         priority: int,
         enabled: bool,
         conditions: Dict,
-        description: str = ""
+        description: str = "",
     ) -> AutomationRule:
         """Update a rule in a policy."""
         policy = self.policy_repo.get_by_id(policy_id)

@@ -14,7 +14,9 @@ class ExternalServiceFactory(ABC):
     """Abstract factory for external services"""
 
     @abstractmethod
-    def create(self, config: Optional[ExternalServiceConfig], logger: LoggerPort) -> Any:
+    def create(
+        self, config: Optional[ExternalServiceConfig], logger: LoggerPort
+    ) -> Any:
         """Create an external service"""
         pass
 

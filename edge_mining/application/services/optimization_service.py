@@ -478,7 +478,7 @@ class OptimizationService(OptimizationServiceInterface):
                 home_load_forecast=context.home_load_forecast,
                 tracker_current_hashrate=context.tracker_current_hashrate,
                 sun=context.sun,
-                miner=miner  # Add the miner to the context
+                miner=miner,  # Add the miner to the context
             )
 
             # Create the rule engine instance

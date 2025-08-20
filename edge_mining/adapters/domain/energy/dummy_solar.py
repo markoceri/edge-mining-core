@@ -125,7 +125,9 @@ class DummySolarEnergyMonitor(EnergyMonitorPort):
                 )
                 battery_power = Watts(-discharge_power)
 
-                grid_power = Watts(net_power - battery_power)  # Import remaining deficit
+                grid_power = Watts(
+                    net_power - battery_power
+                )  # Import remaining deficit
             else:  # Idle or full/empty
                 grid_power = Watts(net_power)  # Import/export directly
 

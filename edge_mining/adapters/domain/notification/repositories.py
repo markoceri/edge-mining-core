@@ -110,7 +110,9 @@ class SqliteNotifierRepository(NotifierRepository):
                 f"Error reading Notifier configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: Optional[type[NotificationConfig]] = NOTIFIER_CONFIG_TYPE_MAP.get(adapter_type)
+        config_class: Optional[type[NotificationConfig]] = NOTIFIER_CONFIG_TYPE_MAP.get(
+            adapter_type
+        )
         if not config_class:
             raise NotifierConfigurationError(
                 f"Error creating Notifier configuration. Type '{adapter_type}'"

@@ -22,7 +22,8 @@ from edge_mining.shared.interfaces.config import MinerControllerConfig
 from edge_mining.shared.logging.port import LoggerPort
 
 from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters, print_configuration
+    process_filters,
+    print_configuration,
 )
 
 
@@ -117,7 +118,9 @@ def list_miners(configuration_service: ConfigurationServiceInterface):
     else:
         for m in miners:
             hashrate_str = (
-                f"{m.hash_rate_max.value} {m.hash_rate_max.unit}" if m.hash_rate_max else "N/A"
+                f"{m.hash_rate_max.value} {m.hash_rate_max.unit}"
+                if m.hash_rate_max
+                else "N/A"
             )
             click.echo(
                 "-> "
@@ -143,7 +146,9 @@ def list_miners(configuration_service: ConfigurationServiceInterface):
     click.echo("")
 
 
-def handle_list_miners(configuration_service: ConfigurationServiceInterface, logger: LoggerPort):
+def handle_list_miners(
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
+):
     """Handle List all configured miners."""
     click.echo(click.style("\n--- Configured Miner ---", fg="yellow"))
 
@@ -168,7 +173,9 @@ def select_miner(
     default_idx = ""
     for idx, m in enumerate(miners):
         hashrate_str = (
-            f"{m.hash_rate_max.value} {m.hash_rate_max.unit}" if m.hash_rate_max else "N/A"
+            f"{m.hash_rate_max.value} {m.hash_rate_max.unit}"
+            if m.hash_rate_max
+            else "N/A"
         )
         click.echo(
             f"{idx}. "
@@ -179,9 +186,7 @@ def select_miner(
             + "Max Power: "
             + click.style(f"{m.power_consumption_max}W, ", fg="cyan")
             + "Max HashRate: "
-            + click.style(
-                f"{hashrate_str}", fg="magenta"
-            )
+            + click.style(f"{hashrate_str}", fg="magenta")
             + "Active:"
             + click.style(f"{m.active}", fg="green" if m.active else "red")
         )
@@ -217,12 +222,16 @@ def update_single_miner(
     hash_rate: float = click.prompt(
         "Max HashRate (eg. 100.0)",
         type=float,
-        default=selected_miner.hash_rate_max.value if selected_miner.hash_rate_max else 100.0,
+        default=selected_miner.hash_rate_max.value
+        if selected_miner.hash_rate_max
+        else 100.0,
     )
     hash_rate_unit: str = click.prompt(
         "HashRate unit (eg. TH/s, GH/s)",
         type=str,
-        default=selected_miner.hash_rate_max.unit if selected_miner.hash_rate_max else "",
+        default=selected_miner.hash_rate_max.unit
+        if selected_miner.hash_rate_max
+        else "",
     )
     power_consumption: float = click.prompt(
         "Max power consumption (Watt, eg. 3200.0)",
@@ -379,10 +388,11 @@ def print_miner_details(
         )
     )
     click.echo(
-        "| Max HashRate: "
-        + str(miner.hash_rate_max.value) if miner.hash_rate_max else "N/A"
-        + " "
-        + miner.hash_rate_max.unit if miner.hash_rate_max else "N/A"
+        "| Max HashRate: " + str(miner.hash_rate_max.value)
+        if miner.hash_rate_max
+        else "N/A" + " " + miner.hash_rate_max.unit
+        if miner.hash_rate_max
+        else "N/A"
     )
     click.echo("| Max Power Consumption: " + str(miner.power_consumption_max) + " W")
     click.echo(
@@ -972,7 +982,9 @@ def handle_manage_miner_controller(
     return choice
 
 
-def miner_menu(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
+def miner_menu(
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
+) -> str:
     """Menu for managing Miners."""
     while True:
         click.echo("\n" + click.style("--- MINER ---", fg="blue", bold=True))

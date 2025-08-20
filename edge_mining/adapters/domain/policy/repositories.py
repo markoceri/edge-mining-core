@@ -122,7 +122,7 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
             name=data["name"],
             description=data["description"],
             enabled=data["enabled"],
-            conditions=data["conditions"]
+            conditions=data["conditions"],
         )
 
     def _rule_to_dict(self, rule: AutomationRule) -> Dict[str, Any]:
@@ -133,7 +133,7 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
             "description": rule.description,
             "priority": rule.priority,
             "enabled": rule.enabled,
-            "conditions": rule.conditions
+            "conditions": rule.conditions,
         }
 
     def _row_to_policy(self, row: sqlite3.Row) -> Optional[OptimizationPolicy]:
@@ -338,9 +338,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
             c for c in name if c.isalnum() or c in (" ", "-", "_")
         ).strip()
         safe_name = safe_name.replace(" ", "_").lower()
-        return Path(
-            os.path.join(self.policies_directory, f"{safe_name}.yaml")
-        )
+        return Path(os.path.join(self.policies_directory, f"{safe_name}.yaml"))
 
     def _load_policy_from_file(
         self, file_path: Path
@@ -498,7 +496,6 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
             # Write to file
             with open(file_path, "w", encoding="utf-8") as f:
-
                 yaml.dump(
                     yaml_content,
                     f,
@@ -574,7 +571,6 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
     ) -> Union[LogicalGroupSchema, RuleConditionSchema]:
         try:
             if isinstance(conditions, dict):
-
                 # Check if conditions are a logical group or a single rule condition
                 conditions_dict_keys = set(conditions.keys())
 

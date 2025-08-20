@@ -480,9 +480,7 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
             )
 
         config_class: Optional[type[MinerControllerConfig]] = (
-            MINER_CONTROLLER_CONFIG_TYPE_MAP.get(
-                adapter_type
-            )
+            MINER_CONTROLLER_CONFIG_TYPE_MAP.get(adapter_type)
         )
         if not config_class:
             raise MinerControllerConfigurationError(

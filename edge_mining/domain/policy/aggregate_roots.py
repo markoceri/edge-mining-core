@@ -38,7 +38,9 @@ class OptimizationPolicy(AggregateRoot):
         """
 
         if not decisional_context.miner:
-            raise ValueError("Error while evaluating policy: Miner is not set in the context.")
+            raise ValueError(
+                "Error while evaluating policy: Miner is not set in the context."
+            )
 
         print(
             f"Policy '{self.name}': Evaluating state "

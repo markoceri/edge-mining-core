@@ -25,7 +25,8 @@ from edge_mining.shared.interfaces.config import NotificationConfig
 from edge_mining.shared.logging.port import LoggerPort
 
 from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters, print_configuration
+    process_filters,
+    print_configuration,
 )
 
 
@@ -144,8 +145,8 @@ def handle_add_notifier(
             )
             if add_external_service:
                 external_service = handle_add_external_service(
-                        configuration_service=configuration_service,
-                        logger=logger,
+                    configuration_service=configuration_service,
+                    logger=logger,
                 )
                 if external_service:
                     click.echo(
@@ -363,7 +364,9 @@ def update_single_notifier(
         new_notifier.config = config
 
     if new_notifier.config is None:
-        click.echo(click.style("Notifier configuration is required. Aborting.", fg="red"))
+        click.echo(
+            click.style("Notifier configuration is required. Aborting.", fg="red")
+        )
         return None
 
     needed_external_service = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(
@@ -372,10 +375,8 @@ def update_single_notifier(
 
     if new_notifier.external_service_id:
         click.echo("\nCurrent external service: ")
-        current_external_service = (
-            configuration_service.get_external_service(
-                new_notifier.external_service_id
-            )
+        current_external_service = configuration_service.get_external_service(
+            new_notifier.external_service_id
         )
         if current_external_service:
             print_external_service_details(
@@ -460,8 +461,10 @@ def update_single_notifier(
 
                     if current_external_service and current_external_service.config:
                         # Check if the current external service is still valid
-                        external_service_valid = current_external_service.config.is_valid(
-                            current_external_service.adapter_type
+                        external_service_valid = (
+                            current_external_service.config.is_valid(
+                                current_external_service.adapter_type
+                            )
                         )
                         if not external_service_valid:
                             click.echo(

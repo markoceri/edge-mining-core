@@ -166,9 +166,7 @@ class Forecast(AggregateRoot):
                     ratio = overlap_duration_sec / interval_duration_sec
                     if interval.energy is not None:
                         # Ensure energy is not None before multiplying
-                        total_energy = WattHours(
-                            total_energy + interval.energy * ratio
-                        )
+                        total_energy = WattHours(total_energy + interval.energy * ratio)
 
         if total_energy > 0:
             return WattHours(round(total_energy, 3))  # Round to 3 decimal places

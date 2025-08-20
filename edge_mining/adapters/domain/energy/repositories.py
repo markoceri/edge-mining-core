@@ -447,8 +447,8 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 f"Error reading EnergyMonitor configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: Optional[type[EnergyMonitorConfig]] = ENERGY_MONITOR_CONFIG_TYPE_MAP.get(
-            adapter_type
+        config_class: Optional[type[EnergyMonitorConfig]] = (
+            ENERGY_MONITOR_CONFIG_TYPE_MAP.get(adapter_type)
         )
         if not config_class:
             raise EnergyMonitorConfigurationError(

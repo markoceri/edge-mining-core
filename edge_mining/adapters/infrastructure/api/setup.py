@@ -8,7 +8,7 @@ from edge_mining.application.interfaces import (
     AdapterServiceInterface,
     ConfigurationServiceInterface,
     MinerActionServiceInterface,
-    OptimizationServiceInterface
+    OptimizationServiceInterface,
 )
 from edge_mining.shared.infrastructure import Services
 from edge_mining.shared.logging.port import LoggerPort

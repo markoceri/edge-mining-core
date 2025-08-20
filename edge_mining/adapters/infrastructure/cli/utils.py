@@ -22,16 +22,8 @@ def run_evaluation(optimization_service: OptimizationServiceInterface):
 
 
 def process_filters(
-        filter_type: Optional[
-            Union[
-                Any, List[Any]
-            ]
-        ] = None
-) -> Optional[
-    Union[
-        List[Any]
-    ]
-]:
+    filter_type: Optional[Union[Any, List[Any]]] = None,
+) -> Optional[Union[List[Any]]]:
     """Process filter types for CLI commands."""
     if filter_type is None:
         return None

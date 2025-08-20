@@ -109,7 +109,7 @@ def interactive(ctx: click.Context):
 
             if sub_choice == "q":
                 break
-        elif choice == '8':
+        elif choice == "8":
             run_evaluation(services.optimization_service)
         elif choice == "q":
             break

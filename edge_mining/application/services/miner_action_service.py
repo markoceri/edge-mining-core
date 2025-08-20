@@ -34,7 +34,9 @@ class MinerActionService(MinerActionServiceInterface):
         # Infrastructure
         self.logger = logger
 
-    async def _notify(self, notifiers: List[NotificationPort], title: str, message: str):
+    async def _notify(
+        self, notifiers: List[NotificationPort], title: str, message: str
+    ):
         """Sends a notification using the configured notifiers."""
 
         for notifier in notifiers:

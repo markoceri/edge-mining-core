@@ -38,7 +38,6 @@ class RuleEvaluator:
     ) -> Union[LogicalGroupSchema, RuleConditionSchema]:
         try:
             if isinstance(conditions, dict):
-
                 # Check if conditions are a logical group or a single rule condition
                 conditions_dict_keys = set(conditions.keys())
 

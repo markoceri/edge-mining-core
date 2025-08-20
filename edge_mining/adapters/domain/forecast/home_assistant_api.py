@@ -69,9 +69,7 @@ class HomeAssistantForecastProviderFactory(ForecastAdapterFactory):
 
         # Get the config from the forecast provider config
         forecast_provider_config: ForecastProviderHomeAssistantConfig = config
-        service_home_assistant_api = cast(
-            ServiceHomeAssistantAPI, external_service
-        )
+        service_home_assistant_api = cast(ServiceHomeAssistantAPI, external_service)
 
         # Use the builder to configure the provider, in this way we can
         # ensure that all required entities are set.
@@ -134,9 +132,7 @@ class HomeAssistantForecastProviderBuilder:
     """Builder for HomeAssistantForecastProvider instances."""
 
     def __init__(
-        self,
-        home_assistant: ServiceHomeAssistantAPI,
-        logger: Optional[LoggerPort]
+        self, home_assistant: ServiceHomeAssistantAPI, logger: Optional[LoggerPort]
     ):
         """Initializes the HomeAssistantForecastProviderBuilder."""
         self.home_assistant: ServiceHomeAssistantAPI = home_assistant
@@ -547,7 +543,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
             start=Timestamp(actual_hour),
             end=Timestamp(end_of_today),
             energy=WattHours(energy_today) if energy_today else None,
-            energy_remaining=WattHours(energy_remaining_today) if energy_remaining_today else None,
+            energy_remaining=WattHours(energy_remaining_today)
+            if energy_remaining_today
+            else None,
             power_points=[],
         )
         forecast_interval_tomorrow = ForecastInterval(

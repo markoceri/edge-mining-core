@@ -35,7 +35,8 @@ from edge_mining.shared.interfaces.config import EnergyMonitorConfig
 from edge_mining.shared.logging.port import LoggerPort
 
 from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters, print_configuration
+    process_filters,
+    print_configuration,
 )
 
 
@@ -1352,7 +1353,9 @@ def update_single_energy_monitor(
         new_energy_monitor.config = config
 
     if new_energy_monitor.config is None:
-        click.echo(click.style("Energy monitor configuration is required. Aborting.", fg="red"))
+        click.echo(
+            click.style("Energy monitor configuration is required. Aborting.", fg="red")
+        )
         return None
 
     needed_external_service = ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP.get(
@@ -1361,10 +1364,8 @@ def update_single_energy_monitor(
 
     if new_energy_monitor.external_service_id:
         click.echo("\nCurrent external service: ")
-        current_external_service = (
-            configuration_service.get_external_service(
-                new_energy_monitor.external_service_id
-            )
+        current_external_service = configuration_service.get_external_service(
+            new_energy_monitor.external_service_id
         )
         if current_external_service:
             print_external_service_details(
@@ -1451,8 +1452,10 @@ def update_single_energy_monitor(
 
                     if current_external_service and current_external_service.config:
                         # Check if the current external service is still valid
-                        external_service_valid = current_external_service.config.is_valid(
-                            current_external_service.adapter_type
+                        external_service_valid = (
+                            current_external_service.config.is_valid(
+                                current_external_service.adapter_type
+                            )
                         )
                         if not external_service_valid:
                             click.echo(
@@ -1666,7 +1669,9 @@ def manage_single_energy_monitor_menu(
     return choice
 
 
-def energy_menu(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
+def energy_menu(
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
+) -> str:
     """Menu for managing Energy Sources."""
     while True:
         click.echo("\n" + click.style("--- ENERGY ---", fg="blue", bold=True))

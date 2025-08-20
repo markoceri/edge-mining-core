@@ -67,7 +67,6 @@ class AstralSunFactory(SunFactoryInterface):
             midnight=s["midnight"],
             sunset=s["sunset"],
             dusk=s["dusk"],
-
             daylight=daylight_duration,
             night=night_duration,
             twilight=twilight_duration,

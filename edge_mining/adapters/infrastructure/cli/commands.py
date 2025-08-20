@@ -9,11 +9,9 @@ from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.value_objects import HashRate
 
 from edge_mining.adapters.domain.optimization_unit.cli.commands import (
-    list_optimization_units
+    list_optimization_units,
 )
-from edge_mining.adapters.domain.miner.cli.commands import (
-    list_miners
-)
+from edge_mining.adapters.domain.miner.cli.commands import list_miners
 
 from edge_mining.application.interfaces import OptimizationServiceInterface
 from edge_mining.shared.infrastructure import Services
@@ -47,7 +45,9 @@ def optimization_unit():
 @click.option("--energy_source_id", help="ID of the energy source to use")
 @click.option("--target_miner_ids", help="Comma-separated list of target miner IDs")
 @click.option("--policy_id", help="ID of the policy to use")
-@click.option("--home_forecast_provider_id", help="ID of the home load forecast provider")
+@click.option(
+    "--home_forecast_provider_id", help="ID of the home load forecast provider"
+)
 @click.option("--performance_tracker_id", help="ID of the performance tracker")
 @click.option("--notifier_ids", help="Comma-separated list of notifier IDs")
 @click.pass_context
@@ -60,7 +60,7 @@ def create_optimization_unit(
     policy_id_str: str,
     home_forecast_provider_id_str: str,
     performance_tracker_id_str: str,
-    notifier_ids_str: str
+    notifier_ids_str: str,
 ):
     """Create a new optimization unit."""
     services: Services = ctx.obj[Services]
@@ -71,20 +71,26 @@ def create_optimization_unit(
         return
 
     try:
-        target_miner_ids = [
-            EntityId(cast(UUID, miner_id.strip()))
-            for miner_id in target_miner_ids_str.split(",")
-        ] if target_miner_ids_str else []
-        notifier_ids = [
-            EntityId(cast(UUID, notifier_id.strip()))
-            for notifier_id in notifier_ids_str.split(",")
-        ] if notifier_ids_str else []
+        target_miner_ids = (
+            [
+                EntityId(cast(UUID, miner_id.strip()))
+                for miner_id in target_miner_ids_str.split(",")
+            ]
+            if target_miner_ids_str
+            else []
+        )
+        notifier_ids = (
+            [
+                EntityId(cast(UUID, notifier_id.strip()))
+                for notifier_id in notifier_ids_str.split(",")
+            ]
+            if notifier_ids_str
+            else []
+        )
         energy_source_id = (
             EntityId(cast(UUID, energy_source_id_str)) if energy_source_id_str else None
         )
-        policy_id = (
-            EntityId(cast(UUID, policy_id_str)) if policy_id_str else None
-        )
+        policy_id = EntityId(cast(UUID, policy_id_str)) if policy_id_str else None
         home_forecast_provider_id = (
             EntityId(cast(UUID, home_forecast_provider_id_str))
             if home_forecast_provider_id_str
@@ -104,7 +110,7 @@ def create_optimization_unit(
             policy_id=policy_id,
             home_forecast_provider_id=home_forecast_provider_id,
             performance_tracker_id=performance_tracker_id,
-            notifier_ids=notifier_ids
+            notifier_ids=notifier_ids,
         )
         if not created:
             click.echo("Error: Optimization Unit creation failed.", err=True)
@@ -136,10 +142,18 @@ def miner():
 
 @miner.command("add")
 @click.argument("name")
-@click.option("--hash_rate", help="Max HashRate of the miner", type=float, default=100.0)
-@click.option("--hash_rate_units", help="HashRate units (e.g. TH/s, GH/s)", default="TH/s")
-@click.option("--power_consumption", help="Max power consumption", type=float, default=3200.0)
-@click.option("--controller_id", help="Reference ID of miner controller", type=int, default=None)
+@click.option(
+    "--hash_rate", help="Max HashRate of the miner", type=float, default=100.0
+)
+@click.option(
+    "--hash_rate_units", help="HashRate units (e.g. TH/s, GH/s)", default="TH/s"
+)
+@click.option(
+    "--power_consumption", help="Max power consumption", type=float, default=3200.0
+)
+@click.option(
+    "--controller_id", help="Reference ID of miner controller", type=int, default=None
+)
 @click.pass_context
 def add_miner(
     ctx: click.Context,
@@ -147,7 +161,7 @@ def add_miner(
     hash_rate_str: str,
     hash_rate_unit_str: str,
     power_consumption_str: str,
-    controller_id_str: str
+    controller_id_str: str,
 ):
     """Add a new miner to the system."""
     services: Services = ctx.obj[Services]
@@ -167,7 +181,7 @@ def add_miner(
             name=name,
             hash_rate_max=hash_rate,
             power_consumption_max=power_consumption,
-            controller_id=controller_id
+            controller_id=controller_id,
         )
         click.echo(f"Miner '{added.name}' ({added.id}) added successfully.")
     except Exception as e:
@@ -219,11 +233,7 @@ def policy():
 @click.argument("name")
 @click.option("--description", help="Description for the Policy")
 @click.pass_context
-def create_policy(
-    ctx: click.Context,
-    name: str,
-    description: str
-):
+def create_policy(ctx: click.Context, name: str, description: str):
     """Create a new optimization policy."""
     services: Services = ctx.obj[Services]
 
@@ -234,11 +244,13 @@ def create_policy(
 
     try:
         created = configuration_service.create_policy(
-            name=name,
-            description=description
+            name=name, description=description
         )
-        click.echo(f"Optimization Policy '{created.name}' ({created.description}) created successfully.")
+        click.echo(
+            f"Optimization Policy '{created.name}' ({created.description}) created successfully."
+        )
     except Exception as e:
         click.echo(f"Error adding miner: {e}", err=True)
+
 
 # # TODO: Add commands for policy management (create, list, activate, add-rule)
