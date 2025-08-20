@@ -107,15 +107,21 @@ class SqliteExternalServiceRepository(ExternalServiceRepository):
                 f"Error reading External Service configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: ExternalServiceConfig = EXTERNAL_SERVICE_CONFIG_TYPE_MAP.get(
-            adapter_type
+        config_class: Optional[type[ExternalServiceConfig]] = (
+            EXTERNAL_SERVICE_CONFIG_TYPE_MAP.get(adapter_type)
         )
         if not config_class:
             raise ExternalServiceConfigurationError(
                 f"Error creating External Service configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, ExternalServiceConfig):
+            raise ExternalServiceConfigurationError(
+                f"Deserialized config is not of type ExternalServiceConfig "
+                f"for adapter '{adapter_type}'"
+            )
+        return config_instance
 
     def _row_to_external_service(self, row: sqlite3.Row) -> Optional[ExternalService]:
         """Deserialize a row from the database into a ExternalService object."""
@@ -151,7 +157,9 @@ class SqliteExternalServiceRepository(ExternalServiceRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(external_service.config.to_dict())
+            config_json: str = ""
+            if external_service.config:
+                config_json = json.dumps(external_service.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()

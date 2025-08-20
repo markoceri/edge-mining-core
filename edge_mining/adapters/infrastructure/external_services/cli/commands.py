@@ -1,11 +1,16 @@
 """CLI commands for the External Service domain."""
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import click
 
-from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.interfaces import ConfigurationServiceInterface
 from edge_mining.domain.common import EntityId
+from edge_mining.domain.energy.entities import EnergyMonitor
+from edge_mining.domain.forecast.entities import ForecastProvider
+from edge_mining.domain.home_load.entities import HomeForecastProvider
+from edge_mining.domain.miner.entities import MinerController
+from edge_mining.domain.notification.entities import Notifier
 from edge_mining.shared.adapter_configs.external_services import (
     ExternalServiceHomeAssistantConfig,
 )
@@ -13,6 +18,10 @@ from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import ExternalServiceConfig
 from edge_mining.shared.logging.port import LoggerPort
+
+from edge_mining.adapters.infrastructure.cli.utils import (
+    process_filters, print_configuration
+)
 
 
 def select_external_service_type() -> Optional[ExternalServiceAdapter]:
@@ -71,12 +80,12 @@ def handle_external_service_configuration(
 
 
 def handle_add_external_service(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> Optional[ExternalService]:
     """Menu to add a new external service"""
     click.echo(click.style("\n--- Add External Service ---", fg="yellow"))
     name: str = click.prompt("Name of the external service", type=str)
-    adapter_type: ExternalServiceAdapter = select_external_service_type()
+    adapter_type: Optional[ExternalServiceAdapter] = select_external_service_type()
 
     if adapter_type is None:
         click.echo(
@@ -84,7 +93,9 @@ def handle_add_external_service(
         )
         return None
 
-    config: ExternalServiceConfig = handle_external_service_configuration(adapter_type)
+    config: Optional[ExternalServiceConfig] = (
+        handle_external_service_configuration(adapter_type)
+    )
 
     if config is None:
         click.echo(click.style("Invalid configuration provided. Aborting.", fg="red"))
@@ -110,7 +121,7 @@ def handle_add_external_service(
 
 
 def handle_list_external_services(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> None:
     """Menu to list all configured external services."""
     click.echo(click.style("\n--- Configured External Services ---", fg="yellow"))
@@ -135,21 +146,19 @@ def handle_list_external_services(
 
 
 def select_external_service(
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
     default_id: Optional[EntityId] = None,
-    filter_type: List[ExternalServiceAdapter] = None,
+    filter_type: Optional[Union[ExternalServiceAdapter, List[ExternalServiceAdapter]]] = None,
 ) -> Optional[ExternalService]:
     """Select an external service from the list of configured services."""
     click.echo(click.style("\n--- Select External Service ---", fg="yellow"))
 
     services = configuration_service.list_external_services()
 
-    if filter_type:
-        # If one element is passed, convert it to a list
-        if not isinstance(filter_type, list):
-            filter_type = [filter_type]
+    filter_type = process_filters(filter_type)
 
+    if filter_type:
         click.echo(
             "Filtering services by types: "
             + click.style(f"{', '.join([t.name for t in filter_type])}", fg="blue")
@@ -198,25 +207,13 @@ def print_external_service_config(external_service: ExternalService) -> None:
         external_service.config.__class__.__name__ if external_service.config else "---"
     )
     click.echo("| Configuration: " + click.style(f"{configuration_class}", fg="cyan"))
-    for key, value in external_service.config.to_dict().items():
-        if isinstance(value, dict):
-            click.echo(f"|-- {key}:")
-            for sub_key, sub_value in value.items():
-                click.echo(
-                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
-                )
-        else:
-            # For other types, just print the value directly
-            if value is None:
-                value = "None"
-            elif isinstance(value, str):
-                value = f'"{value}"'
-            click.echo(f"|-- {key}: " + click.style(f"{value}", fg="blue"))
+    if external_service.config:
+        print_configuration(external_service.config.to_dict())
 
 
 def print_external_service_details(
     service: ExternalService,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     show_config: bool = True,
     show_linked_instances: bool = False,
 ) -> None:
@@ -234,6 +231,13 @@ def print_external_service_details(
             configuration_service.get_entities_by_external_service(service.id)
         )
 
+        e: Union[
+            EnergyMonitor,
+            MinerController,
+            ForecastProvider,
+            HomeForecastProvider,
+            Notifier
+        ]
         if external_service_linked_entities.energy_monitors:
             click.echo("Energy Monitors assigned:")
             for e in external_service_linked_entities.energy_monitors:
@@ -267,14 +271,14 @@ def print_external_service_details(
 
 def update_single_external_service(
     service: ExternalService,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> Optional[ExternalService]:
     """Menu to update an external service"""
     name: str = click.prompt(
         "New name of the external service", type=str, default=service.name
     )
-    config: ExternalServiceConfig = handle_external_service_configuration(
+    config: Optional[ExternalServiceConfig] = handle_external_service_configuration(
         adapter_type=service.adapter_type
     )
 
@@ -301,7 +305,7 @@ def update_single_external_service(
 
 def delete_single_external_service(
     service: ExternalService,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> bool:
     """Delete a specific external service."""
@@ -339,7 +343,7 @@ def delete_single_external_service(
 
 def manage_single_external_service_menu(
     selected_service: ExternalService,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> str:
     """Menu to manage a single external service."""
@@ -399,7 +403,7 @@ def manage_single_external_service_menu(
 
 
 def external_services_menu(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> str:
     """Menu for managing External Services."""
     while True:

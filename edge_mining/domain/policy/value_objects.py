@@ -4,13 +4,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from edge_mining.domain.common import ValueObject, Watts
+from edge_mining.domain.common import ValueObject
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.energy.value_objects import EnergyStateSnapshot
 from edge_mining.domain.forecast.aggregate_root import Forecast
 from edge_mining.domain.forecast.value_objects import Sun
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.value_objects import HashRate
+from edge_mining.domain.home_load.value_objects import ConsumptionForecast
 
 
 @dataclass(frozen=True)
@@ -21,7 +22,7 @@ class DecisionalContext(ValueObject):
     energy_state: EnergyStateSnapshot
 
     forecast: Optional[Forecast]
-    home_load_forecast: Optional[Watts]
+    home_load_forecast: Optional[ConsumptionForecast]
 
     tracker_current_hashrate: Optional[HashRate]
 

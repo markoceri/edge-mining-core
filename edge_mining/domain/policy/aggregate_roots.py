@@ -36,6 +36,10 @@ class OptimizationPolicy(AggregateRoot):
         Applies the policy rules to determine the next action.
         This is the core decision-making logic.
         """
+
+        if not decisional_context.miner:
+            raise ValueError("Error while evaluating policy: Miner is not set in the context.")
+
         print(
             f"Policy '{self.name}': Evaluating state "
             f"for miner status {decisional_context.miner.status.name}"

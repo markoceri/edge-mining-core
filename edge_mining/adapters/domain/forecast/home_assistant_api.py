@@ -4,7 +4,7 @@ for the energy forecast of Edge Mining Application
 """
 
 from datetime import datetime, time, timedelta
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import (
     ServiceHomeAssistantAPI,
@@ -19,12 +19,12 @@ from edge_mining.domain.forecast.value_objects import (
     ForecastInterval,
     ForecastPowerPoint,
 )
+from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.adapter_configs.forecast import (
     ForecastProviderHomeAssistantConfig,
 )
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.ports import ExternalServicePort
-from edge_mining.shared.interfaces.config import ForecastProviderConfig
 from edge_mining.shared.interfaces.factories import ForecastAdapterFactory
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -35,7 +35,7 @@ class HomeAssistantForecastProviderFactory(ForecastAdapterFactory):
     """
 
     def __init__(self):
-        self._energy_source: EnergySource = None
+        self._energy_source: Optional[EnergySource] = None
 
     def from_energy_source(self, energy_source: EnergySource) -> None:
         """Set the reference energy source"""
@@ -43,9 +43,9 @@ class HomeAssistantForecastProviderFactory(ForecastAdapterFactory):
 
     def create(
         self,
-        config: ForecastProviderConfig,
-        logger: LoggerPort,
-        external_service: ExternalServicePort,
+        config: Optional[Configuration],
+        logger: Optional[LoggerPort],
+        external_service: Optional[ExternalServicePort],
     ) -> "HomeAssistantForecastProvider":
         """Creates a HomeAssistantForecastProvider instance."""
 
@@ -69,11 +69,14 @@ class HomeAssistantForecastProviderFactory(ForecastAdapterFactory):
 
         # Get the config from the forecast provider config
         forecast_provider_config: ForecastProviderHomeAssistantConfig = config
+        service_home_assistant_api = cast(
+            ServiceHomeAssistantAPI, external_service
+        )
 
         # Use the builder to configure the provider, in this way we can
         # ensure that all required entities are set.
         builder = HomeAssistantForecastProviderBuilder(
-            home_assistant=external_service, logger=logger
+            home_assistant=service_home_assistant_api, logger=logger
         )
 
         # Configure the builder with the entities and units
@@ -130,9 +133,14 @@ class HomeAssistantForecastProviderFactory(ForecastAdapterFactory):
 class HomeAssistantForecastProviderBuilder:
     """Builder for HomeAssistantForecastProvider instances."""
 
-    def __init__(self, home_assistant: ServiceHomeAssistantAPI, logger: LoggerPort):
+    def __init__(
+        self,
+        home_assistant: ServiceHomeAssistantAPI,
+        logger: Optional[LoggerPort]
+    ):
+        """Initializes the HomeAssistantForecastProviderBuilder."""
         self.home_assistant: ServiceHomeAssistantAPI = home_assistant
-        self.logger: LoggerPort = logger
+        self.logger: Optional[LoggerPort] = logger
         self.entity_forecast_power_actual_h: Optional[str] = None
         self.entity_forecast_power_next_1h: Optional[str] = None
         self.entity_forecast_power_next_12h: Optional[str] = None
@@ -285,7 +293,7 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
         unit_forecast_energy_today: str = "kWh",
         unit_forecast_energy_tomorrow: str = "kWh",
         unit_forecast_energy_remaining_today: str = "kWh",
-        logger: LoggerPort = None,
+        logger: Optional[LoggerPort] = None,
     ):
         # Initialize the HomeAssistant API Service
         super().__init__(
@@ -317,41 +325,42 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
             unit_forecast_energy_remaining_today.lower()
         )
 
-        self.logger.debug(
-            f"Entities Configured for Power:"
-            f"Actual='{entity_forecast_power_actual_h}', "
-            f"Next 1h='{entity_forecast_power_next_1h}', "
-            f"Next 12h='{entity_forecast_power_next_12h}', "
-            f"Next 24h='{entity_forecast_power_next_24h}'"
-        )
-        self.logger.debug(
-            f"Entities Configured for Energy:"
-            f"Actual='{entity_forecast_energy_actual_h}', "
-            f"Today='{entity_forecast_energy_next_1h}', "
-            f"Tomorow='{entity_forecast_energy_tomorrow}', "
-            f"Remaining='{entity_forecast_energy_remaining_today}'"
-        )
+        if self.logger:
+            self.logger.debug(
+                f"Entities Configured for Power:"
+                f"Actual='{entity_forecast_power_actual_h}', "
+                f"Next 1h='{entity_forecast_power_next_1h}', "
+                f"Next 12h='{entity_forecast_power_next_12h}', "
+                f"Next 24h='{entity_forecast_power_next_24h}'"
+            )
+            self.logger.debug(
+                f"Entities Configured for Energy:"
+                f"Actual='{entity_forecast_energy_actual_h}', "
+                f"Today='{entity_forecast_energy_next_1h}', "
+                f"Tomorow='{entity_forecast_energy_tomorrow}', "
+                f"Remaining='{entity_forecast_energy_remaining_today}'"
+            )
 
-        self.logger.debug(
-            f"Units for Power:"
-            f"Actual='{unit_forecast_power_actual_h}', "
-            f"Next 1h='{unit_forecast_power_next_1h}', "
-            f"Next 12h='{unit_forecast_power_next_12h}', "
-            f"Next 24h='{unit_forecast_power_next_24h}'"
-        )
-        self.logger.debug(
-            f"Units Configured for Energy:"
-            f"Actual='{unit_forecast_energy_actual_h}', "
-            f"Next 1h='{unit_forecast_energy_next_1h}', "
-            f"Today='{unit_forecast_energy_today}', "
-            f"Tomorrow='{unit_forecast_energy_tomorrow}', "
-            f"Remaining='{unit_forecast_energy_remaining_today}'"
-        )
+            self.logger.debug(
+                f"Units for Power:"
+                f"Actual='{unit_forecast_power_actual_h}', "
+                f"Next 1h='{unit_forecast_power_next_1h}', "
+                f"Next 12h='{unit_forecast_power_next_12h}', "
+                f"Next 24h='{unit_forecast_power_next_24h}'"
+            )
+            self.logger.debug(
+                f"Units Configured for Energy:"
+                f"Actual='{unit_forecast_energy_actual_h}', "
+                f"Next 1h='{unit_forecast_energy_next_1h}', "
+                f"Today='{unit_forecast_energy_today}', "
+                f"Tomorrow='{unit_forecast_energy_tomorrow}', "
+                f"Remaining='{unit_forecast_energy_remaining_today}'"
+            )
 
     def get_forecast(self) -> Optional[Forecast]:
         """Fetches the energy production forecast."""
-        self.logger.debug("Fetching forecast energy state from Home Assistant...")
-        now = Timestamp(datetime.now())
+        if self.logger:
+            self.logger.debug("Fetching forecast energy state from Home Assistant...")
         has_critical_error = False
 
         # --- Actual Power h ---
@@ -475,29 +484,32 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # Check if essential values are missing
         if energy_today is None and self.entity_forecast_energy_today:
-            self.logger.error(
-                f"Missing critical value: Solar Production "
-                f"(Entity: {self.entity_forecast_energy_today})"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Missing critical value: Solar Production "
+                    f"(Entity: {self.entity_forecast_energy_today})"
+                )
             has_critical_error = True
         if energy_tomorrow is None and self.entity_forecast_energy_tomorrow:
-            self.logger.error(
-                f"Missing critical value: Solar Production "
-                f"(Entity: {self.entity_forecast_energy_tomorrow})"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Missing critical value: Solar Production "
+                    f"(Entity: {self.entity_forecast_energy_tomorrow})"
+                )
             has_critical_error = True
 
         # Add here other checks for critical values as needed
 
         if has_critical_error:
-            self.logger.error(
-                "Failed to retrieve one or more critical energy values "
-                "from Home Assistant. Cannot create forecast data."
-            )
+            if self.logger:
+                self.logger.error(
+                    "Failed to retrieve one or more critical energy values "
+                    "from Home Assistant. Cannot create forecast data."
+                )
             return None
 
-        now = datetime.now()
-        actual_hour = now.replace(minute=0, second=0, microsecond=0)
+        now = Timestamp(datetime.now())
+        actual_hour = datetime.now().replace(minute=0, second=0, microsecond=0)
         end_of_today = datetime.combine(now, time.max)
 
         forecast: Forecast = Forecast(timestamp=Timestamp(now))
@@ -506,14 +518,14 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
         forecast_interval_actual_h = ForecastInterval(
             start=Timestamp(actual_hour),
             end=Timestamp(actual_hour),
-            energy=None,
+            energy=WattHours(energy_actual_h) if energy_actual_h else None,
             energy_remaining=None,
             power_points=[],
         )
         forecast_interval_1h = ForecastInterval(
             start=Timestamp(actual_hour),
             end=Timestamp(actual_hour + timedelta(hours=1)),
-            energy=None,
+            energy=WattHours(energy_next_1h) if energy_next_1h else None,
             energy_remaining=None,
             power_points=[],
         )
@@ -534,29 +546,17 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
         forecast_interval_today = ForecastInterval(
             start=Timestamp(actual_hour),
             end=Timestamp(end_of_today),
-            energy=None,
-            energy_remaining=None,
+            energy=WattHours(energy_today) if energy_today else None,
+            energy_remaining=WattHours(energy_remaining_today) if energy_remaining_today else None,
             power_points=[],
         )
         forecast_interval_tomorrow = ForecastInterval(
             start=Timestamp(end_of_today + timedelta(seconds=1)),
             end=Timestamp(end_of_today + timedelta(days=1)),
-            energy=None,
+            energy=WattHours(energy_tomorrow) if energy_tomorrow else None,
             energy_remaining=None,
             power_points=[],
         )
-
-        # Add energy data
-        if energy_actual_h is not None:
-            forecast_interval_actual_h.energy = WattHours(energy_actual_h)
-        if energy_next_1h is not None:
-            forecast_interval_1h.energy = WattHours(energy_next_1h)
-        if energy_remaining_today is not None:
-            forecast_interval_today.energy_remaining = WattHours(energy_remaining_today)
-        if energy_today is not None:
-            forecast_interval_today.energy = WattHours(energy_today)
-        if energy_tomorrow is not None:
-            forecast_interval_tomorrow.energy = WattHours(energy_tomorrow)
 
         # Add power data
         if power_actual_h is not None:
@@ -606,8 +606,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
             ):
                 forecast.intervals.append(interval)
 
-        self.logger.debug(
-            f"HA Monitor: Forecast Intervals fetched: {forecast.intervals}"
-        )
+        if self.logger:
+            self.logger.debug(
+                f"HA Monitor: Forecast Intervals fetched: {forecast.intervals}"
+            )
 
         return forecast

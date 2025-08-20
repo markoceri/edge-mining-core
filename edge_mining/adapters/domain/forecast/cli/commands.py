@@ -8,7 +8,7 @@ from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     print_external_service_details,
     select_external_service,
 )
-from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.interfaces import ConfigurationServiceInterface
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
@@ -19,9 +19,14 @@ from edge_mining.shared.adapter_configs.forecast import (
 from edge_mining.shared.adapter_maps.forecast import (
     FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP,
 )
+from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import ForecastProviderConfig
 from edge_mining.shared.logging.port import LoggerPort
+
+from edge_mining.adapters.infrastructure.cli.utils import (
+    process_filters, print_configuration
+)
 
 
 def select_forecast_provider_adapter() -> Optional[ForecastProviderAdapter]:
@@ -57,7 +62,7 @@ def handle_forecast_provider_dummy_config() -> ForecastProviderConfig:
     latitude: float = click.prompt("Latitude", type=float, default=41.90)
     longitude: float = click.prompt("Longitude", type=float, default=12.49)
     capacity_kwp: float = click.prompt("Capacity (kWp)", type=float, default=0.0)
-    efficency_percent: float = click.prompt("Efficency (%)", type=float, default=80.0)
+    efficiency_percent: float = click.prompt("Efficiency (%)", type=float, default=80.0)
     production_start_hour: int = click.prompt(
         "Production Start Hour (0-23)", type=int, default=6
     )
@@ -69,7 +74,7 @@ def handle_forecast_provider_dummy_config() -> ForecastProviderConfig:
         latitude=latitude,
         longitude=longitude,
         capacity_kwp=capacity_kwp,
-        efficency_percent=efficency_percent,
+        efficiency_percent=efficiency_percent,
         production_start_hour=production_start_hour,
         production_end_hour=production_end_hour,
     )
@@ -160,9 +165,9 @@ def handle_forecast_provider_configuration(
     adapter_type: ForecastProviderAdapter,
 ) -> Optional[ForecastProviderConfig]:
     """Handle the configuration of a forecast provider based on the selected adapter type."""
-    if adapter_type == ForecastProviderAdapter.DUMMY_SOLAR:
+    if adapter_type.value == ForecastProviderAdapter.DUMMY_SOLAR.value:
         return handle_forecast_provider_dummy_config()
-    elif adapter_type == ForecastProviderAdapter.HOME_ASSISTANT_API:
+    elif adapter_type.value == ForecastProviderAdapter.HOME_ASSISTANT_API.value:
         return handle_forecast_provider_home_assistant_api_config()
     else:
         click.echo(click.style("Unsupported forecast provider adapter type.", fg="red"))
@@ -170,13 +175,13 @@ def handle_forecast_provider_configuration(
 
 
 def handle_add_forecast_provider(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> Optional[ForecastProvider]:
     """Menu to add a new forecast provider."""
     click.echo(click.style("\n--- Add Forecast Provider ---", fg="yellow"))
 
     name: str = click.prompt("Name of the forecast provider", type=str)
-    adapter_type: ForecastProviderAdapter = select_forecast_provider_adapter()
+    adapter_type: Optional[ForecastProviderAdapter] = select_forecast_provider_adapter()
 
     if adapter_type is None:
         click.echo(
@@ -187,7 +192,7 @@ def handle_add_forecast_provider(
         )
         return None
 
-    config: ForecastProviderConfig = handle_forecast_provider_configuration(
+    config: Optional[ForecastProviderConfig] = handle_forecast_provider_configuration(
         adapter_type=adapter_type
     )
 
@@ -197,17 +202,19 @@ def handle_add_forecast_provider(
 
     external_service_id: Optional[EntityId] = None
     if adapter_type != ForecastProviderAdapter.DUMMY_SOLAR:
+        adapter_type_filter = FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP.get(
+            adapter_type, None
+        )
         external_service: Optional[ExternalService] = select_external_service(
             configuration_service=configuration_service,
             logger=logger,
-            filter_type=[
-                FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP.get(adapter_type, None)
-            ],
+            filter_type=adapter_type_filter,
         )
         external_service_id = external_service.id if external_service else None
 
+    added: Optional[ForecastProvider] = None
     try:
-        added: ForecastProvider = configuration_service.create_forecast_provider(
+        added = configuration_service.create_forecast_provider(
             name=name,
             adapter_type=adapter_type,
             config=config,
@@ -220,7 +227,6 @@ def handle_add_forecast_provider(
             )
         )
     except Exception as e:
-        added = None
         logger.error(f"Error adding forecast provider: {e}")
         click.echo(click.style(f"Error: {e}", fg="red"), err=True)
     click.pause("Press any key to return to the menu...")
@@ -228,7 +234,7 @@ def handle_add_forecast_provider(
 
 
 def handle_list_forecast_providers(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> None:
     """List all forecast providers."""
     click.echo(click.style("\n--- List Forecast Providers ---", fg="yellow"))
@@ -255,11 +261,11 @@ def handle_list_forecast_providers(
 
 
 def select_forecast_providers(
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
     default_id: Optional[EntityId] = None,
-    filter_type: List[ForecastProviderAdapter] = None,
-    filter_config: List[ForecastProviderConfig] = None,
+    filter_type: Optional[List[ForecastProviderAdapter]] = None,
+    filter_config: Optional[List[ForecastProviderConfig]] = None,
 ) -> Optional[ForecastProvider]:
     """Select a forecast provider from the list."""
     click.echo(click.style("\n--- Select Forecast Provider ---", fg="yellow"))
@@ -268,11 +274,9 @@ def select_forecast_providers(
         configuration_service.list_forecast_providers()
     )
 
-    if filter_type:
-        # If one element is passed, convert it to a list
-        if not isinstance(filter_type, list):
-            filter_type = [filter_type]
+    filter_type = process_filters(filter_type)
 
+    if filter_type:
         click.echo(
             "Filtering forecast providers by types: "
             + click.style(f"{', '.join([t.name for t in filter_type])}", fg="blue")
@@ -281,21 +285,18 @@ def select_forecast_providers(
             fp for fp in forecast_providers if fp.adapter_type in filter_type
         ]
 
+    filter_config = process_filters(filter_config)
     if filter_config:
-        # If one element is passed, convert it to Pa list
-        if not isinstance(filter_config, list):
-            filter_config = [filter_config]
-
         click.echo(
             "Filtering forecast providers by config: "
             + click.style(
-                f"{', '.join([c.__name__ for c in filter_config])}", fg="blue"
+                f"{', '.join([type(c).__name__ for c in filter_config])}", fg="blue"
             )
         )
         filtered_forecast_providers: List[ForecastProvider] = []
         for fp in forecast_providers:
             for filtered_config_class in filter_config:
-                if isinstance(fp.config, filtered_config_class):
+                if isinstance(fp.config, type(filtered_config_class)):
                     filtered_forecast_providers.append(fp)
         forecast_providers = filtered_forecast_providers
 
@@ -352,25 +353,13 @@ def print_forecast_provider_config(
         else "---"
     )
     click.echo("| Configuration: " + click.style(f"{configuration_class}", fg="cyan"))
-    for key, value in forecast_provider.config.to_dict().items():
-        if isinstance(value, dict):
-            click.echo(f"|-- {key}:")
-            for sub_key, sub_value in value.items():
-                click.echo(
-                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
-                )
-        else:
-            # For other types, just print the value directly
-            if value is None:
-                value = "None"
-            elif isinstance(value, str):
-                value = f'"{value}"'
-            click.echo(f"|-- {key}: " + click.style(f"{value}", fg="blue"))
+    if forecast_provider.config:
+        print_configuration(forecast_provider.config.to_dict())
 
 
 def print_forecast_provider_details(
     forecast_provider: ForecastProvider,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     show_energy_source_list: bool = False,
     show_external_service: bool = False,
 ) -> None:
@@ -434,7 +423,7 @@ def print_forecast_provider_details(
 
 def update_single_forecast_provider(
     forecast_provider: ForecastProvider,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> Optional[ForecastProvider]:
     """Update a single forecast provider."""
@@ -445,7 +434,7 @@ def update_single_forecast_provider(
         default=forecast_provider.name,
     )
 
-    config: ForecastProviderConfig = handle_forecast_provider_configuration(
+    config: Optional[ForecastProviderConfig] = handle_forecast_provider_configuration(
         adapter_type=forecast_provider.adapter_type
     )
 
@@ -454,22 +443,33 @@ def update_single_forecast_provider(
         return None
 
     external_service_id: Optional[EntityId] = forecast_provider.external_service_id
-    needed_external_service_type: Optional[ForecastProviderAdapter] = [
+    needed_external_service_type: Optional[ExternalServiceAdapter] = (
         FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP.get(
             forecast_provider.adapter_type, None
         )
-    ]
+    )
 
     # Ask to change the external service
     change_external_service: bool = False
     remove_external_service: bool = False
     if external_service_id:
-        click.echo("\nCurrent external service: ")
-        print_external_service_details(
-            service=configuration_service.get_external_service(external_service_id),
-            configuration_service=configuration_service,
-            show_linked_instances=False,
+        actual_external_service: Optional[ExternalService] = (
+            configuration_service.get_external_service(external_service_id)
         )
+        if actual_external_service:
+            click.echo("\nCurrent external service: ")
+            print_external_service_details(
+                service=actual_external_service,
+                configuration_service=configuration_service,
+                show_linked_instances=False,
+            )
+        else:
+            click.echo(
+                click.style(
+                    "\nCurrent external service not found. It might have been deleted.",
+                    fg="yellow",
+                )
+            )
 
         # An external service is set but the forecast provider does not require it
         if not needed_external_service_type:
@@ -545,7 +545,7 @@ def update_single_forecast_provider(
 
 def delete_single_forecast_provider(
     forecast_provider: ForecastProvider,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> bool:
     """Delete a single forecast provider."""
@@ -579,7 +579,7 @@ def delete_single_forecast_provider(
 
 def manage_single_forecast_provider_menu(
     forecast_provider: ForecastProvider,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> str:
     """Menu for managing a single forecast provider."""
@@ -639,7 +639,7 @@ def manage_single_forecast_provider_menu(
 
 
 def forecast_menu(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> str:
     """Menu for managing Forecast Providers."""
     while True:
@@ -652,7 +652,7 @@ def forecast_menu(
         click.echo("q. Quit")
         click.echo("-----------------")
 
-        choice = click.prompt("Select an action", type=str).strip().lower()
+        choice: str = click.prompt("Select an action", type=str).strip().lower()
 
         if choice == "1":
             handle_add_forecast_provider(configuration_service, logger)

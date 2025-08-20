@@ -173,7 +173,7 @@ class SqliteMinerRepository(MinerRepository):
             )
         except (ValueError, KeyError) as e:
             self.logger.error(
-                f"Error deserializing Miner from DB row: {row}. Errorr: {e}"
+                f"Error deserializing Miner from DB row: {row}. Error: {e}"
             )
             return None
 
@@ -479,15 +479,23 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
                 f"Error reading MinerController configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: MinerControllerConfig = MINER_CONTROLLER_CONFIG_TYPE_MAP.get(
-            adapter_type
+        config_class: Optional[type[MinerControllerConfig]] = (
+            MINER_CONTROLLER_CONFIG_TYPE_MAP.get(
+                adapter_type
+            )
         )
         if not config_class:
             raise MinerControllerConfigurationError(
                 f"Error creating MinerController configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, MinerControllerConfig):
+            raise MinerControllerConfigurationError(
+                "Deserialized config is not of type MinerControllerConfig "
+                f"for adapter type {adapter_type}."
+            )
+        return config_instance
 
     def _row_to_miner_controller(self, row: sqlite3.Row) -> Optional[MinerController]:
         """Deserialize a row from the database into a MinerController object."""
@@ -527,7 +535,9 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(miner_controller.config.to_dict())
+            config_json: str = ""
+            if miner_controller.config:
+                config_json = json.dumps(miner_controller.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -615,7 +625,9 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(miner_controller.config.to_dict())
+            config_json: str = ""
+            if miner_controller.config:
+                config_json = json.dumps(miner_controller.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()

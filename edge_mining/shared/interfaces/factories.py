@@ -1,7 +1,7 @@
 """Interfaces for the factories."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Optional
 
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.miner.entities import Miner
@@ -14,7 +14,7 @@ class ExternalServiceFactory(ABC):
     """Abstract factory for external services"""
 
     @abstractmethod
-    def create(self, config: ExternalServiceConfig, logger: LoggerPort) -> Any:
+    def create(self, config: Optional[ExternalServiceConfig], logger: LoggerPort) -> Any:
         """Create an external service"""
         pass
 
@@ -25,9 +25,9 @@ class AdapterFactory(ABC):
     @abstractmethod
     def create(
         self,
-        config: Configuration,
-        logger: LoggerPort,
-        external_service: ExternalServicePort,
+        config: Optional[Configuration],
+        logger: Optional[LoggerPort],
+        external_service: Optional[ExternalServicePort],
     ) -> Any:
         """Create an adapter"""
         pass

@@ -115,7 +115,7 @@ class TerminalLogger(LoggerPort):
 
         # Print a goodbye message
         print("Shutting down...")
-        print("Goodbye! 👋​")
+        print("Goodbye! 👋")
 
     def log_examples(self):
         """Log examples for the log engine."""

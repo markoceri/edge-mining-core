@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from edge_mining.application.interfaces import (
-    ActionServiceInterface,
+    MinerActionServiceInterface,
     AdapterServiceInterface,
     ConfigurationServiceInterface,
     OptimizationServiceInterface,
@@ -59,5 +59,5 @@ class Services:
 
     adapter_service: AdapterServiceInterface
     optimization_service: OptimizationServiceInterface
-    miner_action_service: ActionServiceInterface
+    miner_action_service: MinerActionServiceInterface
     configuration_service: ConfigurationServiceInterface

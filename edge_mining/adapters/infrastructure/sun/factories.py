@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from astral import LocationInfo
-from astral.sun import sun
+from astral.sun import sun, daylight, night, twilight, zenith_and_azimuth, elevation
 
 from edge_mining.application.interfaces import SunFactoryInterface
 from edge_mining.domain.policy.value_objects import Sun
@@ -34,11 +34,31 @@ class AstralSunFactory(SunFactoryInterface):
         )
         self._location = location_info
 
-    def create_sun_for_date(self, for_date: datetime = datetime.now) -> Sun:
+    def create_sun_for_date(self, for_date: datetime = datetime.now()) -> Sun:
         """
         Creates a Sun object for a specific date.
         """
         s = sun(self._location.observer, date=for_date)
+
+        # Calculate night duration
+        night_start, night_end = night(self._location.observer, date=for_date)
+        night_duration = night_end - night_start
+
+        # Obtain zenith and azimuth values
+        zenith_value, azimuth_value = zenith_and_azimuth(
+            self._location.observer, dateandtime=for_date
+        )
+
+        # Calculate daylight duration
+        daylight_start, daylight_end = daylight(self._location.observer, date=for_date)
+        daylight_duration = daylight_end - daylight_start
+
+        # Calculate twilight duration
+        twilight_start, twilight_end = twilight(self._location.observer, date=for_date)
+        twilight_duration = twilight_end - twilight_start
+
+        # Calculate elevation
+        elevation_value = elevation(self._location.observer, dateandtime=for_date)
 
         return Sun(
             dawn=s["dawn"],
@@ -47,10 +67,11 @@ class AstralSunFactory(SunFactoryInterface):
             midnight=s["midnight"],
             sunset=s["sunset"],
             dusk=s["dusk"],
-            daylight=s["daylight"],
-            night=s["night"],
-            twilight=s["twilight"],
-            azimuth=s["azimuth"],
-            zenith=s["zenith"],
-            elevation=s["elevation"],
+
+            daylight=daylight_duration,
+            night=night_duration,
+            twilight=twilight_duration,
+            azimuth=azimuth_value,
+            zenith=zenith_value,
+            elevation=elevation_value,
         )

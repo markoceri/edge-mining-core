@@ -1,4 +1,4 @@
-"""Collection of Common Objects for the Mining Performace Analysis domain of the Edge Mining application."""
+"""Collection of Common Objects for the Mining Performance Analysis domain of the Edge Mining application."""
 
 from typing import NewType
 
@@ -9,6 +9,6 @@ Satoshi = NewType("Satoshi", int)
 
 
 class MiningPerformanceTrackerAdapter(AdapterType):
-    """Types of mining performace tracker adapter."""
+    """Types of mining performance tracker adapter."""
 
     DUMMY = "dummy"

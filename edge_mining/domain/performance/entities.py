@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from edge_mining.domain.common import Entity, Timestamp
+from edge_mining.domain.common import Entity, Timestamp, EntityId
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.performance.common import (
     MiningPerformanceTrackerAdapter,
@@ -22,7 +22,7 @@ class MiningPerformanceTracker(Entity):
         MiningPerformanceTrackerAdapter.DUMMY
     )
     config: Optional[MiningPerformanceTrackerConfig] = None
-    external_service_id: Optional[str] = None
+    external_service_id: Optional[EntityId] = None
 
 
 @dataclass

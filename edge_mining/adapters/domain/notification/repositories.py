@@ -31,7 +31,7 @@ class InMemoryNotifierRepository(NotifierRepository):
     def add(self, notifier: Notifier) -> None:
         self._notifiers.append(notifier)
 
-    def get_by_id(self, notifier_id: str) -> Optional[Notifier]:
+    def get_by_id(self, notifier_id: EntityId) -> Optional[Notifier]:
         for notifier in self._notifiers:
             if notifier.id == notifier_id:
                 return notifier
@@ -46,7 +46,7 @@ class InMemoryNotifierRepository(NotifierRepository):
                 self._notifiers[i] = notifier
                 return
 
-    def remove(self, notifier_id: str) -> None:
+    def remove(self, notifier_id: EntityId) -> None:
         self._notifiers = [n for n in self._notifiers if n.id != notifier_id]
 
     def get_by_external_service_id(
@@ -107,16 +107,22 @@ class SqliteNotifierRepository(NotifierRepository):
 
         if adapter_type not in NOTIFIER_CONFIG_TYPE_MAP:
             raise NotifierConfigurationError(
-                f"Error reading Notifir configuration. Invalid type '{adapter_type}'"
+                f"Error reading Notifier configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: NotificationConfig = NOTIFIER_CONFIG_TYPE_MAP.get(adapter_type)
+        config_class: Optional[type[NotificationConfig]] = NOTIFIER_CONFIG_TYPE_MAP.get(adapter_type)
         if not config_class:
             raise NotifierConfigurationError(
-                f"Error creating Notifir configuration. Type '{adapter_type}'"
+                f"Error creating Notifier configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, NotificationConfig):
+            raise NotifierConfigurationError(
+                f"Deserialized config is not of type NotificationConfig "
+                f"for adapter type '{adapter_type}'"
+            )
+        return config_instance
 
     def _row_to_notifier(self, row: sqlite3.Row) -> Optional[Notifier]:
         """Deserialize a row from the database into a Notifier object."""
@@ -155,7 +161,9 @@ class SqliteNotifierRepository(NotifierRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(notifier.config.to_dict())
+            config_json: str = ""
+            if notifier.config:
+                config_json = json.dumps(notifier.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -173,7 +181,8 @@ class SqliteNotifierRepository(NotifierRepository):
             self.logger.error(f"Integrity error adding notifier {notifier.id}: {e}")
             # Could mean that the ID already exists
             raise NotifierAlreadyExistsError(
-                f"notifier with ID {notifier.id} already exists or constraint violation: {e}"
+                f"notifier with ID {notifier.id} already exists "
+                f"or constraint violation: {e}"
             ) from e
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error adding notifier {notifier.id}: {e}")
@@ -182,7 +191,7 @@ class SqliteNotifierRepository(NotifierRepository):
             if conn:
                 conn.close()
 
-    def get_by_id(self, notifier_id: str) -> Optional[Notifier]:
+    def get_by_id(self, notifier_id: EntityId) -> Optional[Notifier]:
         """Retrieve a notifier by its ID."""
         self.logger.debug(f"Retrieving notifier {notifier_id} from SQLite repository.")
         sql = "SELECT * FROM notifiers WHERE id = ?;"
@@ -257,7 +266,7 @@ class SqliteNotifierRepository(NotifierRepository):
             if conn:
                 conn.close()
 
-    def remove(self, notifier_id: str) -> None:
+    def remove(self, notifier_id: EntityId) -> None:
         """Remove a notifier from the repository."""
         self.logger.debug(f"Removing notifier {notifier_id} from SQLite repository.")
         sql = "DELETE FROM notifiers WHERE id = ?;"

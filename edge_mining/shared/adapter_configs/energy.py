@@ -9,7 +9,7 @@ from edge_mining.shared.interfaces.config import EnergyMonitorConfig
 
 @dataclass(frozen=True)
 class EnergyMonitorDummySolarConfig(EnergyMonitorConfig):
-    """Energy monitor configiguration"""
+    """Energy monitor configuration"""
 
     max_consumption_power: Watts = field(
         default=Watts(3200.0)

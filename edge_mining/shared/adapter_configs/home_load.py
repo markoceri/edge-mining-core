@@ -16,7 +16,7 @@ class HomeForecastProviderDummyConfig(HomeForecastProviderConfig):
     to retrieve home forecast data from a dummy provider.
     """
 
-    load_power_max: float = field(default="500.0")
+    load_power_max: float = field(default=500.0)
 
     def is_valid(self, adapter_type: HomeForecastProviderAdapter) -> bool:
         """

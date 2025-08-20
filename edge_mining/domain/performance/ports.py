@@ -13,8 +13,8 @@ class MiningPerformanceTrackerPort(ABC):
     """Port for the Mining Performance Tracker."""
 
     @abstractmethod
-    def get_current_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
-        """Gets the current hashrate from the pool or device."""
+    def get_current_hashrate(self, miner_ids: List[EntityId]) -> Optional[HashRate]:
+        """Gets the current hashrate from the pool or devices."""
         raise NotImplementedError
 
     @abstractmethod
@@ -57,5 +57,8 @@ class MiningPerformanceTrackerRepository(ABC):
     def get_by_external_service_id(
         self, external_service_id: EntityId
     ) -> List[MiningPerformanceTracker]:
-        """Retrieves a list of forecast providers by its associated external service ID."""
+        """
+        Retrieves a list of mining performance trackers
+        by its associated external service ID.
+        """
         raise NotImplementedError

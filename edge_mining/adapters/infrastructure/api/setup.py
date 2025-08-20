@@ -4,10 +4,12 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException
 
-from edge_mining.application.services.adapter_service import AdapterService
-from edge_mining.application.services.configuration_service import ConfigurationService
-from edge_mining.application.services.miner_action_service import MinerActionService
-from edge_mining.application.services.optimization_service import OptimizationService
+from edge_mining.application.interfaces import (
+    AdapterServiceInterface,
+    ConfigurationServiceInterface,
+    MinerActionServiceInterface,
+    OptimizationServiceInterface
+)
 from edge_mining.shared.infrastructure import Services
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -71,28 +73,28 @@ async def get_service_container() -> ServiceContainer:
 
 async def get_adapter_service(
     container: ServiceContainer = Depends(get_service_container),
-) -> AdapterService:
+) -> AdapterServiceInterface:
     """Get AdapterService via dependency injection."""
     return container.services.adapter_service
 
 
 async def get_config_service(
     container: ServiceContainer = Depends(get_service_container),
-) -> ConfigurationService:
+) -> ConfigurationServiceInterface:
     """Get ConfigurationService via dependency injection."""
     return container.services.configuration_service
 
 
 async def get_miner_action_service(
     container: ServiceContainer = Depends(get_service_container),
-) -> MinerActionService:
+) -> MinerActionServiceInterface:
     """Get MinerActionService via dependency injection."""
     return container.services.miner_action_service
 
 
 async def get_optimization_service(
     container: ServiceContainer = Depends(get_service_container),
-) -> OptimizationService:
+) -> OptimizationServiceInterface:
     """Get OptimizationService via dependency injection."""
     return container.services.optimization_service
 

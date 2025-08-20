@@ -1,4 +1,4 @@
-"""Repositories for Performace Tracker Domain."""
+"""Repositories for Performance Tracker Domain."""
 
 import copy
 import json
@@ -17,7 +17,7 @@ from edge_mining.domain.performance.exceptions import (
 )
 from edge_mining.domain.performance.ports import MiningPerformanceTrackerRepository
 from edge_mining.shared.adapter_maps.performance import (
-    MINING_PERFORMACE_TRACKER_CONFIG_TYPE_MAP,
+    MINING_PERFORMANCE_TRACKER_CONFIG_TYPE_MAP,
 )
 from edge_mining.shared.interfaces.config import MiningPerformanceTrackerConfig
 
@@ -36,7 +36,7 @@ class InMemoryMiningPerformanceTrackerRepository(MiningPerformanceTrackerReposit
     def add(self, tracker: MiningPerformanceTracker) -> None:
         if tracker.id in self._trackers:
             raise MiningPerformanceTrackerAlreadyExistsError(
-                f"Performace Tracker with ID {tracker.id} already exists."
+                f"Performance Tracker with ID {tracker.id} already exists."
             )
         self._trackers[tracker.id] = tracker
 
@@ -49,7 +49,7 @@ class InMemoryMiningPerformanceTrackerRepository(MiningPerformanceTrackerReposit
     def update(self, tracker: MiningPerformanceTracker) -> None:
         if tracker.id not in self._trackers:
             raise MiningPerformanceTrackerNotFoundError(
-                f"Performace Tracker with ID {tracker.id} not found."
+                f"Performance Tracker with ID {tracker.id} not found."
             )
         self._trackers[tracker.id] = copy.deepcopy(tracker)
 
@@ -59,7 +59,7 @@ class InMemoryMiningPerformanceTrackerRepository(MiningPerformanceTrackerReposit
 
     def get_by_external_service_id(
         self, external_service_id: EntityId
-    ) -> Optional[MiningPerformanceTracker]:
+    ) -> List[MiningPerformanceTracker]:
         return [
             copy.deepcopy(t)
             for t in self._trackers.values()
@@ -100,7 +100,7 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
                 for sql in sql_statements:
                     conn.execute(sql)
                 self.logger.debug(
-                    "Mining Performace Tracker tables checked/created successfully."
+                    "Mining Performance Tracker tables checked/created successfully."
                 )
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error creating tables: {e}")
@@ -115,20 +115,25 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
         """Deserialize the JSON string into a MiningPerformanceTrackerConfig object."""
         data: dict = json.loads(config_json)
 
-        if adapter_type not in MINING_PERFORMACE_TRACKER_CONFIG_TYPE_MAP:
+        if adapter_type not in MINING_PERFORMANCE_TRACKER_CONFIG_TYPE_MAP:
             raise MiningPerformanceTrackerConfigurationError(
                 f"Error reading MiningPerformanceTracker configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: MiningPerformanceTrackerConfig = (
-            MINING_PERFORMACE_TRACKER_CONFIG_TYPE_MAP.get(adapter_type)
+        config_class: Optional[type[MiningPerformanceTrackerConfig]] = (
+            MINING_PERFORMANCE_TRACKER_CONFIG_TYPE_MAP.get(adapter_type)
         )
         if not config_class:
             raise MiningPerformanceTrackerConfigurationError(
                 f"Error creating MiningPerformanceTracker configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, MiningPerformanceTrackerConfig):
+            raise MiningPerformanceTrackerConfigurationError(
+                f"Error creating MiningPerformanceTracker configuration. Type '{adapter_type}'"
+            )
+        return config_instance
 
     def _row_to_tracker(self, row: sqlite3.Row) -> Optional[MiningPerformanceTracker]:
         """Deserialize a row from the database into a MiningPerformanceTracker object."""
@@ -158,9 +163,9 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
             return None
 
     def add(self, tracker: MiningPerformanceTracker) -> None:
-        """Add a new mining performace tracker to the repository."""
+        """Add a new mining performance tracker to the repository."""
         self.logger.debug(
-            f"Adding mining performace tracker {tracker.id} to SQLite repository."
+            f"Adding mining performance tracker {tracker.id} to SQLite repository."
         )
         sql = """
             INSERT INTO mining_performance_trackers (id, name, adapter_type, config, external_service_id)
@@ -169,7 +174,9 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(tracker.config.to_dict())
+            config_json: str = ""
+            if tracker.config:
+                config_json = json.dumps(tracker.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -185,27 +192,27 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
                 )
         except sqlite3.IntegrityError as e:
             self.logger.error(
-                f"Integrity error adding mining performace tracker {tracker.id}: {e}"
+                f"Integrity error adding mining performance tracker {tracker.id}: {e}"
             )
             # Could mean that the ID already exists
             raise MiningPerformanceTrackerAlreadyExistsError(
-                f"Mining performace tracker with ID {tracker.id} already exists or constraint violation: {e}"
+                f"Mining performance tracker with ID {tracker.id} already exists or constraint violation: {e}"
             ) from e
         except sqlite3.Error as e:
             self.logger.error(
-                f"SQLite error adding mining performace tracker {tracker.id}: {e}"
+                f"SQLite error adding mining performance tracker {tracker.id}: {e}"
             )
             raise MiningPerformanceTrackerConfigurationError(
-                f"DB error adding mining performace tracker: {e}"
+                f"DB error adding mining performance tracker: {e}"
             ) from e
         finally:
             if conn:
                 conn.close()
 
     def get_by_id(self, tracker_id: EntityId) -> Optional[MiningPerformanceTracker]:
-        """Retrieve a mining performace tracker by its ID."""
+        """Retrieve a mining performance tracker by its ID."""
         self.logger.debug(
-            f"Retrieving mining performace tracker {tracker_id} from SQLite repository."
+            f"Retrieving mining performance tracker {tracker_id} from SQLite repository."
         )
         sql = "SELECT * FROM mining_performance_trackers WHERE id = ?;"
         conn = self._db.get_connection()
@@ -216,19 +223,19 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
             return self._row_to_tracker(row)
         except sqlite3.Error as e:
             self.logger.error(
-                f"SQLite error retrieving mining performace tracker {tracker_id}: {e}"
+                f"SQLite error retrieving mining performance tracker {tracker_id}: {e}"
             )
             raise MiningPerformanceTrackerNotFoundError(
-                f"DB error retrieving mining performace tracker: {e}"
+                f"DB error retrieving mining performance tracker: {e}"
             ) from e
         finally:
             if conn:
                 conn.close()
 
     def get_all(self) -> List[MiningPerformanceTracker]:
-        """Retrieve all mining performace trackers from the repository."""
+        """Retrieve all mining performance trackers from the repository."""
         self.logger.debug(
-            "Retrieving all mining performace trackers from SQLite repository."
+            "Retrieving all mining performance trackers from SQLite repository."
         )
         sql = "SELECT * FROM mining_performance_trackers;"
         conn = self._db.get_connection()
@@ -243,7 +250,7 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
                     trackers.append(tracker)
         except sqlite3.Error as e:
             self.logger.error(
-                f"SQLite error retrieving all mining performace trackers: {e}"
+                f"SQLite error retrieving all mining performance trackers: {e}"
             )
             return []
         finally:
@@ -252,9 +259,9 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
         return trackers
 
     def update(self, tracker: MiningPerformanceTracker) -> None:
-        """Update an existing mining performace tracker in the repository."""
+        """Update an existing mining performance tracker in the repository."""
         self.logger.debug(
-            f"Updating mining performace tracker {tracker.id} in SQLite repository."
+            f"Updating mining performance tracker {tracker.id} in SQLite repository."
         )
         sql = """
             UPDATE mining_performance_trackers
@@ -264,7 +271,9 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(tracker.config.to_dict())
+            config_json: str = ""
+            if tracker.config:
+                config_json = json.dumps(tracker.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -280,23 +289,23 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
                 )
                 if cursor.rowcount == 0:
                     raise MiningPerformanceTrackerNotFoundError(
-                        f"mining performace tracker with ID {tracker.id} not found."
+                        f"mining performance tracker with ID {tracker.id} not found."
                     )
         except sqlite3.Error as e:
             self.logger.error(
-                f"SQLite error updating mining performace tracker {tracker.id}: {e}"
+                f"SQLite error updating mining performance tracker {tracker.id}: {e}"
             )
             raise MiningPerformanceTrackerConfigurationError(
-                f"DB error updating mining performace tracker: {e}"
+                f"DB error updating mining performance tracker: {e}"
             ) from e
         finally:
             if conn:
                 conn.close()
 
     def remove(self, tracker_id: EntityId) -> None:
-        """Remove a mining performace tracker from the repository."""
+        """Remove a mining performance tracker from the repository."""
         self.logger.debug(
-            f"Removing mining performace tracker {tracker_id} from SQLite repository."
+            f"Removing mining performance tracker {tracker_id} from SQLite repository."
         )
         sql = "DELETE FROM mining_performance_trackers WHERE id = ?;"
         conn = self._db.get_connection()
@@ -306,16 +315,16 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
                 cursor.execute(sql, (tracker_id,))
                 if cursor.rowcount == 0:
                     self.logger.warning(
-                        f"Attempted to remove non-existent mining performace tracker {tracker_id}."
+                        f"Attempted to remove non-existent mining performance tracker {tracker_id}."
                     )
                     # There is no need to raise an exception here, removing a
                     # non-existent is idempotent.
         except sqlite3.Error as e:
             self.logger.error(
-                f"SQLite error removing mining performace tracker {tracker_id}: {e}"
+                f"SQLite error removing mining performance tracker {tracker_id}: {e}"
             )
             raise MiningPerformanceTrackerConfigurationError(
-                f"DB error removing mining performace tracker: {e}"
+                f"DB error removing mining performance tracker: {e}"
             ) from e
         finally:
             if conn:
@@ -324,9 +333,9 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
     def get_by_external_service_id(
         self, external_service_id: EntityId
     ) -> List[MiningPerformanceTracker]:
-        """Get all mining performace trackers associated with a specific external service ID."""
+        """Get all mining performance trackers associated with a specific external service ID."""
         self.logger.debug(
-            f"Retrieving mining performace trackers for external service {external_service_id} from SQLite repository."
+            f"Retrieving mining performance trackers for external service {external_service_id} from SQLite repository."
         )
         sql = "SELECT * FROM mining_performance_trackers WHERE external_service_id = ?;"
         conn = self._db.get_connection()
@@ -342,7 +351,7 @@ class SqliteMiningPerformanceTrackerRepository(MiningPerformanceTrackerRepositor
             return trackers
         except sqlite3.Error as e:
             self.logger.error(
-                f"SQLite error retrieving mining performace trackers for external service {external_service_id}: {e}"
+                f"SQLite error retrieving mining performance trackers for external service {external_service_id}: {e}"
             )
             return []
         finally:

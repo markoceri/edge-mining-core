@@ -11,7 +11,7 @@ from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import MinerControllerConfig
 
 MINER_CONTROLLER_CONFIG_TYPE_MAP: Dict[
-    MinerControllerAdapter, Optional[MinerControllerConfig]
+    MinerControllerAdapter, Optional[type[MinerControllerConfig]]
 ] = {MinerControllerAdapter.DUMMY: MinerControllerDummyConfig}
 
 MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP: Dict[

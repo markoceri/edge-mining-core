@@ -16,6 +16,7 @@ from edge_mining.domain.home_load.exceptions import (
     HomeForecastProviderAlreadyExistsError,
     HomeForecastProviderError,
     HomeForecastProviderNotFoundError,
+    HomeForecastProviderConfigurationError,
 )
 from edge_mining.domain.home_load.ports import (
     HomeForecastProviderRepository,
@@ -94,7 +95,7 @@ class SqliteHomeLoadsProfileRepository(HomeLoadsProfileRepository):
     def _dict_to_device(self, data: Dict[str, Any]) -> LoadDevice:
         """Convert a dictionary to a LoadDevice."""
         return LoadDevice(
-            id=uuid.UUID(data["id"]), name=data["name"], type=data["type"]
+            id=EntityId(uuid.UUID(data["id"])), name=data["name"], type=data["type"]
         )
 
     def _row_to_profile(self, row: sqlite3.Row) -> Optional[HomeLoadsProfile]:
@@ -104,7 +105,7 @@ class SqliteHomeLoadsProfileRepository(HomeLoadsProfileRepository):
         try:
             devices_data: Dict = json.loads(row["devices_json"] or "{}")
             devices = {
-                uuid.UUID(id_str): self._dict_to_device(dev_dict)
+                EntityId(uuid.UUID(id_str)): self._dict_to_device(dev_dict)
                 for id_str, dev_dict in devices_data.items()
             }
             return HomeLoadsProfile(
@@ -152,7 +153,7 @@ class SqliteHomeLoadsProfileRepository(HomeLoadsProfileRepository):
                 }
             )
             with conn:
-                # Usa sempre l'UUID fisso per salvare/sovrascrivere il profilo di
+                # Always use the fixed UUID for the default profile
                 # default
                 conn.execute(
                     sql,
@@ -271,7 +272,7 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
                 f"Error reading HomeForecastProvider configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: HomeForecastProviderConfig = (
+        config_class: Optional[type[HomeForecastProviderConfig]] = (
             HOME_FORECAST_PROVIDER_CONFIG_TYPE_MAP.get(adapter_type)
         )
         if not config_class:
@@ -279,7 +280,13 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
                 f"Error creating HomeForecastProviderConfig configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, HomeForecastProviderConfig):
+            raise HomeForecastProviderConfigurationError(
+                "Deserialized config is not of type HomeForecastProviderConfig "
+                f"for adapter type {adapter_type}."
+            )
+        return config_instance
 
     def _row_to_home_forecast_provider(
         self, row: sqlite3.Row
@@ -328,7 +335,9 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(home_forecast_provider.config.to_dict())
+            config_json: str = ""
+            if home_forecast_provider.config:
+                config_json = json.dumps(home_forecast_provider.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -348,7 +357,8 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
             )
             # Could mean that the ID already exists
             raise HomeForecastProviderAlreadyExistsError(
-                f"Home forecast provider with ID {home_forecast_provider.id} already exists or constraint violation: {e}"
+                f"Home forecast provider with ID {home_forecast_provider.id} "
+                f"already exists or constraint violation: {e}"
             ) from e
         except sqlite3.Error as e:
             self.logger.error(
@@ -487,7 +497,8 @@ class SqliteHomeForecastProviderRepository(HomeForecastProviderRepository):
     ) -> List[HomeForecastProvider]:
         """Retrieve all home forecast providers linked to a specific external service."""
         self.logger.debug(
-            f"Retrieving home forecast providers linked to external service {external_service_id} from SQLite repository."
+            "Retrieving home forecast providers linked to external service "
+            f"{external_service_id} from SQLite repository."
         )
         sql = "SELECT * FROM home_forecast_providers WHERE external_service_id = ?;"
         conn = self._db.get_connection()

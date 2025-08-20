@@ -18,8 +18,8 @@ class MinerControllerDummyConfig(MinerControllerConfig):
     """
 
     initial_status: str = field(default="UNKNOWN")
-    power_max: float = field(default="3200.0")
-    hashrate_max: float = field(default=HashRate(90, "TH/s"))
+    power_max: float = field(default=3200.0)
+    hashrate_max: HashRate = field(default=HashRate(90, "TH/s"))
 
     def is_valid(self, adapter_type: MinerControllerAdapter) -> bool:
         """

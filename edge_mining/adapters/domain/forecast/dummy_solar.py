@@ -19,7 +19,7 @@ from edge_mining.domain.forecast.value_objects import (
 )
 from edge_mining.shared.adapter_configs.forecast import ForecastProviderDummySolarConfig
 from edge_mining.shared.external_services.ports import ExternalServicePort
-from edge_mining.shared.interfaces.config import ForecastProviderConfig
+from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.interfaces.factories import ForecastAdapterFactory
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -30,7 +30,7 @@ class DummyForecastProviderFactory(ForecastAdapterFactory):
     """
 
     def __init__(self):
-        self._energy_source: EnergySource = None
+        self._energy_source: Optional[EnergySource] = None
 
     def from_energy_source(self, energy_source: EnergySource) -> None:
         """Set the reference energy source"""
@@ -38,9 +38,9 @@ class DummyForecastProviderFactory(ForecastAdapterFactory):
 
     def create(
         self,
-        config: ForecastProviderConfig,
-        logger: LoggerPort,
-        external_service: ExternalServicePort,
+        config: Optional[Configuration],
+        logger: Optional[LoggerPort],
+        external_service: Optional[ExternalServicePort],
     ) -> ForecastProviderPort:
         """
         Creates a DummySolarForecastProvider instance.
@@ -54,17 +54,16 @@ class DummyForecastProviderFactory(ForecastAdapterFactory):
         # Get the config from the forecast provider config
         forecast_provider_config: ForecastProviderDummySolarConfig = config
 
-        if not forecast_provider_config.capacity_kwp:
+        capacity_kwp = forecast_provider_config.capacity_kwp
+        if not capacity_kwp:
             if self._energy_source and self._energy_source.nominal_power_max:
-                forecast_provider_config.capacity_kwp = (
-                    self._energy_source.nominal_power_max
-                )
+                capacity_kwp = self._energy_source.nominal_power_max
 
         return DummySolarForecastProvider(
             latitude=forecast_provider_config.latitude,
             longitude=forecast_provider_config.longitude,
-            capacity_kwp=forecast_provider_config.capacity_kwp,
-            efficency_percent=forecast_provider_config.efficency_percent,
+            capacity_kwp=capacity_kwp,
+            efficiency_percent=forecast_provider_config.efficiency_percent,
             production_start_hour=forecast_provider_config.production_start_hour,
             production_end_hour=forecast_provider_config.production_end_hour,
             logger=logger,
@@ -76,13 +75,13 @@ class DummySolarForecastProvider(ForecastProviderPort):
 
     def __init__(
         self,
-        latitude: float = None,
-        longitude: float = None,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
         capacity_kwp: float = 5.0,
-        efficency_percent: float = 80.0,
+        efficiency_percent: float = 80.0,
         production_start_hour: int = 6,
         production_end_hour: int = 20,
-        logger: LoggerPort = None,
+        logger: Optional[LoggerPort] = None,
     ):
         """Initializes the DummySolarForecastProvider."""
         super().__init__(forecast_provider_type=ForecastProviderAdapter.DUMMY_SOLAR)
@@ -91,7 +90,7 @@ class DummySolarForecastProvider(ForecastProviderPort):
         self.latitude = latitude
         self.longitude = longitude
         self.capacity_kwp = capacity_kwp
-        self.efficency_percent = efficency_percent
+        self.efficiency_percent = efficiency_percent
         self.production_start_hour = production_start_hour
         self.production_end_hour = production_end_hour
         # You can set default values or use the ones from settings if needed
@@ -106,7 +105,7 @@ class DummySolarForecastProvider(ForecastProviderPort):
             )
         now = datetime.now()
         forecast: Forecast = Forecast(timestamp=Timestamp(now))
-        base_max_watts = self.capacity_kwp * 1000 * (self.efficency_percent / 100)
+        base_max_watts = self.capacity_kwp * 1000 * (self.efficiency_percent / 100)
 
         peak_hour = 13
         total_production_hours = self.production_end_hour - self.production_start_hour

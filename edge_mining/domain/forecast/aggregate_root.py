@@ -12,7 +12,7 @@ from edge_mining.domain.forecast.value_objects import ForecastInterval
 class Forecast(AggregateRoot):
     """Aggregate Root for the Forecast domain."""
 
-    timestamp: Timestamp = field(default_factory=datetime.now)
+    timestamp: Timestamp = field(default_factory=Timestamp(datetime.now()))
     intervals: List[ForecastInterval] = field(default_factory=list)
 
     @property
@@ -91,7 +91,11 @@ class Forecast(AggregateRoot):
                     if interval_duration_sec > 0:
                         # Compute the energy ratio for the overlapping interval
                         ratio = overlap_duration_sec / interval_duration_sec
-                        total_energy += interval.energy * ratio
+                        if interval.energy is not None:
+                            # Ensure energy is not None before multiplying
+                            total_energy = WattHours(
+                                total_energy + float(interval.energy) * ratio
+                            )
 
         return WattHours(round(total_energy, 3)) if total_energy > 0 else WattHours(0.0)
 
@@ -160,7 +164,11 @@ class Forecast(AggregateRoot):
                 if interval_duration_sec > 0:
                     # Compute the energy ratio for the overlapping interval
                     ratio = overlap_duration_sec / interval_duration_sec
-                    total_energy += interval.energy * ratio
+                    if interval.energy is not None:
+                        # Ensure energy is not None before multiplying
+                        total_energy = WattHours(
+                            total_energy + interval.energy * ratio
+                        )
 
         if total_energy > 0:
             return WattHours(round(total_energy, 3))  # Round to 3 decimal places

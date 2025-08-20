@@ -2,7 +2,7 @@
 This service is responsible for creating and managing adapters for the application.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from edge_mining.adapters.domain.energy.dummy_solar import (
     DummySolarEnergyMonitorFactory,
@@ -67,6 +67,7 @@ from edge_mining.shared.interfaces.factories import (
     ForecastAdapterFactory,
 )
 from edge_mining.shared.logging.port import LoggerPort
+from edge_mining.adapters.infrastructure.rule_engine.common import RuleEngineType
 
 
 class AdapterService(AdapterServiceInterface):
@@ -92,12 +93,19 @@ class AdapterService(AdapterServiceInterface):
         self.mining_performance_tracker_repo = mining_performance_tracker_repo
         self.home_forecast_provider_repo = home_forecast_provider_repo
         self.external_service_repo = external_service_repo
-        self._instance_cache: Dict[EntityId, Any] = (
-            {}
-        )  # Cache for already created instances
-        self._service_cache: Dict[EntityId, ExternalServicePort] = (
-            {}
-        )  # Cache for already created external services
+        # Cache for already created instances
+        self._instance_cache: Dict[
+            EntityId, Optional[Union[
+                EnergyMonitorPort,
+                MinerControlPort,
+                NotificationPort,
+                ForecastProviderPort,
+                HomeForecastProviderPort,
+                MiningPerformanceTrackerPort
+            ]]
+        ] = {}
+        # Cache for already created external services
+        self._service_cache: Dict[EntityId, ExternalServicePort] = {}
 
         self.logger = logger
 
@@ -107,19 +115,20 @@ class AdapterService(AdapterServiceInterface):
         """Initialize an external service"""
         # If the external service already exists, we use it
         if external_service.id in self._service_cache:
-            self.logger.debug(
-                f"Returning cached instance "
-                f"for external service ID {external_service.id} "
-                f"(Type: {external_service.adapter_type})"
-            )
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached instance "
+                    f"for external service ID {external_service.id} "
+                    f"(Type: {external_service.adapter_type})"
+                )
             return self._service_cache[external_service.id]
 
         try:
-            external_service_factory: ExternalServiceFactory = None
+            external_service_factory: Optional[ExternalServiceFactory] = None
 
             if (
                 external_service.adapter_type
-                == ExternalServiceAdapter.HOME_ASSISTANT_API.value
+                == ExternalServiceAdapter.HOME_ASSISTANT_API
             ):
                 # --- Home Assistant API ---
 
@@ -137,10 +146,11 @@ class AdapterService(AdapterServiceInterface):
             self._service_cache[external_service.id] = instance_service
             return instance_service
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize External Service '{external_service.name}' "
-                f"(Type: {external_service.adapter_type}): {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize External Service '{external_service.name}' "
+                    f"(Type: {external_service.adapter_type}): {e}"
+                )
             return None
 
     def _initialize_energy_monitor_adapter(
@@ -149,12 +159,36 @@ class AdapterService(AdapterServiceInterface):
         """Initialize an energy monitor adapter."""
         # If the adapter has already been created, we use it.
         if energy_monitor.id in self._instance_cache:
-            self.logger.debug(
-                f"Returning cached adapter instance "
-                f"for energy monitor ID {energy_monitor.id} "
-                f"(Type: {energy_monitor.adapter_type})"
-            )
-            return self._instance_cache[energy_monitor.id]
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached adapter instance "
+                    f"for energy monitor ID {energy_monitor.id} "
+                    f"(Type: {energy_monitor.adapter_type})"
+                )
+
+            cached_instance = self._instance_cache[energy_monitor.id]
+
+            if not cached_instance:
+                # If the cached instance is None, we return it
+                # to indicate that the adapter was not initialized.
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for energy monitor ID {energy_monitor.id} "
+                        f"is None. Reinitializing adapter."
+                    )
+                return None
+
+            # Check if the cached instance is of the correct type
+            if not isinstance(cached_instance, EnergyMonitorPort):
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for energy monitor ID {energy_monitor.id} "
+                        f"is not of type EnergyMonitorPort. Reinitializing adapter."
+                    )
+                return None
+
+            # If the cached instance is valid, we return it
+            return cached_instance
 
         # Retrieve the external service associated to the energy monitor
         if energy_monitor.external_service_id:
@@ -163,14 +197,15 @@ class AdapterService(AdapterServiceInterface):
             )
             if not external_service:
                 raise ValueError(
-                    f"Unable to load external service {energy_monitor.external_service_id} "
+                    "Unable to load external service "
+                    f"{energy_monitor.external_service_id} "
                     f"for energy monitor {energy_monitor.name}"
                 )
 
         try:
-            energy_monitor_adapter_factory: EnergyMonitorAdapterFactory = None
+            energy_monitor_adapter_factory: Optional[EnergyMonitorAdapterFactory] = None
 
-            if energy_monitor.adapter_type == EnergyMonitorAdapter.DUMMY_SOLAR.value:
+            if energy_monitor.adapter_type == EnergyMonitorAdapter.DUMMY_SOLAR:
                 # --- Dummy Solar ---
                 if not energy_source:
                     raise ValueError(
@@ -183,7 +218,7 @@ class AdapterService(AdapterServiceInterface):
                 energy_monitor_adapter_factory.from_energy_source(energy_source)
             elif (
                 energy_monitor.adapter_type
-                == EnergyMonitorAdapter.HOME_ASSISTANT_API.value
+                == EnergyMonitorAdapter.HOME_ASSISTANT_API
             ):
                 # --- Home Assistant API ---
                 if not energy_monitor.config:
@@ -210,10 +245,11 @@ class AdapterService(AdapterServiceInterface):
             self._instance_cache[energy_monitor.id] = instance
             return instance
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize adapter '{energy_monitor.name}' "
-                f"(Type: {energy_monitor.adapter_type}) using factory: {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize adapter '{energy_monitor.name}' "
+                    f"(Type: {energy_monitor.adapter_type}) using factory: {e}"
+                )
             return None
 
     def _initialize_miner_controller_adapter(
@@ -222,17 +258,44 @@ class AdapterService(AdapterServiceInterface):
         """Initialize a miner controller adapter."""
         # If the adapter has already been created, we use it.
         if miner_controller.id in self._instance_cache:
-            self.logger.debug(
-                f"Returning cached adapter instance "
-                f"for miner controller ID {miner_controller.id} "
-                f"(Type: {miner_controller.adapter_type})"
-            )
-            return self._instance_cache[miner_controller.id]
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached adapter instance "
+                    f"for miner controller ID {miner_controller.id} "
+                    f"(Type: {miner_controller.adapter_type})"
+                )
+
+            cached_instance = self._instance_cache[miner_controller.id]
+            if not cached_instance:
+                # If the cached instance is None, we return it
+                # to indicate that the adapter was not initialized.
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for miner controller ID {miner_controller.id} "
+                        f"is None. Reinitializing adapter."
+                    )
+                return None
+
+            # Check if the cached instance is of the correct type
+            if not isinstance(cached_instance, MinerControlPort):
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for miner controller ID {miner_controller.id} "
+                        f"is not of type MinerControlPort. Reinitializing adapter."
+                    )
+                return None
+
+            # If the cached instance is valid, we return it
+            return cached_instance
 
         try:
-
-            if miner_controller.adapter_type == MinerControllerAdapter.DUMMY.name:
-                # --- Dummy Conctroller ---
+            if miner_controller.adapter_type == MinerControllerAdapter.DUMMY:
+                if miner.power_consumption_max is None or miner.hash_rate_max is None:
+                    raise ValueError(
+                        "Miner power consumption max and hash rate max "
+                        "are required for DummyMinerController."
+                    )
+                # --- Dummy Controller ---
                 instance = DummyMinerController(
                     power_max=miner.power_consumption_max,
                     hashrate_max=miner.hash_rate_max,
@@ -246,23 +309,48 @@ class AdapterService(AdapterServiceInterface):
             self._instance_cache[miner_controller.id] = instance
             return instance
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize adapter '{miner_controller.name}' "
-                f"(Type: {miner_controller.adapter_type}) using factory: {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize adapter '{miner_controller.name}' "
+                    f"(Type: {miner_controller.adapter_type}) using factory: {e}"
+                )
             return None
 
     def _initialize_notifier_adapter(
         self, notifier: Notifier
-    ) -> Optional[NotificationAdapter]:
+    ) -> Optional[NotificationPort]:
         """Initialize a notifier adapter."""
         # If the adapter has already been created, we use it.
         if notifier.id in self._instance_cache:
-            self.logger.debug(
-                f"Returning cached adapter instance "
-                f"for notifier ID {notifier.id} (Type: {notifier.adapter_type})"
-            )
-            return self._instance_cache[notifier.id]
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached adapter instance "
+                    f"for notifier ID {notifier.id} (Type: {notifier.adapter_type})"
+                )
+
+            cached_instance = self._instance_cache[notifier.id]
+
+            if not cached_instance:
+                # If the cached instance is None, we return it
+                # to indicate that the adapter was not initialized.
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for notifier ID {notifier.id} "
+                        f"is None. Reinitializing adapter."
+                    )
+                return None
+
+            # Check if the cached instance is of the correct type
+            if not isinstance(cached_instance, NotificationPort):
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for notifier ID {notifier.id} "
+                        f"is not of type NotificationPort. Reinitializing adapter."
+                    )
+                return None
+
+            # If the cached instance is valid, we return it
+            return cached_instance
 
         # Retrieve the external service associated to the notifier
         if notifier.external_service_id:
@@ -273,11 +361,12 @@ class AdapterService(AdapterServiceInterface):
                     f"for notifier {notifier.name}"
                 )
         try:
+            instance: Optional[NotificationPort] = None
 
-            if notifier.adapter_type == NotificationAdapter.DUMMY.name:
+            if notifier.adapter_type == NotificationAdapter.DUMMY:
                 # --- Dummy Notifier ---
                 instance = DummyNotifier()
-            elif notifier.adapter_type == NotificationAdapter.TELEGRAM.name:
+            elif notifier.adapter_type == NotificationAdapter.TELEGRAM:
                 # --- Telegram Notifier ---
                 instance = TelegramNotifierFactory().create(
                     config=notifier.config,
@@ -292,10 +381,11 @@ class AdapterService(AdapterServiceInterface):
             self._instance_cache[notifier.id] = instance
             return instance
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize adapter '{notifier.name}' "
-                f"(Type: {notifier.adapter_type}) using factory: {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize adapter '{notifier.name}' "
+                    f"(Type: {notifier.adapter_type}) using factory: {e}"
+                )
             return None
 
     def _initialize_forecast_provider_adapter(
@@ -304,12 +394,37 @@ class AdapterService(AdapterServiceInterface):
         """Initialize a forecast provider adapter."""
         # If the adapter has already been created, we use it.
         if forecast_provider.id in self._instance_cache:
-            self.logger.debug(
-                f"Returning cached adapter instance "
-                f"for forecast provider ID {forecast_provider.id} "
-                f"(Type: {forecast_provider.adapter_type})"
-            )
-            return self._instance_cache[forecast_provider.id]
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached adapter instance "
+                    f"for forecast provider ID {forecast_provider.id} "
+                    f"(Type: {forecast_provider.adapter_type})"
+                )
+            cached_instance = self._instance_cache[forecast_provider.id]
+
+            if not cached_instance:
+                # If the cached instance is None, we return it
+                # to indicate that the adapter was not initialized.
+                if self.logger:
+                    self.logger.warning(
+                        "Cached instance for forecast provider "
+                        f"ID {forecast_provider.id} "
+                        f"is None. Reinitializing adapter."
+                    )
+                return None
+
+            # Check if the cached instance is of the correct type
+            if not isinstance(cached_instance, ForecastProviderPort):
+                if self.logger:
+                    self.logger.warning(
+                        "Cached instance for forecast provider "
+                        f"ID {forecast_provider.id} "
+                        f"is not of type ForecastProviderPort. Reinitializing adapter."
+                    )
+                return None
+
+            # If the cached instance is valid, we return it
+            return cached_instance
 
         # Retrieve the external service associated to the forecast provider
         if forecast_provider.external_service_id:
@@ -323,16 +438,13 @@ class AdapterService(AdapterServiceInterface):
                 )
 
         try:
-            forecast_provider_adapter_factory: ForecastAdapterFactory = None
+            forecast_provider_adapter_factory: Optional[ForecastAdapterFactory] = None
 
-            if (
-                forecast_provider.adapter_type
-                == ForecastProviderAdapter.DUMMY_SOLAR.name
-            ):
+            if forecast_provider.adapter_type == ForecastProviderAdapter.DUMMY_SOLAR:
                 # --- Dummy Forecast Provider ---
                 if not energy_source:
                     raise ValueError(
-                        "EnergySource is required " "for DummySolar forecast provider."
+                        "EnergySource is required for DummySolar forecast provider."
                     )
 
                 forecast_provider_adapter_factory = DummyForecastProviderFactory()
@@ -341,7 +453,7 @@ class AdapterService(AdapterServiceInterface):
                 forecast_provider_adapter_factory.from_energy_source(energy_source)
             elif (
                 forecast_provider.adapter_type
-                == ForecastProviderAdapter.HOME_ASSISTANT_API.name
+                == ForecastProviderAdapter.HOME_ASSISTANT_API
             ):
                 # --- Home Assistant API Forecast Provider ---
                 if not forecast_provider.config:
@@ -368,10 +480,11 @@ class AdapterService(AdapterServiceInterface):
             self._instance_cache[forecast_provider.id] = instance
             return instance
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize adapter '{forecast_provider.name}' "
-                f"(Type: {forecast_provider.adapter_type}) using factory: {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize adapter '{forecast_provider.name}' "
+                    f"(Type: {forecast_provider.adapter_type}) using factory: {e}"
+                )
             return None
 
     def _initialize_home_forecast_provider_adapter(
@@ -380,19 +493,45 @@ class AdapterService(AdapterServiceInterface):
         """Initialize a home forecast provider adapter."""
         # If the adapter has already been created, we use it.
         if home_forecast_provider.id in self._instance_cache:
-            self.logger.debug(
-                f"Returning cached adapter instance "
-                f"for home forecast provider ID {home_forecast_provider.id} "
-                f"(Type: {home_forecast_provider.adapter_type})"
-            )
-            return self._instance_cache[home_forecast_provider.id]
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached adapter instance "
+                    f"for home forecast provider ID {home_forecast_provider.id} "
+                    f"(Type: {home_forecast_provider.adapter_type})"
+                )
+            cached_instance = self._instance_cache[home_forecast_provider.id]
+
+            if not cached_instance:
+                # If the cached instance is None, we return it
+                # to indicate that the adapter was not initialized.
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for home forecast provider ID "
+                        f"{home_forecast_provider.id} is None. Reinitializing adapter."
+                    )
+                return None
+
+            # Check if the cached instance is of the correct type
+            if not isinstance(cached_instance, HomeForecastProviderPort):
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for home forecast provider ID "
+                        f"{home_forecast_provider.id} is not of type HomeForecastProviderPort. "
+                        "Reinitializing adapter."
+                    )
+                return None
+
+            # If the cached instance is valid, we return it
+            return cached_instance
 
         try:
             if (
                 home_forecast_provider.adapter_type
-                == HomeForecastProviderAdapter.DUMMY.name
+                == HomeForecastProviderAdapter.DUMMY
             ):
                 # --- Dummy Home Forecast Provider ---
+                # TODO - Add configuration parameters for DummyHomeForecastProvider
+                # For now, we use a default load power max of 800W.
                 instance = DummyHomeForecastProvider(load_power_max=800)
             else:
                 raise ValueError(
@@ -403,24 +542,48 @@ class AdapterService(AdapterServiceInterface):
             self._instance_cache[home_forecast_provider.id] = instance
             return instance
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize adapter '{home_forecast_provider.name}' "
-                f"(Type: {home_forecast_provider.adapter_type}) using factory: {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize adapter '{home_forecast_provider.name}' "
+                    f"(Type: {home_forecast_provider.adapter_type}) using factory: {e}"
+                )
             return None
 
-    def _initialize_mining_performace_tracker_adapter(
+    def _initialize_mining_performance_tracker_adapter(
         self, tracker: MiningPerformanceTracker
     ) -> Optional[MiningPerformanceTrackerPort]:
-        """Initialize a mining performace tracker adapter."""
+        """Initialize a mining performance tracker adapter."""
         # If the adapter has already been created, we use it.
         if tracker.id in self._instance_cache:
-            self.logger.debug(
-                f"Returning cached adapter instance "
-                f"for mining performace tracker ID {tracker.id} "
-                f"(Type: {tracker.adapter_type})"
-            )
-            return self._instance_cache[tracker.id]
+            if self.logger:
+                self.logger.debug(
+                    f"Returning cached adapter instance "
+                    f"for mining performance tracker ID {tracker.id} "
+                    f"(Type: {tracker.adapter_type})"
+                )
+            cached_instance = self._instance_cache[tracker.id]
+
+            if not cached_instance:
+                # If the cached instance is None, we return it
+                # to indicate that the adapter was not initialized.
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for mining performance tracker ID {tracker.id} "
+                        f"is None. Reinitializing adapter."
+                    )
+                return None
+
+            # Check if the cached instance is of the correct type
+            if not isinstance(cached_instance, MiningPerformanceTrackerPort):
+                if self.logger:
+                    self.logger.warning(
+                        f"Cached instance for mining performance tracker ID {tracker.id} "
+                        f"is not of type MiningPerformanceTrackerPort. Reinitializing adapter."
+                    )
+                return None
+
+            # If the cached instance is valid, we return it
+            return cached_instance
 
         # Retrieve the external service associated to the energy monitor
         if tracker.external_service_id:
@@ -432,7 +595,7 @@ class AdapterService(AdapterServiceInterface):
                 )
 
         try:
-            instance: MiningPerformanceTrackerPort = None
+            instance: Optional[MiningPerformanceTrackerPort] = None
 
             # No configuration is needed for the dummy tracker.
             # We instantiate it directly using DummyMiningPerformanceTracker.
@@ -440,48 +603,65 @@ class AdapterService(AdapterServiceInterface):
             # that require different initialization logic, we can use
             # a factory pattern similar to the other adapters.
 
-            if tracker.adapter_type == MiningPerformanceTrackerAdapter.DUMMY.value:
+            if tracker.adapter_type == MiningPerformanceTrackerAdapter.DUMMY:
                 # --- Dummy Tracker ---
 
                 instance = DummyMiningPerformanceTracker()
             else:
                 raise ValueError(
-                    f"Unsupported mining performace tracker adapter type: "
+                    f"Unsupported mining performance tracker adapter type: "
                     f"{tracker.adapter_type}"
                 )
 
             self._instance_cache[tracker.id] = instance
             return instance
         except Exception as e:
-            self.logger.error(
-                f"Failed to initialize adapter '{tracker.name}' "
-                f"(Type: {tracker.adapter_type}) using factory: {e}"
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Failed to initialize adapter '{tracker.name}' "
+                    f"(Type: {tracker.adapter_type}) using factory: {e}"
+                )
             return None
 
     def get_energy_monitor(
         self, energy_source: EnergySource
     ) -> Optional[EnergyMonitorPort]:
         """Get an energy monitor adapter instance."""
+        if not energy_source.energy_monitor_id:
+            if self.logger:
+                self.logger.error(
+                    f"EnergySource {energy_source.name} does not have "
+                    "an associated EnergyMonitor ID."
+                )
+            return None
         energy_monitor = self.energy_monitor_repo.get_by_id(
             energy_source.energy_monitor_id
         )
         if not energy_monitor:
-            self.logger.error(
-                f"EnergyMonitor ID {energy_source.energy_monitor_id} not found "
-                f"or not an EnergyMonitor."
-            )
+            if self.logger:
+                self.logger.error(
+                    f"EnergyMonitor ID {energy_source.energy_monitor_id} not found "
+                    f"or not an EnergyMonitor."
+                )
             return None
         return self._initialize_energy_monitor_adapter(energy_source, energy_monitor)
 
     def get_miner_controller(self, miner: Miner) -> Optional[MinerControlPort]:
         """Get a miner controller adapter instance"""
+        if not miner.controller_id:
+            if self.logger:
+                self.logger.error(
+                    f"Miner {miner.name} does not have an associated "
+                    "MinerController ID."
+                )
+            return None
         miner_controller = self.miner_controller_repo.get_by_id(miner.controller_id)
         if not miner_controller:
-            self.logger.error(
-                f"Miner Controller ID {miner.controller_id} not found "
-                "or not a MinerController."
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Miner Controller ID {miner.controller_id} not found "
+                    "or not a MinerController."
+                )
             return None
         return self._initialize_miner_controller_adapter(miner, miner_controller)
 
@@ -490,25 +670,28 @@ class AdapterService(AdapterServiceInterface):
         notifier_instances = []
         notifiers = self.notifier_repo.get_all()
         if not notifiers or not len(notifiers) > 0:
-            self.logger.error("Notifiers not configured.")
-            return None
+            if self.logger:
+                self.logger.error("Notifiers not configured.")
+            return []
 
         for notifier in notifiers:
             instance = self._initialize_notifier_adapter(notifier)
             if instance:
                 notifier_instances.append(instance)
             else:
-                self.logger.warning(
-                    f"Notifier ID {notifier.id} not found "
-                    "or not a Notification category."
-                )
+                if self.logger:
+                    self.logger.warning(
+                        f"Notifier ID {notifier.id} not found "
+                        "or not a Notification category."
+                    )
         return notifier_instances
 
     def get_notifier(self, notifier_id: EntityId) -> Optional[NotificationPort]:
         """Get a specific notifier adapter instance by ID."""
         notifier = self.notifier_repo.get_by_id(notifier_id)
         if not notifier:
-            self.logger.error(f"Notifier ID {notifier_id} not found or not a Notifier.")
+            if self.logger:
+                self.logger.error(f"Notifier ID {notifier_id} not found or not a Notifier.")
             return None
         return self._initialize_notifier_adapter(notifier)
 
@@ -518,32 +701,43 @@ class AdapterService(AdapterServiceInterface):
         for notifier_id in notifier_ids:
             notifier = self.notifier_repo.get_by_id(notifier_id)
             if not notifier:
-                self.logger.error(
-                    f"Notifier ID {notifier_id} not found or not a Notifier."
-                )
+                if self.logger:
+                    self.logger.error(
+                        f"Notifier ID {notifier_id} not found or not a Notifier."
+                    )
                 continue
 
             instance = self._initialize_notifier_adapter(notifier)
             if instance:
                 notifier_instances.append(instance)
             else:
-                self.logger.warning(
-                    f"Notifier ID {notifier.id} not found "
-                    "or not a Notification category."
-                )
+                if self.logger:
+                    self.logger.warning(
+                        f"Notifier ID {notifier.id} not found "
+                        "or not a Notification category."
+                    )
         return notifier_instances
 
     def get_forecast_provider(
         self, energy_source: EnergySource
     ) -> Optional[ForecastProviderPort]:
         """Get a forecast provider adapter instance."""
+        if not energy_source.forecast_provider_id:
+            if self.logger:
+                self.logger.error(
+                    f"EnergySource {energy_source.name} does not have "
+                    "an associated ForecastProvider ID."
+                )
+            return None
         forecast_provider = self.forecast_provider_repo.get_by_id(
             energy_source.forecast_provider_id
         )
         if not forecast_provider:
-            self.logger.error(
-                f"Forecast Provider ID {energy_source.forecast_provider_id} not found or not a Forecast Provider."
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Forecast Provider ID {energy_source.forecast_provider_id} "
+                    "not found or not a Forecast Provider."
+                )
             return None
         return self._initialize_forecast_provider_adapter(
             energy_source, forecast_provider
@@ -557,24 +751,27 @@ class AdapterService(AdapterServiceInterface):
             home_forecast_provider_id
         )
         if not home_forecast_provider:
-            self.logger.error(
-                f"Home Forecast Provider ID {home_forecast_provider_id} "
-                f"not found or not a Home Forecast Provider."
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Home Forecast Provider ID {home_forecast_provider_id} "
+                    f"not found or not a Home Forecast Provider."
+                )
             return None
         return self._initialize_home_forecast_provider_adapter(home_forecast_provider)
 
-    def get_mining_performace_tracker(
+    def get_mining_performance_tracker(
         self, tracker_id: EntityId
-    ) -> Optional[ForecastProviderPort]:
-        """Get a mining performace tracker adapter instance."""
+    ) -> Optional[MiningPerformanceTrackerPort]:
+        """Get a mining performance tracker adapter instance."""
         tracker = self.mining_performance_tracker_repo.get_by_id(tracker_id)
         if not tracker:
-            self.logger.error(
-                f"Mining Performace Tracker ID {tracker_id} not found or not a Mining Performace Tracker."
-            )
+            if self.logger:
+                self.logger.error(
+                    f"Mining Performance Tracker ID {tracker_id} not found "
+                    "or not a Mining Performance Tracker."
+                )
             return None
-        return self._initialize_mining_performace_tracker_adapter(tracker)
+        return self._initialize_mining_performance_tracker_adapter(tracker)
 
     def get_external_service(
         self, external_service_id: EntityId
@@ -582,9 +779,11 @@ class AdapterService(AdapterServiceInterface):
         """Get a specific external service instance by ID."""
         external_service = self.external_service_repo.get_by_id(external_service_id)
         if not external_service:
-            self.logger.error(
-                f"External Service ID {external_service_id} not found or not an External Service."
-            )
+            if self.logger:
+                self.logger.error(
+                    f"External Service ID {external_service_id} not found "
+                    "or not an External Service."
+                )
             return None
         return self._initialize_external_service(external_service)
 
@@ -594,38 +793,49 @@ class AdapterService(AdapterServiceInterface):
             # For now, we default to the 'custom' engine.
             # This could be driven by configuration in the future.
             factory = RuleEngineFactory()
-            engine = factory.create(engine_type="custom", logger=self.logger)
+            engine = factory.create(
+                engine_type=RuleEngineType.CUSTOM, logger=self.logger
+            )
             return engine
         except Exception as e:
-            self.logger.error(f"Failed to create RuleEngine instance: {e}")
+            if self.logger:
+                self.logger.error(f"Failed to create RuleEngine instance: {e}")
             return None
 
     def clear_all_adapters(self):
-        """Clear adapter chache"""
-        self.logger.info("Clearing all adapters.")
+        """Clear adapter cache"""
+        if self.logger:
+            self.logger.info("Clearing all adapters.")
         self._instance_cache = {}  # Reset the cache
 
     def remove_adapter(self, entity_id: EntityId):
         """Remove a specific adapter from the cache."""
         if entity_id in self._instance_cache:
             del self._instance_cache[entity_id]
-            self.logger.info(f"Removed adapter with ID {entity_id} from cache.")
+            if self.logger:
+                self.logger.info(f"Removed adapter with ID {entity_id} from cache.")
         else:
-            self.logger.warning(f"No adapter found with ID {entity_id} to remove.")
+            if self.logger:
+                self.logger.warning(f"No adapter found with ID {entity_id} to remove.")
 
     def clear_all_services(self):
-        """Clear external services chache"""
-        self.logger.info("Clearing all external services.")
+        """Clear external services cache"""
+        if self.logger:
+            self.logger.info("Clearing all external services.")
         self._service_cache = {}  # Reset the cache
 
     def remove_service(self, external_service_id: EntityId):
-        """Remove a specific external seervice from the cache."""
+        """Remove a specific external service from the cache."""
         if external_service_id in self._service_cache:
             del self._service_cache[external_service_id]
-            self.logger.info(
-                f"Removed external service with ID {external_service_id} from cache."
-            )
+            if self.logger:
+                self.logger.info(
+                    f"Removed external service with ID {external_service_id} "
+                    "from cache."
+                )
         else:
-            self.logger.warning(
-                f"No external service found with ID {external_service_id} to remove."
-            )
+            if self.logger:
+                self.logger.warning(
+                    f"No external service found with ID {external_service_id} "
+                    "to remove."
+                )

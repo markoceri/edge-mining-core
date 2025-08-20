@@ -11,7 +11,7 @@ from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import HomeForecastProviderConfig
 
 HOME_FORECAST_PROVIDER_CONFIG_TYPE_MAP: Dict[
-    HomeForecastProviderAdapter, Optional[HomeForecastProviderConfig]
+    HomeForecastProviderAdapter, Optional[type[HomeForecastProviderConfig]]
 ] = {HomeForecastProviderAdapter.DUMMY: HomeForecastProviderDummyConfig}
 
 HOME_FORECAST_PROVIDER_EXTERNAL_SERVICE_MAP: Dict[

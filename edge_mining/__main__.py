@@ -1,25 +1,19 @@
 """Start Edge Mining."""
 
 import asyncio
-import os
 import sys
 
 import uvicorn
 
 from edge_mining.adapters.infrastructure.api.main_api import app as fastapi_app
 from edge_mining.adapters.infrastructure.api.setup import init_api_dependencies
-from edge_mining.adapters.infrastructure.cli.main_cli import run_interactive_cli
+from edge_mining.adapters.infrastructure.cli.main_cli import run_cli
 from edge_mining.adapters.infrastructure.logging.terminal_logging import TerminalLogger
 from edge_mining.adapters.infrastructure.sheduler.jobs import AutomationScheduler
 from edge_mining.bootstrap import configure_dependencies
 from edge_mining.shared.infrastructure import ApplicationMode, Services
 from edge_mining.shared.settings.settings import AppSettings
 
-# Ensure the src directory is in the Python path
-# This is often needed when running directly with `python -m edge_mining`
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
 
 settings = AppSettings()
 logger = TerminalLogger(log_level=settings.log_level)
@@ -54,7 +48,8 @@ async def main_async():
     if mode == ApplicationMode.STANDARD.value:
         # --- Run the FastAPI server ---
         logger.debug("Starting FastAPI server with Uvicorn...")
-        # Note: Uvicorn might reload and cause DI to run multiple times if --reload is used.
+        # Note: Uvicorn might reload and cause DI to run multiple times if
+        # --reload is used.
         # We should to consider more robust DI setup for production APIs.
         api_config = uvicorn.Config(
             fastapi_app,
@@ -73,16 +68,17 @@ async def main_async():
 
         await asyncio.gather(
             api_server.serve(),  # Run the FastAPI server
-            # scheduler.start()   # Run the automation scheduler
+            scheduler.start(),  # Run the automation scheduler
         )
 
     elif mode == ApplicationMode.CLI.value:
         # Run Click CLI with injected services
-        run_interactive_cli(services, logger)
+        run_cli(services, logger)
 
     else:
         logger.error(
-            f"Unknown run mode: '{mode}'. Use '{ApplicationMode.STANDARD.value}', or '{ApplicationMode.CLI.value}'."
+            f"Unknown run mode: '{mode}'. "
+            f"Use '{ApplicationMode.STANDARD.value}', or '{ApplicationMode.CLI.value}'."
         )
         sys.exit(1)
 

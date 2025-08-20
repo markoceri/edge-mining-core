@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from edge_mining.domain.common import EntityId
+from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.home_load.aggregate_roots import HomeLoadsProfile
 from edge_mining.domain.home_load.entities import HomeForecastProvider
 from edge_mining.domain.home_load.value_objects import ConsumptionForecast
@@ -11,6 +12,10 @@ from edge_mining.domain.home_load.value_objects import ConsumptionForecast
 
 class HomeForecastProviderPort(ABC):
     """Port for the Home Forecast Provider."""
+
+    def __init__(self, home_forecast_provider_type: HomeForecastProviderAdapter):
+        """Initialize the HomeForecast Provider."""
+        self.home_forecast_provider_type = home_forecast_provider_type
 
     @abstractmethod
     def get_home_consumption_forecast(

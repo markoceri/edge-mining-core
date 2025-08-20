@@ -120,15 +120,21 @@ class SqliteForecastProviderRepository(ForecastProviderRepository):
                 f"Error reading ForecastProvider configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: ForecastProviderConfig = FORECAST_PROVIDER_CONFIG_TYPE_MAP.get(
-            adapter_type
+        config_class: Optional[type[ForecastProviderConfig]] = (
+            FORECAST_PROVIDER_CONFIG_TYPE_MAP.get(adapter_type)
         )
         if not config_class:
             raise ForecastProviderConfigurationError(
                 f"Error creating ForecastProvider configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, ForecastProviderConfig):
+            raise ForecastProviderConfigurationError(
+                "Deserialized config is not of type ForecastProviderConfig "
+                f"for adapter type {adapter_type}."
+            )
+        return config_instance
 
     def _row_to_forecast_provider(self, row: sqlite3.Row) -> Optional[ForecastProvider]:
         """Deserialize a row from the database into a ForecastProvider object."""
@@ -169,7 +175,9 @@ class SqliteForecastProviderRepository(ForecastProviderRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(forecast_provider.config.to_dict())
+            config_json: str = ""
+            if forecast_provider.config:
+                config_json = json.dumps(forecast_provider.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -260,7 +268,9 @@ class SqliteForecastProviderRepository(ForecastProviderRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(forecast_provider.config.to_dict())
+            config_json: str = ""
+            if forecast_provider.config:
+                config_json = json.dumps(forecast_provider.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()

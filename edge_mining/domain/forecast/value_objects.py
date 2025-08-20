@@ -26,11 +26,11 @@ class Sun(ValueObject):
     # below the horizon.
     dusk: datetime
     # The time when the sun is up i.e. between sunrise and sunset.
-    daylight: datetime
+    daylight: timedelta
     # The time between astronomical dusk of one day and astronomical dawn of the next.
-    night: datetime
+    night: timedelta
     # The time between dawn and sunrise or between sunset and dusk.
-    twilight: datetime
+    twilight: timedelta
 
     # The number of degrees clockwise from North at which the sun can be seen.
     azimuth: Optional[float] = field(default=None)
@@ -40,26 +40,26 @@ class Sun(ValueObject):
     elevation: Optional[float] = field(default=None)
 
     @property
-    def time_before_sunrise(self) -> datetime:
+    def time_before_sunrise(self) -> Optional[timedelta]:
         """Returns the time remaining until sunrise."""
         if self.sunrise < datetime.now():
             return None
         return self.sunrise - datetime.now()
 
     @property
-    def time_after_sunrise(self) -> datetime:
+    def time_after_sunrise(self) -> Optional[timedelta]:
         """Returns the time elapsed since sunrise."""
         return datetime.now() - self.sunrise
 
     @property
-    def time_before_sunset(self) -> datetime:
+    def time_before_sunset(self) -> Optional[timedelta]:
         """Returns the time remaining until sunset."""
         if self.sunset < datetime.now():
             return None
         return self.sunset - datetime.now()
 
     @property
-    def time_after_sunset(self) -> datetime:
+    def time_after_sunset(self) -> Optional[timedelta]:
         """Returns the time elapsed since sunset."""
         return datetime.now() - self.sunset
 

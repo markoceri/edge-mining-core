@@ -17,11 +17,12 @@ from edge_mining.domain.performance.ports import (
 class DummyMiningPerformanceTracker(MiningPerformanceTrackerPort):
     """Dummy implementation of the MiningPerformanceTrackerPort."""
 
-    def get_current_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
-        # Requires miner status knowledge - should ideally integrate with controller or miner repo
-        # Or query pool API
+    def get_current_hashrate(self, miner_ids: List[EntityId]) -> Optional[HashRate]:
+        # Requires miner status knowledge - should ideally integrate with controller
+        # or miner repo or query pool API
         print(
-            f"DummyMiningPerformanceTracker: Getting hashrate for {miner_id} (Not Implemented Yet)"
+            "DummyMiningPerformanceTracker: Getting hashrate for "
+            f"{miner_ids} (Not Implemented Yet)"
         )
         # Simulate based on a known power? Needs more info.
 

@@ -9,7 +9,7 @@ import sqlite3
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import yaml
 from pydantic import ValidationError
@@ -117,10 +117,12 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
     def _dict_to_rule(self, data: Dict[str, Any]) -> AutomationRule:
         # Deserialize a dictionary (from JSON) into an AutomationRule object
         return AutomationRule(
-            id=uuid.UUID(data["id"]),  # Convert UUID string
+            id=EntityId(uuid.UUID(data["id"])),  # Convert UUID string
             priority=data["priority"],
             name=data["name"],
-            conditions=data["conditions"],
+            description=data["description"],
+            enabled=data["enabled"],
+            conditions=data["conditions"]
         )
 
     def _rule_to_dict(self, rule: AutomationRule) -> Dict[str, Any]:
@@ -128,8 +130,10 @@ class SqliteOptimizationPolicyRepository(OptimizationPolicyRepository):
         return {
             "id": str(rule.id),
             "name": rule.name,
-            "conditions": rule.conditions,
-            "action": rule.action.value,
+            "description": rule.description,
+            "priority": rule.priority,
+            "enabled": rule.enabled,
+            "conditions": rule.conditions
         }
 
     def _row_to_policy(self, row: sqlite3.Row) -> Optional[OptimizationPolicy]:
@@ -323,7 +327,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
     def _get_policy_file_path(self, policy_id: EntityId) -> Path:
         """Get the file path for a policy based on its ID."""
-        return os.path.join(self.policies_directory.resolve(), f"{policy_id}.yaml")
+        return Path(
+            os.path.join(self.policies_directory.resolve(), f"{policy_id}.yaml")
+        )
 
     def _get_policy_file_path_by_name(self, name: str) -> Path:
         """Get a potential file path for a policy based on its name (for searching)."""
@@ -332,10 +338,12 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
             c for c in name if c.isalnum() or c in (" ", "-", "_")
         ).strip()
         safe_name = safe_name.replace(" ", "_").lower()
-        return os.path.join(self.policies_directory, f"{safe_name}.yaml")
+        return Path(
+            os.path.join(self.policies_directory, f"{safe_name}.yaml")
+        )
 
     def _load_policy_from_file(
-        self, file_path: str
+        self, file_path: Path
     ) -> Tuple[Optional[OptimizationPolicy], Optional[MetadataSchema]]:
         """Load a policy from a YAML file."""
         try:
@@ -369,28 +377,32 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
                 policy_schema.id = file_name_id
 
             # Convert to domain objects
-            policy_id = EntityId(file_name_id)  # Use filename as ID
+            policy_id = EntityId(cast(uuid.UUID, file_name_id))  # Use filename as ID
 
             # Convert AutomationRuleSchema to AutomationRule entities
             start_rules = self._load_and_sort_rules(policy_schema.start_rules)
 
             if len(start_rules) > 0:
-                self.logger.debug(
-                    f"Successfully loaded {len(start_rules)} start rules "
-                    f"from {file_path}"
-                )
+                if self.logger:
+                    self.logger.debug(
+                        f"Successfully loaded {len(start_rules)} start rules "
+                        f"from {file_path}"
+                    )
             else:
-                self.logger.warning(f"No start rules found in {file_path}")
+                if self.logger:
+                    self.logger.warning(f"No start rules found in {file_path}")
 
             stop_rules = self._load_and_sort_rules(policy_schema.stop_rules)
 
             if len(stop_rules) > 0:
-                self.logger.debug(
-                    f"Successfully loaded {len(start_rules)} stop rules "
-                    f"from {file_path}"
-                )
+                if self.logger:
+                    self.logger.debug(
+                        f"Successfully loaded {len(start_rules)} stop rules "
+                        f"from {file_path}"
+                    )
             else:
-                self.logger.warning(f"No stop rules found in {file_path}")
+                if self.logger:
+                    self.logger.warning(f"No stop rules found in {file_path}")
 
             # Create the OptimizationPolicy domain object
             policy = OptimizationPolicy(
@@ -452,9 +464,9 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
         # Create AutomationRule with YAML rule support
         return AutomationRule(
-            id=EntityId(rule_schema.id),
+            id=EntityId(cast(uuid.UUID, rule_schema.id)),
             name=rule_schema.name,
-            description=rule_schema.description,
+            description=rule_schema.description or "",
             priority=rule_schema.priority,
             enabled=rule_schema.enabled,
             conditions=rule_schema.conditions.model_dump(),
@@ -613,7 +625,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
         if self.logger:
             self.logger.debug("Getting all policies")
 
-        policies = []
+        policies: List[OptimizationPolicy] = []
 
         if not self.policies_directory.exists():
             if self.logger:
@@ -661,7 +673,8 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
                 last_modified=metadata.last_modified,
             )
             metadata.last_modified = datetime.now().strftime("%Y-%m-%d")
-            metadata.version = metadata.version + 1  # Increment version
+            # Increment version
+            metadata.version = metadata.version + 1 if metadata.version else 1
 
         self._save_policy_to_file(policy, metadata)
 

@@ -133,9 +133,9 @@ class RuleEvaluator:
         """Apply comparison operator."""
         try:
             if operator == OperatorType.EQ:
-                return field_value == expected_value
+                return bool(field_value == expected_value)
             elif operator == OperatorType.NE:
-                return field_value != expected_value
+                return bool(field_value != expected_value)
             elif operator == OperatorType.GT:
                 return float(field_value) > float(expected_value)
             elif operator == OperatorType.GTE:

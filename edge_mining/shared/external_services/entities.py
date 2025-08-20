@@ -4,6 +4,7 @@ of the Edge Mining application.
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 from edge_mining.domain.common import Entity
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
@@ -16,4 +17,4 @@ class ExternalService(Entity):
 
     name: str = ""
     adapter_type: ExternalServiceAdapter = ExternalServiceAdapter.UNKNOWN
-    config: ExternalServiceConfig = None
+    config: Optional[ExternalServiceConfig] = None

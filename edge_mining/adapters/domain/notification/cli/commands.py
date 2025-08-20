@@ -9,7 +9,7 @@ from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     print_external_service_details,
     select_external_service,
 )
-from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.interfaces import ConfigurationServiceInterface
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.notification.common import NotificationAdapter
 from edge_mining.domain.notification.entities import Notifier
@@ -23,6 +23,10 @@ from edge_mining.shared.adapter_maps.notification import (
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import NotificationConfig
 from edge_mining.shared.logging.port import LoggerPort
+
+from edge_mining.adapters.infrastructure.cli.utils import (
+    process_filters, print_configuration
+)
 
 
 def select_notifier_adapter() -> Optional[NotificationAdapter]:
@@ -64,26 +68,27 @@ def handle_notifier_telegram_config() -> NotificationConfig:
 
 def handle_notifier_configuration(
     adapter_type: NotificationAdapter,
-) -> NotificationConfig:
+) -> Optional[NotificationConfig]:
     """Handle configuration for a notifier."""
+    config: Optional[NotificationConfig] = None
     if adapter_type == NotificationAdapter.DUMMY:
-        return handle_notifier_dummy_config()
-    elif adapter_type == NotificationAdapter.TELEGRAM:
-        return handle_notifier_telegram_config()
-    else:
+        config = handle_notifier_dummy_config()
+    if adapter_type == NotificationAdapter.TELEGRAM:
+        config = handle_notifier_telegram_config()
+    if config is None:
         click.echo(
             click.style("Unsupported notifier type selected. Aborting.", fg="red")
         )
-        return None
+    return config
 
 
 def handle_add_notifier(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> Optional[Notifier]:
     """Menu to add a new notifier."""
     click.echo(click.style("\n--- Add Notifier ---", fg="yellow"))
     name: str = click.prompt("Name of the notifier", type=str)
-    adapter_type: NotificationAdapter = select_notifier_adapter()
+    adapter_type: Optional[NotificationAdapter] = select_notifier_adapter()
 
     if adapter_type is None:
         click.echo(click.style("Invalid notifier type selected. Aborting.", fg="red"))
@@ -95,7 +100,7 @@ def handle_add_notifier(
     new_notifier.config = None
     new_notifier.external_service_id = None
 
-    config: NotificationConfig = handle_notifier_configuration(
+    config: Optional[NotificationConfig] = handle_notifier_configuration(
         adapter_type=new_notifier.adapter_type
     )
     if config is None:
@@ -113,8 +118,9 @@ def handle_add_notifier(
         external_services: List[ExternalService] = (
             configuration_service.list_external_services()
         )
+        external_service: Optional[ExternalService] = None
         if external_services:
-            external_service: Optional[ExternalService] = select_external_service(
+            external_service = select_external_service(
                 configuration_service=configuration_service,
                 logger=logger,
                 filter_type=[needed_external_service],
@@ -125,7 +131,8 @@ def handle_add_notifier(
             click.echo("")
             click.echo(
                 click.style(
-                    "No external services configured. Please configure an external service first "
+                    "No external services configured. "
+                    "Please configure an external service first "
                     "and then add a notifier.",
                     fg="yellow",
                 )
@@ -136,11 +143,9 @@ def handle_add_notifier(
                 abort=False,
             )
             if add_external_service:
-                external_service: Optional[ExternalService] = (
-                    handle_add_external_service(
+                external_service = handle_add_external_service(
                         configuration_service=configuration_service,
                         logger=logger,
-                    )
                 )
                 if external_service:
                     click.echo(
@@ -155,8 +160,10 @@ def handle_add_notifier(
             else:
                 click.echo(click.style("Aborting notifier addition.", fg="red"))
                 return None
+
+    added: Optional[Notifier] = None
     try:
-        added: Notifier = configuration_service.add_notifier(
+        added = configuration_service.add_notifier(
             name=new_notifier.name,
             adapter_type=new_notifier.adapter_type,
             config=new_notifier.config,
@@ -177,7 +184,7 @@ def handle_add_notifier(
 
 
 def handle_list_notifiers(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> None:
     """List all notifiers."""
     click.echo(click.style("\n--- Configured Notifiers ---", fg="yellow"))
@@ -201,10 +208,10 @@ def handle_list_notifiers(
 
 
 def select_notifier(
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
     default_id: Optional[EntityId] = None,
-    filter_type: List[NotificationAdapter] = None,
+    filter_type: Optional[List[NotificationAdapter]] = None,
 ) -> Optional[Notifier]:
     """Select a notifier from the list."""
     click.echo(click.style("\n--- Select Notifier ---", fg="yellow"))
@@ -214,11 +221,9 @@ def select_notifier(
         click.echo(click.style("No notifiers configured.", fg="yellow"))
         return None
 
-    if filter_type:
-        # If one element is passed, convert it to a list
-        if not isinstance(filter_type, list):
-            filter_type = [filter_type]
+    filter_type = process_filters(filter_type)
 
+    if filter_type:
         click.echo(
             "Filtering notifier by types: "
             + click.style(f"{', '.join([n.name for n in filter_type])}", fg="blue")
@@ -261,25 +266,13 @@ def print_notifier_config(notifier: Notifier) -> None:
         notifier.config.__class__.__name__ if notifier.config else "---"
     )
     click.echo("| Configuration: " + click.style(f"{configuration_class}", fg="cyan"))
-    for key, value in notifier.config.to_dict().items():
-        if isinstance(value, dict):
-            click.echo(f"|-- {key}:")
-            for sub_key, sub_value in value.items():
-                click.echo(
-                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
-                )
-        else:
-            # For other types, just print the value directly
-            if value is None:
-                value = "None"
-            elif isinstance(value, str):
-                value = f'"{value}"'
-            click.echo(f"|-- {key}: " + click.style(f"{value}", fg="blue"))
+    if notifier.config:
+        print_configuration(notifier.config.to_dict())
 
 
 def print_notifier_details(
     notifier: Notifier,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     show_external_service: bool = False,
     show_optimization_unit_list: bool = False,
 ) -> None:
@@ -340,7 +333,7 @@ def print_notifier_details(
 
 def update_single_notifier(
     notifier: Notifier,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> Optional[Notifier]:
     """Update a single notifier."""
@@ -355,11 +348,22 @@ def update_single_notifier(
     new_notifier.config = notifier.config
     new_notifier.external_service_id = notifier.external_service_id
 
-    config: NotificationConfig = handle_notifier_configuration(
-        adapter_type=new_notifier.adapter_type
+    click.echo("\nDo you want to change the notifier configuration?")
+    change_config: bool = click.confirm(
+        "Change configuration", default=True, prompt_suffix=""
     )
-    if config is None:
-        click.echo(click.style("Invalid configuration. Aborting.", fg="red"))
+    if change_config:
+        config: Optional[NotificationConfig] = handle_notifier_configuration(
+            adapter_type=new_notifier.adapter_type
+        )
+        if config is None:
+            click.echo(click.style("Invalid configuration. Aborting.", fg="red"))
+            return None
+        # Update the notifier configuration
+        new_notifier.config = config
+
+    if new_notifier.config is None:
+        click.echo(click.style("Notifier configuration is required. Aborting.", fg="red"))
         return None
 
     needed_external_service = NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP.get(
@@ -368,15 +372,28 @@ def update_single_notifier(
 
     if new_notifier.external_service_id:
         click.echo("\nCurrent external service: ")
-        print_external_service_details(
-            service=configuration_service.get_external_service(
+        current_external_service = (
+            configuration_service.get_external_service(
                 new_notifier.external_service_id
-            ),
-            configuration_service=configuration_service,
-            show_linked_instances=False,
+            )
         )
+        if current_external_service:
+            print_external_service_details(
+                service=current_external_service,
+                configuration_service=configuration_service,
+                show_linked_instances=False,
+            )
+        else:
+            click.echo(
+                click.style(
+                    "Current external service is not valid. Please select a new one.",
+                    fg="red",
+                )
+            )
 
     if needed_external_service:
+        external_service: Optional[ExternalService] = None
+
         # If external service is needed, check if some one is already configured
         external_services: List[ExternalService] = (
             configuration_service.list_external_services()
@@ -394,12 +411,10 @@ def update_single_notifier(
                     "Change external service", default=True, prompt_suffix=""
                 )
                 if change_external_service:
-                    external_service: Optional[ExternalService] = (
-                        select_external_service(
-                            configuration_service=configuration_service,
-                            logger=logger,
-                            filter_type=[needed_external_service],
-                        )
+                    external_service = select_external_service(
+                        configuration_service=configuration_service,
+                        logger=logger,
+                        filter_type=[needed_external_service],
                     )
 
                     if external_service is None:
@@ -419,20 +434,19 @@ def update_single_notifier(
                         )
                     )
 
-                    # If currest external service not exists, ask to select a new one
+                    # If current external service not exists, ask to select a new one
                     if not current_external_service:
                         click.echo(
                             click.style(
-                                "Current external service is not valid. Please select a new one.",
+                                "Current external service is not valid. "
+                                "Please select a new one.",
                                 fg="red",
                             )
                         )
-                        external_service: Optional[ExternalService] = (
-                            select_external_service(
-                                configuration_service=configuration_service,
-                                logger=logger,
-                                filter_type=[needed_external_service],
-                            )
+                        external_service = select_external_service(
+                            configuration_service=configuration_service,
+                            logger=logger,
+                            filter_type=[needed_external_service],
                         )
                         if external_service is None:
                             click.echo(
@@ -444,30 +458,32 @@ def update_single_notifier(
                             return None
                         new_notifier.external_service_id = external_service.id
 
-                    # Check if the current external service is still valid
-                    if not current_external_service.config.is_valid():
-                        click.echo(
-                            click.style(
-                                "Current external service configuration is not valid. Please select a new one.",
-                                fg="red",
-                            )
+                    if current_external_service and current_external_service.config:
+                        # Check if the current external service is still valid
+                        external_service_valid = current_external_service.config.is_valid(
+                            current_external_service.adapter_type
                         )
-                        external_service: Optional[ExternalService] = (
-                            select_external_service(
+                        if not external_service_valid:
+                            click.echo(
+                                click.style(
+                                    "Current external service configuration is not valid. Please select a new one.",
+                                    fg="red",
+                                )
+                            )
+                            external_service = select_external_service(
                                 configuration_service=configuration_service,
                                 logger=logger,
                                 filter_type=[needed_external_service],
                             )
-                        )
-                        if external_service is None:
-                            click.echo(
-                                click.style(
-                                    "No external service selected. Aborting update.",
-                                    fg="red",
+                            if external_service is None:
+                                click.echo(
+                                    click.style(
+                                        "No external service selected. Aborting update.",
+                                        fg="red",
+                                    )
                                 )
-                            )
-                            return None
-                        new_notifier.external_service_id = external_service.id
+                                return None
+                            new_notifier.external_service_id = external_service.id
             else:
                 # If no external service is configured, ask to select one
                 click.echo(
@@ -476,16 +492,14 @@ def update_single_notifier(
                         fg="yellow",
                     )
                 )
-                add_external_service: bool = click.confirm(
+                add_external_service = click.confirm(
                     "Add external service", default=True, prompt_suffix=""
                 )
                 if add_external_service:
-                    external_service: Optional[ExternalService] = (
-                        select_external_service(
-                            configuration_service=configuration_service,
-                            logger=logger,
-                            filter_type=[needed_external_service],
-                        )
+                    external_service = select_external_service(
+                        configuration_service=configuration_service,
+                        logger=logger,
+                        filter_type=[needed_external_service],
                     )
                     if external_service is None:
                         click.echo(
@@ -506,17 +520,15 @@ def update_single_notifier(
                     fg="yellow",
                 )
             )
-            add_external_service: bool = click.confirm(
+            add_external_service = click.confirm(
                 "Do you want to add an external service now?",
                 default=True,
                 abort=False,
             )
             if add_external_service:
-                external_service: Optional[ExternalService] = (
-                    handle_add_external_service(
-                        configuration_service=configuration_service,
-                        logger=logger,
-                    )
+                external_service = handle_add_external_service(
+                    configuration_service=configuration_service,
+                    logger=logger,
                 )
                 if external_service:
                     click.echo(
@@ -559,7 +571,7 @@ def update_single_notifier(
 
 def delete_single_notifier(
     notifier: Notifier,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> bool:
     """Delete a single notifier."""
@@ -593,7 +605,7 @@ def delete_single_notifier(
 
 def manage_single_notifier_menu(
     notifier: Notifier,
-    configuration_service: ConfigurationService,
+    configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
 ) -> str:
     """Menu for managing a single notifier."""
@@ -641,11 +653,11 @@ def manage_single_notifier_menu(
             click.echo(click.style("Invalid choice. Try again.", fg="red"))
             click.pause("Press any key to return to the menu...")
 
-        return choice
+    return choice
 
 
 def handle_manage_notifier(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> str:
     """Menu to manage a notifier."""
     selected_notifier = select_notifier(configuration_service, logger)
@@ -662,7 +674,7 @@ def handle_manage_notifier(
 
 
 def notifier_menu(
-    configuration_service: ConfigurationService, logger: LoggerPort
+    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
 ) -> str:
     """Menu for managing Notifiers."""
     while True:

@@ -1,6 +1,5 @@
 """Collection of Entities for the User Settings domain of the Edge Mining application."""
 
-import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict
 

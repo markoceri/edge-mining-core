@@ -12,4 +12,4 @@ class MiningReward(ValueObject):
     """Value Object for a mining reward."""
 
     amount: Satoshi
-    timestamp: Timestamp = field(default_factory=datetime.now)
+    timestamp: Timestamp = field(default_factory=Timestamp(datetime.now()))

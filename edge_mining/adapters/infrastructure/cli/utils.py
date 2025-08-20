@@ -1,60 +1,63 @@
 """Utility functions for CLI commands."""
 
-from functools import wraps
+from typing import Any, Optional, Union, List, Dict
 
 import click
 
-from edge_mining.application.services.adapter_service import AdapterService
-from edge_mining.application.services.configuration_service import ConfigurationService
-from edge_mining.application.services.miner_action_service import MinerActionService
-from edge_mining.application.services.optimization_service import OptimizationService
-from edge_mining.shared.infrastructure import Services
-from edge_mining.shared.logging.port import LoggerPort
-
-global _cli_adapter_service, _cli_optimization_service, _cli_miner_action_service, _cli_configuration_service, _cli_logger
-
-_cli_adapter_service: AdapterService = None
-_cli_optimization_service: OptimizationService = None
-_cli_miner_action_service: MinerActionService = None
-_cli_configuration_service: ConfigurationService = None
-_cli_logger: LoggerPort = None
+from edge_mining.application.interfaces import OptimizationServiceInterface
 
 
-# --- Decorator to check if services are initialized ---
-def requires_services(func):
-    """Check if required services are initialized before executing a command."""
+def run_evaluation(optimization_service: OptimizationServiceInterface):
+    """Manually trigger one evaluation cycle."""
+    if not optimization_service:
+        click.echo("Error: Optimization Services not initialized.", err=True)
+        return
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        global _cli_adapter_service, _cli_optimization_service, _cli_miner_action_service, _cli_configuration_service, _cli_logger
+    click.echo("Manually running evaluation cycle...")
+    try:
+        optimization_service.run_all_enabled_units()
+        click.echo("Evaluation cycle finished.")
+    except Exception as e:
+        click.echo(f"Error during evaluation: {e}", err=True)
 
-        # Check if all required services are initialized
-        if not all(
-            [
-                _cli_adapter_service,
-                _cli_optimization_service,
-                _cli_miner_action_service,
-                _cli_configuration_service,
-                _cli_logger,
+
+def process_filters(
+        filter_type: Optional[
+            Union[
+                Any, List[Any]
             ]
-        ):
-            click.echo(
-                click.style("Error: Services not initialized.", fg="red"),
-                err=True,
-            )
-            click.pause("Press any key to return to the menu...")
-            return
-        return func(*args, **kwargs)
+        ] = None
+) -> Optional[
+    Union[
+        List[Any]
+    ]
+]:
+    """Process filter types for CLI commands."""
+    if filter_type is None:
+        return None
 
-    return wrapper
+    # Convert single item to list
+    if not isinstance(filter_type, list):
+        filter_type_list = [filter_type]
+    else:
+        filter_type_list = filter_type
+
+    return filter_type_list
 
 
-# --- Simple way for Dependency Injection using global objects ---
-def set_cli_services(services: Services, logger: LoggerPort):
-    """Set the services for the CLI commands."""
-
-    _cli_adapter_service = (services.adapter_service,)
-    _cli_optimization_service = (services.optimization_service,)
-    _cli_miner_action_service = (services.miner_action_service,)
-    _cli_configuration_service = services.configuration_service
-    _cli_logger = logger
+def print_configuration(configuration: Dict):
+    """Print configuration in a structured format."""
+    for key, value in configuration.items():
+        if isinstance(value, dict):
+            click.echo(f"|-- {key}:")
+            for sub_key, sub_value in value.items():
+                click.echo(
+                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
+                )
+        else:
+            # For other types, just print the value directly
+            if value is None:
+                value = "None"
+            elif isinstance(value, str):
+                value = f'"{value}"'
+            click.echo(f"|-- {key}: " + click.style(f"{value}", fg="blue"))

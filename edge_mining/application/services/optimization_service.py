@@ -8,7 +8,6 @@ It is responsible for:
 """
 
 import asyncio
-import copy
 from typing import List, Optional
 
 from edge_mining.application.interfaces import (
@@ -39,8 +38,10 @@ from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.value_objects import DecisionalContext, Sun
 from edge_mining.shared.logging.port import LoggerPort
 
+from edge_mining.application.interfaces import OptimizationServiceInterface
 
-class OptimizationService:
+
+class OptimizationService(OptimizationServiceInterface):
     """Service for the optimization process."""
 
     def __init__(
@@ -128,7 +129,8 @@ class OptimizationService:
         if not optimization_unit.policy_id:
             if self.logger:
                 self.logger.warning(
-                    f"Optimization unit '{optimization_unit.name}' has no policy assigned. Skipping."
+                    f"Optimization unit '{optimization_unit.name}' "
+                    "has no policy assigned. Skipping."
                 )
             return
         policy: Optional[OptimizationPolicy] = None
@@ -136,7 +138,8 @@ class OptimizationService:
         if not policy:
             if self.logger:
                 self.logger.error(
-                    f"Policy ID {optimization_unit.policy_id} for optimization unit '{optimization_unit.name}' not found. Skipping."
+                    f"Policy ID {optimization_unit.policy_id} for optimization unit "
+                    f"'{optimization_unit.name}' not found. Skipping."
                 )
             return
         else:
@@ -218,14 +221,17 @@ class OptimizationService:
         if not home_forecast_provider:
             if self.logger:
                 self.logger.warning(
-                    f"Home forecast provider for optimization unit '{optimization_unit.name}' (Config ID: {optimization_unit.home_forecast_provider_id}) not found. Skipping forecast provier."
+                    f"Home forecast provider for "
+                    f"optimization unit '{optimization_unit.name}' "
+                    f"(Config ID: {optimization_unit.home_forecast_provider_id}) "
+                    "not found. Skipping forecast provider."
                 )
 
         # --- Mining Performance Tracker ---
         mining_performance_tracker: Optional[MiningPerformanceTrackerPort] = None
         if optimization_unit.performance_tracker_id:
             mining_performance_tracker = (
-                self.adapter_service.get_mining_performace_tracker(
+                self.adapter_service.get_mining_performance_tracker(
                     optimization_unit.performance_tracker_id
                 )
             )
@@ -234,9 +240,10 @@ class OptimizationService:
         if not mining_performance_tracker:
             if self.logger:
                 self.logger.warning(
-                    f"Mining performance tracker for optimization unit '{optimization_unit.name}' "
+                    f"Mining performance tracker for optimization unit "
+                    f"'{optimization_unit.name}' "
                     f"(Config ID: {optimization_unit.performance_tracker_id}) not found. "
-                    f"Skipping mining performace tracker."
+                    f"Skipping mining performance tracker."
                 )
 
         # --- Energy State ---
@@ -246,7 +253,8 @@ class OptimizationService:
             if not energy_state:
                 if self.logger:
                     self.logger.error(
-                        f"Could not retrieve energy state for optimization unit '{optimization_unit.name}'. Skipping."
+                        f"Could not retrieve energy state for optimization unit "
+                        f"'{optimization_unit.name}'. Skipping."
                     )
                 await self._notify_unit(
                     unit_notifiers,
@@ -257,7 +265,8 @@ class OptimizationService:
         except Exception as e:
             if self.logger:
                 self.logger.error(
-                    f"Error getting energy state for optimization unit '{optimization_unit.name}': {e}"
+                    f"Error getting energy state for optimization unit "
+                    f"'{optimization_unit.name}': {e}"
                 )
             await self._notify_unit(
                 unit_notifiers,
@@ -281,12 +290,14 @@ class OptimizationService:
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
-                        f"Error getting solar forecast for optimization unit '{optimization_unit.name}': {e}"
+                        f"Error getting solar forecast for optimization unit "
+                        f"'{optimization_unit.name}': {e}"
                     )
         else:
             if self.logger:
                 self.logger.info(
-                    f"No solar forecast provider configured for optimization unit '{optimization_unit.name}'."
+                    f"No solar forecast provider configured for optimization unit "
+                    f"'{optimization_unit.name}'."
                 )
 
         # --- Home Load Forecast ---
@@ -300,37 +311,42 @@ class OptimizationService:
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
-                        f"Error getting home load forecast for optimization unit '{optimization_unit.name}': {e}"
+                        f"Error getting home load forecast for optimization unit "
+                        f"'{optimization_unit.name}': {e}"
                     )
         else:
             if self.logger:
                 self.logger.info(
-                    f"No home load forecast provider configured for optimization unit '{optimization_unit.name}'."
+                    f"No home load forecast provider configured for optimization unit "
+                    f"'{optimization_unit.name}'."
                 )
-
-        # --- Mining Performance Tracker ---
-        tracker_current_hashrate: Optional[HashRate] = None
-        if mining_performance_tracker:
-            try:
-                # TODO: Provide parameters if needed
-                tracker_current_hashrate = (
-                    mining_performance_tracker.get_current_hashrate()
-                )
-            except Exception as e:
-                if self.logger:
-                    self.logger.warning(
-                        f"Error getting mining performance tracker for optimization unit '{optimization_unit.name}': {e}"
-                    )
-                tracker_current_hashrate = None
 
         # --- Target Miners ---
         # Process each target miner in this optimization unit
         if not optimization_unit.target_miner_ids:
             if self.logger:
                 self.logger.info(
-                    f"No target miners configured for optimization unit '{optimization_unit.name}'."
+                    f"No target miners configured for optimization unit "
+                    f"'{optimization_unit.name}'."
                 )
             return
+
+        # --- Mining Performance Tracker ---
+        tracker_current_hashrate: Optional[HashRate] = None
+        if mining_performance_tracker:
+            try:
+                # TODO: Provide parameters if needed
+                miner_ids = optimization_unit.target_miner_ids
+                tracker_current_hashrate = (
+                    mining_performance_tracker.get_current_hashrate(miner_ids=miner_ids)
+                )
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(
+                        f"Error getting mining performance tracker "
+                        f"for optimization unit '{optimization_unit.name}': {e}"
+                    )
+                tracker_current_hashrate = None
 
         # Creates the Sun object for the current date.
         sun: Sun = self.sun_factory.create_sun_for_date()
@@ -367,7 +383,8 @@ class OptimizationService:
 
         if self.logger:
             self.logger.info(
-                f"Finished processing for optimization unit '{optimization_unit.name}'. {len(miner_processing_tasks)} miners controlled."
+                f"Finished processing for optimization unit '{optimization_unit.name}'. "
+                f"{len(miner_processing_tasks)} miners controlled."
             )
 
     async def _process_single_miner_in_unit(
@@ -387,7 +404,10 @@ class OptimizationService:
                     f"Miner {miner_id} in optimization unit "
                     f"'{optimization_unit.name}' not found in repository."
                 )
-            message = f"Miner {miner_id} not found in optimization unit '{optimization_unit.name}'."
+            message = (
+                f"Miner {miner_id} not found in optimization unit "
+                f"'{optimization_unit.name}'."
+            )
             await self._notify_unit(
                 notifiers,
                 f"Optimizer Error ({optimization_unit.name})",
@@ -398,9 +418,7 @@ class OptimizationService:
         # --- Miner Controller ---
         miner_controller: Optional[MinerControlPort] = None
         if miner.controller_id:
-            miner_controller = self.adapter_service.get_miner_controller(
-                miner.controller_id
-            )
+            miner_controller = self.adapter_service.get_miner_controller(miner)
             if not miner_controller:
                 if self.logger:
                     self.logger.error(
@@ -408,7 +426,10 @@ class OptimizationService:
                         f"(Config ID: {miner.controller_id}) not found/initialized. "
                         f"Using default."
                     )
-                message = f"Controller for miner {miner_id} not found in optimization unit '{optimization_unit.name}'."
+                message = (
+                    f"Controller for miner {miner_id} not found in optimization unit "
+                    f"'{optimization_unit.name}'."
+                )
                 await self._notify_unit(
                     notifiers,
                     f"Optimizer Error ({optimization_unit.name})",
@@ -432,9 +453,9 @@ class OptimizationService:
         # Get current status and make decision
         try:
             # Update miner status using controller
-            current_status = miner_controller.get_miner_status(miner_id)
-            current_hashrate = miner_controller.get_miner_hashrate(miner_id)
-            current_power = miner_controller.get_miner_power(miner_id)
+            current_status = miner_controller.get_miner_status()
+            current_hashrate = miner_controller.get_miner_hashrate()
+            current_power = miner_controller.get_miner_power()
 
             # Update the domain model
             miner.update_status(
@@ -450,18 +471,39 @@ class OptimizationService:
             # can access miner-specific data, without modifying the original context.
             # This is important to keep the context consistent across all miners in
             # the unit.
-            decisional_context = copy.deepcopy(context)
-            decisional_context.miner = miner  # Add the miner to the context
+            decisional_context = DecisionalContext(
+                energy_source=context.energy_source,
+                energy_state=context.energy_state,
+                forecast=context.forecast,
+                home_load_forecast=context.home_load_forecast,
+                tracker_current_hashrate=context.tracker_current_hashrate,
+                sun=context.sun,
+                miner=miner  # Add the miner to the context
+            )
 
             # Create the rule engine instance
             rule_engine = self.adapter_service.get_rule_engine()
+            if not rule_engine:
+                if self.logger:
+                    self.logger.error(
+                        f"Rule engine not available for optimization unit "
+                        f"'{optimization_unit.name}'. Cannot process policy."
+                    )
+                await self._notify_unit(
+                    notifiers,
+                    f"Optimizer Error ({optimization_unit.name} / {miner_id})",
+                    "Rule engine unavailable.",
+                )
+                return
 
             decision = policy.decide_next_action(
                 decisional_context=decisional_context, rule_engine=rule_engine
             )
             if self.logger:
                 self.logger.info(
-                    f"Optimization unit '{optimization_unit.name}', Miner {miner_id}: Status={current_status.name}, Policy='{policy.name}', Decision={decision.name}"
+                    f"Optimization unit '{optimization_unit.name}', "
+                    f"Miner {miner_id}: Status={current_status.name}, "
+                    f"Policy='{policy.name}', Decision={decision.name}"
                 )
 
             await self._execute_miner_decision(
@@ -476,8 +518,8 @@ class OptimizationService:
         except (MinerError, PolicyError) as e:
             if self.logger:
                 self.logger.error(
-                    f"Domain error processing miner {miner_id} in optimization unit '{optimization_unit.name}': {e}",
-                    exc_info=True,
+                    f"Domain error processing miner {miner_id} in optimization unit "
+                    f"'{optimization_unit.name}': {e}"
                 )
             await self._notify_unit(
                 notifiers,
@@ -486,10 +528,11 @@ class OptimizationService:
             )
         except Exception as e:  # Other exceptions (e.g. IO from the controller)
             if self.logger:
-                self.logger.error(
-                    f"Unexpected error processing miner {miner_id} in optimization unit '{optimization_unit.name}': {e}",
-                    exc_info=True,
-                )
+                if self.logger:
+                    self.logger.error(
+                        f"Unexpected error processing miner {miner_id} "
+                        f"in optimization unit '{optimization_unit.name}': {e}"
+                    )
             await self._notify_unit(
                 notifiers,
                 f"Optimizer Error ({optimization_unit.name} / {miner_id})",
@@ -514,7 +557,7 @@ class OptimizationService:
                 self.logger.info(
                     f"Executing START for miner {miner_id} via {type(controller).__name__}"
                 )
-            success = controller.start_miner(miner_id)
+            success = controller.start_miner()
             action_taken = True
             if success:
                 await self._notify_unit(
@@ -536,7 +579,7 @@ class OptimizationService:
                 self.logger.info(
                     f"Executing STOP for miner {miner_id} via {type(controller).__name__}"
                 )
-            success = controller.stop_miner(miner_id)
+            success = controller.stop_miner()
             action_taken = True
             if success:
                 await self._notify_unit(
@@ -554,7 +597,8 @@ class OptimizationService:
         if action_taken and not success:
             if self.logger:
                 self.logger.error(
-                    f"Command {decision.name} for miner {miner_id} failed using controller {type(controller).__name__}."
+                    f"Command {decision.name} for miner {miner_id} failed using "
+                    f"controller {type(controller).__name__}."
                 )
         elif action_taken and success:
             # We might want to update the expected state in the miner entity here,

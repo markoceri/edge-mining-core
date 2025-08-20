@@ -18,14 +18,14 @@ class DummyMinerController(MinerControlPort):
         initial_status: MinerStatus = MinerStatus.UNKNOWN,
         power_max: Watts = Watts(3200.0),
         hashrate_max: HashRate = HashRate(90, "TH/s"),
-        logger: LoggerPort = None,
+        logger: Optional[LoggerPort] = None,
     ):
         self._status = initial_status
         self._power_max = power_max
         self._hashrate_max = hashrate_max
         self.logger = logger
 
-        self._power = 0
+        self._power: Watts = Watts(0.0)
 
     def start_miner(self) -> bool:
         """Start the miner."""
@@ -112,7 +112,8 @@ class DummyMinerController(MinerControlPort):
         if status == MinerStatus.ON:
             # Simulate hash rate
             hash_rate = HashRate(
-                value=random.uniform(20, self._hashrate_max), unit="TH/s"
+                value=random.uniform(0, self._hashrate_max.value),
+                unit=self._hashrate_max.unit
             )
             if self.logger:
                 self.logger.debug(

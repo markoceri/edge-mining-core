@@ -19,9 +19,8 @@ from edge_mining.shared.settings.ports import SettingsRepository
 class InMemorySettingsRepository(SettingsRepository):
     """In-Memory implementation of the SettingsRepository."""
 
-    _SETTINGS_ID = (
-        "global_settings"  # We dont have different users, so we use a single ID.
-    )
+    # We dont have different users, so we use a single ID.
+    _SETTINGS_ID: str = "global_settings"
 
     def __init__(self, initial_settings: Optional[Dict[UserId, SystemSettings]] = None):
         self._settings: Dict[UserId, SystemSettings] = (
@@ -29,7 +28,7 @@ class InMemorySettingsRepository(SettingsRepository):
         )
 
     def get_settings(self, user_id: Optional[UserId]) -> Optional[SystemSettings]:
-        user_id = user_id or self._SETTINGS_ID
+        user_id = user_id or UserId(self._SETTINGS_ID)
         if user_id in self._settings:
             return copy.deepcopy(self._settings[user_id])
         return None
@@ -37,16 +36,15 @@ class InMemorySettingsRepository(SettingsRepository):
     def save_settings(
         self, user_id: Optional[UserId], settings: SystemSettings
     ) -> None:
-        user_id = user_id or self._SETTINGS_ID
+        user_id = user_id or UserId(self._SETTINGS_ID)
         self._settings[user_id] = copy.deepcopy(settings)
 
 
 class SqliteSettingsRepository(SettingsRepository):
     """SQLite implementation of the SettingsRepository."""
 
-    _SETTINGS_ID: UserId = (
-        "global_settings"  # We dont have different users, so we use a single ID.
-    )
+    # We dont have different users, so we use a single ID.
+    _SETTINGS_ID: str = "global_settings"
 
     def __init__(self, db: BaseSqliteRepository):
         self._db = db
@@ -87,7 +85,7 @@ class SqliteSettingsRepository(SettingsRepository):
 
     def get_settings(self, user_id: Optional[UserId]) -> Optional[SystemSettings]:
         self.logger.debug("Getting settings from SQLite.")
-        user_id = user_id or self._SETTINGS_ID
+        user_id = user_id or UserId(self._SETTINGS_ID)
         sql = "SELECT settings_json FROM settings WHERE id = ?"
         conn = self._db.get_connection()
         try:
@@ -111,7 +109,7 @@ class SqliteSettingsRepository(SettingsRepository):
         self, user_id: Optional[UserId], settings: SystemSettings
     ) -> None:
         self.logger.debug("Saving settings to SQLite.")
-        user_id = user_id or self._SETTINGS_ID
+        user_id = user_id or UserId(self._SETTINGS_ID)
         sql = "INSERT OR REPLACE INTO settings (id, settings_json) VALUES (?, ?)"
         conn = self._db.get_connection()
         try:

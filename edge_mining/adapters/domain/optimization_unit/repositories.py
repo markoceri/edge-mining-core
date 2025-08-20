@@ -163,7 +163,7 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
             )
         except (ValueError, KeyError) as e:
             self.logger.error(
-                f"Error deserializing Optimization Unit from DB row: {row}. Errorr: {e}"
+                f"Error deserializing Optimization Unit from DB row: {row}. Error: {e}"
             )
             return None
 
@@ -205,7 +205,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
                 f"Integrity error adding optimization unit '{optimization_unit.name}': {e}"
             )
             raise OptimizationUnitAlreadyExistsError(
-                f"Optimization Unit with ID {optimization_unit.id} or name '{optimization_unit.name}' already exists: {e}"
+                f"Optimization Unit with ID {optimization_unit.id} or name "
+                f"'{optimization_unit.name}' already exists: {e}"
             ) from e
         except Exception as e:
             self.logger.error(

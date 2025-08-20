@@ -447,7 +447,7 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 f"Error reading EnergyMonitor configuration. Invalid type '{adapter_type}'"
             )
 
-        config_class: EnergyMonitorConfig = ENERGY_MONITOR_CONFIG_TYPE_MAP.get(
+        config_class: Optional[type[EnergyMonitorConfig]] = ENERGY_MONITOR_CONFIG_TYPE_MAP.get(
             adapter_type
         )
         if not config_class:
@@ -455,7 +455,13 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
                 f"Error creating EnergyMonitor configuration. Type '{adapter_type}'"
             )
 
-        return config_class.from_dict(data)
+        config_instance = config_class.from_dict(data)
+        if not isinstance(config_instance, EnergyMonitorConfig):
+            raise EnergyMonitorConfigurationError(
+                "Deserialized config is not of type EnergyMonitorConfig "
+                f"for adapter type {adapter_type}."
+            )
+        return config_instance
 
     def _row_to_energy_monitor(self, row: sqlite3.Row) -> Optional[EnergyMonitor]:
         """Convert a SQLite row to an EnergyMonitor object."""
@@ -497,7 +503,9 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
         conn = self._db.get_connection()
         try:
             # Serialize the config to JSON for storage
-            config_json = json.dumps(energy_monitor.config.to_dict())
+            config_json: str = ""
+            if energy_monitor.config:
+                config_json = json.dumps(energy_monitor.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
@@ -583,7 +591,9 @@ class SqliteEnergyMonitorRepository(EnergyMonitorRepository):
         conn = self._db.get_connection()
         try:
             # Serialize the config to JSON for storage
-            config_json = json.dumps(energy_monitor.config.to_dict())
+            config_json: str = ""
+            if energy_monitor.config:
+                config_json = json.dumps(energy_monitor.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()

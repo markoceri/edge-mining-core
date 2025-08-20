@@ -1,6 +1,6 @@
 """Collection of adapters maps for the energy domain of the Edge Mining application."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from edge_mining.adapters.domain.energy.dummy_solar import DummySolarEnergyMonitor
 from edge_mining.adapters.domain.energy.home_assistant_api import (
@@ -11,9 +11,7 @@ from edge_mining.adapters.domain.forecast.home_assistant_api import (
     HomeAssistantForecastProvider,
 )
 from edge_mining.domain.energy.common import EnergyMonitorAdapter, EnergySourceType
-from edge_mining.domain.energy.ports import EnergyMonitorPort
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
-from edge_mining.domain.forecast.ports import ForecastProviderPort
 from edge_mining.shared.adapter_configs.energy import (
     EnergyMonitorDummySolarConfig,
     EnergyMonitorHomeAssistantConfig,
@@ -41,7 +39,14 @@ ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP: Dict[
 
 # Mapping of energy source types to forecast providers configuration classes.
 ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP: Dict[
-    EnergySourceType, Optional[List[EnergyMonitorConfig]]
+    EnergySourceType, Optional[
+        List[
+            Union[
+                type[ForecastProviderDummySolarConfig],
+                type[ForecastProviderHomeAssistantConfig]
+            ]
+        ]
+    ]
 ] = {
     EnergySourceType.SOLAR: [
         ForecastProviderDummySolarConfig,
@@ -55,7 +60,14 @@ ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP: Dict[
 
 # Mapping of energy source types to forecast providers instance classes.
 ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CLASS_MAP: Dict[
-    EnergySourceType, Optional[List[EnergyMonitorPort]]
+    EnergySourceType, Optional[
+        List[
+            Union[
+                type[DummySolarForecastProvider],
+                type[HomeAssistantForecastProvider]
+            ]
+        ]
+    ]
 ] = {
     EnergySourceType.SOLAR: [
         DummySolarForecastProvider,
@@ -81,7 +93,14 @@ ENERGY_SOURCE_TYPE_ENERGY_MONITOR_MAP: Dict[
 }
 
 ENERGY_SOURCE_TYPE_ENERGY_MONITOR_CLASS_MAP: Dict[
-    EnergySourceType, Optional[List[EnergyMonitorPort]]
+    EnergySourceType, Optional[
+        List[
+            Union[
+                type[DummySolarEnergyMonitor],
+                type[HomeAssistantAPIEnergyMonitor]
+            ]
+        ]
+    ]
 ] = {
     EnergySourceType.SOLAR: [
         DummySolarEnergyMonitor,
@@ -94,7 +113,9 @@ ENERGY_SOURCE_TYPE_ENERGY_MONITOR_CLASS_MAP: Dict[
 }
 
 ENERGY_MONITOR_CONFIG_TYPE_MAP: Dict[
-    EnergyMonitorAdapter, Optional[EnergyMonitorConfig]
+    EnergyMonitorAdapter, Optional[
+        type[EnergyMonitorConfig]
+    ]
 ] = {
     EnergyMonitorAdapter.DUMMY_SOLAR: EnergyMonitorDummySolarConfig,
     EnergyMonitorAdapter.HOME_ASSISTANT_API: EnergyMonitorHomeAssistantConfig,

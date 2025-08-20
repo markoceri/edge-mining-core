@@ -13,4 +13,4 @@ class ConsumptionForecast(ValueObject):
 
     # Predicted consumption for a future period
     predicted_watts: Dict[Timestamp, Watts] = field(default_factory=dict)
-    generated_at: Timestamp = field(default_factory=datetime.now)
+    generated_at: Timestamp = field(default_factory=Timestamp(datetime.now()))

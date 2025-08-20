@@ -9,7 +9,7 @@ from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.shared.interfaces.config import ForecastProviderConfig
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class ForecastProviderDummySolarConfig(ForecastProviderConfig):
     """
     Forecast provider configuration. It encapsulate the configuration parameters
@@ -19,7 +19,7 @@ class ForecastProviderDummySolarConfig(ForecastProviderConfig):
     latitude: float = field(default=41.90)
     longitude: float = field(default=12.49)
     capacity_kwp: float = field(default=0.0)
-    efficency_percent: float = field(default=80.0)
+    efficiency_percent: float = field(default=80.0)
     production_start_hour: int = field(default=6)
     production_end_hour: int = field(default=20)
 

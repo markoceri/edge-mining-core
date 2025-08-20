@@ -6,6 +6,8 @@ from edge_mining.domain.energy.common import EnergyMonitorAdapter
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.home_load.common import HomeForecastProviderAdapter
 from edge_mining.domain.miner.common import MinerControllerAdapter
+from edge_mining.domain.notification.common import NotificationAdapter
+from edge_mining.domain.performance.common import MiningPerformanceTrackerAdapter
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 
 
@@ -35,7 +37,7 @@ class NotificationConfig(Configuration):
     """Base interface for Notification configurations."""
 
     @abstractmethod
-    def is_valid(self, adapter_type: str) -> bool:
+    def is_valid(self, adapter_type: NotificationAdapter) -> bool:
         """Check if the configuration is valid for the given adapter type."""
         pass
 
@@ -71,7 +73,7 @@ class MiningPerformanceTrackerConfig(Configuration):
     """Base interface for Mining Performance Tracker configurations."""
 
     @abstractmethod
-    def is_valid(self, adapter_type: str) -> bool:
+    def is_valid(self, adapter_type: MiningPerformanceTrackerAdapter) -> bool:
         """Check if the configuration is valid for the given adapter type."""
         pass
 

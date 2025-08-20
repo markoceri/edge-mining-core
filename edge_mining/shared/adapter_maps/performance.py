@@ -11,6 +11,6 @@ from edge_mining.shared.adapter_configs.performance import (
 )
 from edge_mining.shared.interfaces.config import MiningPerformanceTrackerConfig
 
-MINING_PERFORMACE_TRACKER_CONFIG_TYPE_MAP: Dict[
-    MiningPerformanceTrackerAdapter, Optional[MiningPerformanceTrackerConfig]
+MINING_PERFORMANCE_TRACKER_CONFIG_TYPE_MAP: Dict[
+    MiningPerformanceTrackerAdapter, Optional[type[MiningPerformanceTrackerConfig]]
 ] = {MiningPerformanceTrackerAdapter.DUMMY: MiningPerformanceTrackerDummyConfig}
