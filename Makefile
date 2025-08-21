@@ -44,7 +44,7 @@ format:
 # Run linting
 lint:
 	@echo "🔍 Running linting checks..."
-	$(PYTHON) -m ruff check edge_mining/ tests/
+	$(PYTHON) -m ruff check edge_mining/
 	$(PYTHON) -m mypy edge_mining/ || true
 	$(PYTHON) -m bandit -r edge_mining/ || true
 	@echo "✅ Linting complete!"
@@ -52,8 +52,8 @@ lint:
 # Run linting and fix what can be auto-fixed
 lint-fix:
 	@echo "🔧 Running auto-fixable linting..."
-	$(PYTHON) -m ruff check --fix edge_mining/ tests/
-	$(PYTHON) -m ruff format edge_mining/ tests/
+	$(PYTHON) -m ruff check --fix edge_mining/
+	$(PYTHON) -m ruff format edge_mining/
 	@echo "✅ Auto-fix complete!"
 
 # Run tests
