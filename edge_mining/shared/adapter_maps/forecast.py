@@ -13,16 +13,12 @@ from edge_mining.shared.adapter_configs.forecast import (
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import ForecastProviderConfig
 
-FORECAST_PROVIDER_CONFIG_TYPE_MAP: Dict[
-    ForecastProviderAdapter, Optional[type[ForecastProviderConfig]]
-] = {
+FORECAST_PROVIDER_CONFIG_TYPE_MAP: Dict[ForecastProviderAdapter, Optional[type[ForecastProviderConfig]]] = {
     ForecastProviderAdapter.DUMMY_SOLAR: ForecastProviderDummySolarConfig,
     ForecastProviderAdapter.HOME_ASSISTANT_API: ForecastProviderHomeAssistantConfig,
 }
 
-FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP: Dict[
-    ForecastProviderAdapter, Optional[ExternalServiceAdapter]
-] = {
+FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP: Dict[ForecastProviderAdapter, Optional[ExternalServiceAdapter]] = {
     ForecastProviderAdapter.DUMMY_SOLAR: None,  # Dummy does not use an external service
     ForecastProviderAdapter.HOME_ASSISTANT_API: ExternalServiceAdapter.HOME_ASSISTANT_API,
 }

@@ -49,13 +49,9 @@ class InMemoryNotifierRepository(NotifierRepository):
     def remove(self, notifier_id: EntityId) -> None:
         self._notifiers = [n for n in self._notifiers if n.id != notifier_id]
 
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[Notifier]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[Notifier]:
         """Retrieve a list of notifiers by their associated external service ID."""
-        return [
-            n for n in self._notifiers if n.external_service_id == external_service_id
-        ]
+        return [n for n in self._notifiers if n.external_service_id == external_service_id]
 
 
 class SqliteNotifierRepository(NotifierRepository):
@@ -69,10 +65,7 @@ class SqliteNotifierRepository(NotifierRepository):
 
     def _create_tables(self):
         """Create the necessary table for the Notifier if it does not exist."""
-        self.logger.debug(
-            f"Ensuring SQLite tables exist for "
-            f"Notifier Repository in {self._db.db_path}..."
-        )
+        self.logger.debug(f"Ensuring SQLite tables exist for Notifier Repository in {self._db.db_path}...")
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS notifiers (
@@ -99,30 +92,21 @@ class SqliteNotifierRepository(NotifierRepository):
             if conn:
                 conn.close()
 
-    def _deserialize_config(
-        self, adapter_type: NotificationAdapter, config_json: str
-    ) -> NotificationConfig:
+    def _deserialize_config(self, adapter_type: NotificationAdapter, config_json: str) -> NotificationConfig:
         """Deserialize a JSON string into NotificationConfig object."""
         data: dict = json.loads(config_json)
 
         if adapter_type not in NOTIFIER_CONFIG_TYPE_MAP:
-            raise NotifierConfigurationError(
-                f"Error reading Notifier configuration. Invalid type '{adapter_type}'"
-            )
+            raise NotifierConfigurationError(f"Error reading Notifier configuration. Invalid type '{adapter_type}'")
 
-        config_class: Optional[type[NotificationConfig]] = NOTIFIER_CONFIG_TYPE_MAP.get(
-            adapter_type
-        )
+        config_class: Optional[type[NotificationConfig]] = NOTIFIER_CONFIG_TYPE_MAP.get(adapter_type)
         if not config_class:
-            raise NotifierConfigurationError(
-                f"Error creating Notifier configuration. Type '{adapter_type}'"
-            )
+            raise NotifierConfigurationError(f"Error creating Notifier configuration. Type '{adapter_type}'")
 
         config_instance = config_class.from_dict(data)
         if not isinstance(config_instance, NotificationConfig):
             raise NotifierConfigurationError(
-                f"Deserialized config is not of type NotificationConfig "
-                f"for adapter type '{adapter_type}'"
+                f"Deserialized config is not of type NotificationConfig for adapter type '{adapter_type}'"
             )
         return config_instance
 
@@ -141,16 +125,10 @@ class SqliteNotifierRepository(NotifierRepository):
                 name=row["name"],
                 adapter_type=adapter_type,
                 config=config,
-                external_service_id=(
-                    EntityId(row["external_service_id"])
-                    if row["external_service_id"]
-                    else None
-                ),
+                external_service_id=(EntityId(row["external_service_id"]) if row["external_service_id"] else None),
             )
         except (ValueError, KeyError) as e:
-            self.logger.error(
-                f"Error deserializing Notifier from DB row: {row}. Error: {e}"
-            )
+            self.logger.error(f"Error deserializing Notifier from DB row: {row}. Error: {e}")
             return None
 
     def add(self, notifier: Notifier) -> None:
@@ -183,8 +161,7 @@ class SqliteNotifierRepository(NotifierRepository):
             self.logger.error(f"Integrity error adding notifier {notifier.id}: {e}")
             # Could mean that the ID already exists
             raise NotifierAlreadyExistsError(
-                f"notifier with ID {notifier.id} already exists "
-                f"or constraint violation: {e}"
+                f"notifier with ID {notifier.id} already exists or constraint violation: {e}"
             ) from e
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error adding notifier {notifier.id}: {e}")
@@ -258,9 +235,7 @@ class SqliteNotifierRepository(NotifierRepository):
                     ),
                 )
                 if cursor.rowcount == 0:
-                    raise NotifierNotFoundError(
-                        f"Notifier with ID {notifier.id} not found."
-                    )
+                    raise NotifierNotFoundError(f"Notifier with ID {notifier.id} not found.")
         except sqlite3.Error as e:
             self.logger.error(f"SQLite error updating notifier {notifier.id}: {e}")
             raise NotifierError(f"DB error updating notifier: {e}") from e
@@ -278,9 +253,7 @@ class SqliteNotifierRepository(NotifierRepository):
                 cursor = conn.cursor()
                 cursor.execute(sql, (notifier_id,))
                 if cursor.rowcount == 0:
-                    self.logger.warning(
-                        f"Attempted to remove non-existent notifier {notifier_id}."
-                    )
+                    self.logger.warning(f"Attempted to remove non-existent notifier {notifier_id}.")
                     # There is no need to raise an exception here, removing a
                     # non-existent is idempotent.
         except sqlite3.Error as e:
@@ -290,13 +263,9 @@ class SqliteNotifierRepository(NotifierRepository):
             if conn:
                 conn.close()
 
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[Notifier]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[Notifier]:
         """Retrieve a list of notifiers by their associated external service ID."""
-        self.logger.debug(
-            f"Retrieving notifiers for external service {external_service_id} from SQLite repository."
-        )
+        self.logger.debug(f"Retrieving notifiers for external service {external_service_id} from SQLite repository.")
         sql = "SELECT * FROM notifiers WHERE external_service_id = ?;"
         conn = self._db.get_connection()
         try:
@@ -310,9 +279,7 @@ class SqliteNotifierRepository(NotifierRepository):
                     notifiers.append(notifier)
             return notifiers
         except sqlite3.Error as e:
-            self.logger.error(
-                f"SQLite error retrieving notifiers for external service {external_service_id}: {e}"
-            )
+            self.logger.error(f"SQLite error retrieving notifiers for external service {external_service_id}: {e}")
             return []
         finally:
             if conn:

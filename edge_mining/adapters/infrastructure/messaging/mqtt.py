@@ -23,9 +23,7 @@ class BaseMQTTBus:
         self.broker_port = broker_port
         self.username = username
         self.password = password
-        self.client_id = (
-            f"{client_id}-{int(time.time())}"  # Add timestamp for more uniqueness
-        )
+        self.client_id = f"{client_id}-{int(time.time())}"  # Add timestamp for more uniqueness
         self._connected = threading.Event()
         self._client: Optional[mqtt.Client] = None
         self._thread: Optional[threading.Thread] = None

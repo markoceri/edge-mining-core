@@ -43,9 +43,7 @@ def print_configuration(configuration: Dict):
         if isinstance(value, dict):
             click.echo(f"|-- {key}:")
             for sub_key, sub_value in value.items():
-                click.echo(
-                    f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue")
-                )
+                click.echo(f"|   |-- {sub_key}: " + click.style(f"{sub_value}", fg="blue"))
         else:
             # For other types, just print the value directly
             if value is None:

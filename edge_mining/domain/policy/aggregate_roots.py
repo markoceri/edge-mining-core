@@ -29,23 +29,16 @@ class OptimizationPolicy(AggregateRoot):
         self.start_rules.sort(key=lambda r: r.priority, reverse=True)
         self.stop_rules.sort(key=lambda r: r.priority, reverse=True)
 
-    def decide_next_action(
-        self, decisional_context: DecisionalContext, rule_engine: RuleEngine
-    ) -> MiningDecision:
+    def decide_next_action(self, decisional_context: DecisionalContext, rule_engine: RuleEngine) -> MiningDecision:
         """
         Applies the policy rules to determine the next action.
         This is the core decision-making logic.
         """
 
         if not decisional_context.miner:
-            raise ValueError(
-                "Error while evaluating policy: Miner is not set in the context."
-            )
+            raise ValueError("Error while evaluating policy: Miner is not set in the context.")
 
-        print(
-            f"Policy '{self.name}': Evaluating state "
-            f"for miner status {decisional_context.miner.status.name}"
-        )
+        print(f"Policy '{self.name}': Evaluating state for miner status {decisional_context.miner.status.name}")
 
         # Logic:
         # 1. If miner is OFF, check START rules. If any match -> START_MINING

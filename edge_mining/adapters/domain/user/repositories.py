@@ -23,9 +23,7 @@ class InMemorySettingsRepository(SettingsRepository):
     _SETTINGS_ID: str = "global_settings"
 
     def __init__(self, initial_settings: Optional[Dict[UserId, SystemSettings]] = None):
-        self._settings: Dict[UserId, SystemSettings] = (
-            copy.deepcopy(initial_settings) if initial_settings else {}
-        )
+        self._settings: Dict[UserId, SystemSettings] = copy.deepcopy(initial_settings) if initial_settings else {}
 
     def get_settings(self, user_id: Optional[UserId]) -> Optional[SystemSettings]:
         user_id = user_id or UserId(self._SETTINGS_ID)
@@ -33,9 +31,7 @@ class InMemorySettingsRepository(SettingsRepository):
             return copy.deepcopy(self._settings[user_id])
         return None
 
-    def save_settings(
-        self, user_id: Optional[UserId], settings: SystemSettings
-    ) -> None:
+    def save_settings(self, user_id: Optional[UserId], settings: SystemSettings) -> None:
         user_id = user_id or UserId(self._SETTINGS_ID)
         self._settings[user_id] = copy.deepcopy(settings)
 
@@ -54,10 +50,7 @@ class SqliteSettingsRepository(SettingsRepository):
 
     def _create_tables(self):
         """Create the necessary tables for the Settings domain if they do not exist."""
-        self.logger.debug(
-            f"Ensuring SQLite tables exist "
-            f"for Settings Repository in {self._db.db_path}..."
-        )
+        self.logger.debug(f"Ensuring SQLite tables exist for Settings Repository in {self._db.db_path}...")
         sql_statements = [
             """
             CREATE TABLE IF NOT EXISTS settings (
@@ -105,17 +98,13 @@ class SqliteSettingsRepository(SettingsRepository):
             if conn:
                 conn.close()
 
-    def save_settings(
-        self, user_id: Optional[UserId], settings: SystemSettings
-    ) -> None:
+    def save_settings(self, user_id: Optional[UserId], settings: SystemSettings) -> None:
         self.logger.debug("Saving settings to SQLite.")
         user_id = user_id or UserId(self._SETTINGS_ID)
         sql = "INSERT OR REPLACE INTO settings (id, settings_json) VALUES (?, ?)"
         conn = self._db.get_connection()
         try:
-            settings_json = json.dumps(
-                settings.settings
-            )  # Serialize the inner dictionary
+            settings_json = json.dumps(settings.settings)  # Serialize the inner dictionary
             with conn:
                 conn.execute(sql, (user_id, settings_json))
         except sqlite3.Error as e:

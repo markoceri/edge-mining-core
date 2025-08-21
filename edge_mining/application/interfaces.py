@@ -49,9 +49,7 @@ class AdapterServiceInterface(ABC):
     """Base interface for all adapter services in the Edge Mining application."""
 
     @abstractmethod
-    def get_energy_monitor(
-        self, energy_source: EnergySource
-    ) -> Optional[EnergyMonitorPort]:
+    def get_energy_monitor(self, energy_source: EnergySource) -> Optional[EnergyMonitorPort]:
         """Get an energy monitor adapter instance."""
 
     @abstractmethod
@@ -71,9 +69,7 @@ class AdapterServiceInterface(ABC):
         """Get a list of specific notifiers adapter instance by IDs."""
 
     @abstractmethod
-    def get_forecast_provider(
-        self, energy_source: EnergySource
-    ) -> Optional[ForecastProviderPort]:
+    def get_forecast_provider(self, energy_source: EnergySource) -> Optional[ForecastProviderPort]:
         """Get a forecast provider adapter instance."""
 
     @abstractmethod
@@ -83,15 +79,11 @@ class AdapterServiceInterface(ABC):
         """Get an home load forecast provider adapter instance."""
 
     @abstractmethod
-    def get_mining_performance_tracker(
-        self, tracker_id: EntityId
-    ) -> Optional[MiningPerformanceTrackerPort]:
+    def get_mining_performance_tracker(self, tracker_id: EntityId) -> Optional[MiningPerformanceTrackerPort]:
         """Get a mining performance tracker adapter instance."""
 
     @abstractmethod
-    def get_external_service(
-        self, external_service_id: EntityId
-    ) -> Optional[ExternalServicePort]:
+    def get_external_service(self, external_service_id: EntityId) -> Optional[ExternalServicePort]:
         """Get a specific external service instance by ID."""
 
     @abstractmethod
@@ -127,15 +119,11 @@ class MinerActionServiceInterface(ABC):
     """Base interface for miner action services in the Edge Mining application."""
 
     @abstractmethod
-    async def start_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def start_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Start a specific miner."""
 
     @abstractmethod
-    async def stop_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def stop_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Stop a specific miner."""
 
     @abstractmethod
@@ -214,9 +202,7 @@ class ConfigurationServiceInterface(ABC):
         """Add a miner controller to the system."""
 
     @abstractmethod
-    def get_miner_controller(
-        self, controller_id: EntityId
-    ) -> Optional[MinerController]:
+    def get_miner_controller(self, controller_id: EntityId) -> Optional[MinerController]:
         """Get a miner controller by its ID."""
 
     @abstractmethod
@@ -313,15 +299,11 @@ class ConfigurationServiceInterface(ABC):
         """Add a rule to a policy."""
 
     @abstractmethod
-    def get_policy_rules(
-        self, policy_id: EntityId, rule_type: RuleType
-    ) -> List[AutomationRule]:
+    def get_policy_rules(self, policy_id: EntityId, rule_type: RuleType) -> List[AutomationRule]:
         """Get all rules of a policy."""
 
     @abstractmethod
-    def get_policy_rule(
-        self, policy_id: EntityId, rule_id: EntityId
-    ) -> Optional[AutomationRule]:
+    def get_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> Optional[AutomationRule]:
         """Get a rule by its ID."""
 
     @abstractmethod
@@ -338,9 +320,7 @@ class ConfigurationServiceInterface(ABC):
         """Update a rule in a policy."""
 
     @abstractmethod
-    def delete_policy_rule(
-        self, policy_id: EntityId, rule_id: EntityId
-    ) -> AutomationRule:
+    def delete_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
         """Delete a rule from a policy."""
 
     @abstractmethod
@@ -381,9 +361,7 @@ class ConfigurationServiceInterface(ABC):
         """Create an optimization unit into the system."""
 
     @abstractmethod
-    def get_optimization_unit(
-        self, unit_id: EntityId
-    ) -> Optional[EnergyOptimizationUnit]:
+    def get_optimization_unit(self, unit_id: EntityId) -> Optional[EnergyOptimizationUnit]:
         """Get an optimization unit by its ID."""
 
     @abstractmethod
@@ -431,21 +409,15 @@ class ConfigurationServiceInterface(ABC):
         """Deactivate an optimization unit in the system."""
 
     @abstractmethod
-    def add_miner_to_optimization_unit(
-        self, unit_id: EntityId, miner_id: EntityId
-    ) -> EnergyOptimizationUnit:
+    def add_miner_to_optimization_unit(self, unit_id: EntityId, miner_id: EntityId) -> EnergyOptimizationUnit:
         """Add a miner to an optimization unit."""
 
     @abstractmethod
-    def remove_miner_from_optimization_unit(
-        self, unit_id: EntityId, miner_id: EntityId
-    ) -> EnergyOptimizationUnit:
+    def remove_miner_from_optimization_unit(self, unit_id: EntityId, miner_id: EntityId) -> EnergyOptimizationUnit:
         """Remove a miner from an optimization unit."""
 
     @abstractmethod
-    def assign_policy_to_optimization_unit(
-        self, unit_id: EntityId, policy_id: EntityId
-    ) -> EnergyOptimizationUnit:
+    def assign_policy_to_optimization_unit(self, unit_id: EntityId, policy_id: EntityId) -> EnergyOptimizationUnit:
         """Assign a policy to an optimization unit."""
 
     @abstractmethod
@@ -467,9 +439,7 @@ class ConfigurationServiceInterface(ABC):
         """Assign a performance tracker to an optimization unit."""
 
     @abstractmethod
-    def add_notifier_to_optimization_unit(
-        self, unit_id: EntityId, notifier_id: EntityId
-    ) -> EnergyOptimizationUnit:
+    def add_notifier_to_optimization_unit(self, unit_id: EntityId, notifier_id: EntityId) -> EnergyOptimizationUnit:
         """Add a notifier to an optimization unit."""
 
     @abstractmethod
@@ -479,9 +449,7 @@ class ConfigurationServiceInterface(ABC):
         """Remove a notifier from an optimization unit."""
 
     @abstractmethod
-    def check_optimization_unit(
-        self, optimization_unit: EnergyOptimizationUnit
-    ) -> bool:
+    def check_optimization_unit(self, optimization_unit: EnergyOptimizationUnit) -> bool:
         """Check if an optimization unit is valid and can be used."""
 
     # --- External Service Management ---
@@ -503,9 +471,7 @@ class ConfigurationServiceInterface(ABC):
         """List all external services in the system."""
 
     @abstractmethod
-    def get_entities_by_external_service(
-        self, service_id: EntityId
-    ) -> ExternalServiceLinkedEntities:
+    def get_entities_by_external_service(self, service_id: EntityId) -> ExternalServiceLinkedEntities:
         """Get entities associated with this external service"""
 
     @abstractmethod
@@ -628,15 +594,11 @@ class ConfigurationServiceInterface(ABC):
         """Set a forecast provider to an energy source."""
 
     @abstractmethod
-    def list_energy_sources_by_monitor(
-        self, monitor_id: EntityId
-    ) -> List[EnergySource]:
+    def list_energy_sources_by_monitor(self, monitor_id: EntityId) -> List[EnergySource]:
         """List all energy sources that use a specific energy monitor."""
 
     @abstractmethod
-    def list_energy_sources_by_forecast_provider(
-        self, forecast_provider_id: EntityId
-    ) -> List[EnergySource]:
+    def list_energy_sources_by_forecast_provider(self, forecast_provider_id: EntityId) -> List[EnergySource]:
         """List all energy sources that use a specific forecast provider."""
 
     @abstractmethod
@@ -655,9 +617,7 @@ class ConfigurationServiceInterface(ABC):
         """Create a new forecast provider."""
 
     @abstractmethod
-    def get_forecast_provider(
-        self, provider_id: EntityId
-    ) -> Optional[ForecastProvider]:
+    def get_forecast_provider(self, provider_id: EntityId) -> Optional[ForecastProvider]:
         """Get a forecast provider by its ID."""
 
     @abstractmethod

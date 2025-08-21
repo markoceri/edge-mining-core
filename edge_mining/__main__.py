@@ -14,7 +14,6 @@ from edge_mining.bootstrap import configure_dependencies
 from edge_mining.shared.infrastructure import ApplicationMode, Services
 from edge_mining.shared.settings.settings import AppSettings
 
-
 settings = AppSettings()
 logger = TerminalLogger(log_level=settings.log_level)
 
@@ -77,13 +76,13 @@ async def main_async():
 
     else:
         logger.error(
-            f"Unknown run mode: '{mode}'. "
-            f"Use '{ApplicationMode.STANDARD.value}', or '{ApplicationMode.CLI.value}'."
+            f"Unknown run mode: '{mode}'. Use '{ApplicationMode.STANDARD.value}', or '{ApplicationMode.CLI.value}'."
         )
         sys.exit(1)
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the Edge Mining application (synchronous wrapper)."""
     try:
         asyncio.run(main_async())
     except KeyboardInterrupt:
@@ -94,3 +93,7 @@ if __name__ == "__main__":
         # Sure to flush logs before exiting
         logger.shutdown()
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

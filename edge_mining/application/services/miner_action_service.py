@@ -34,9 +34,7 @@ class MinerActionService(MinerActionServiceInterface):
         # Infrastructure
         self.logger = logger
 
-    async def _notify(
-        self, notifiers: List[NotificationPort], title: str, message: str
-    ):
+    async def _notify(self, notifiers: List[NotificationPort], title: str, message: str):
         """Sends a notification using the configured notifiers."""
 
         for notifier in notifiers:
@@ -48,9 +46,7 @@ class MinerActionService(MinerActionServiceInterface):
                         self.logger.error(f"Failed to send notification: {e}")
 
     # --- Miner Actions ---
-    async def start_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def start_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Starts the specified miner."""
         if self.logger:
             self.logger.info(f"Starting miner {miner_id}")
@@ -64,9 +60,7 @@ class MinerActionService(MinerActionServiceInterface):
         miner_controller = self.adapter_service.get_miner_controller(miner)
 
         if not miner_controller:
-            raise MinerControllerConfigurationError(
-                f"Miner controller for miner {miner_id} is not configured."
-            )
+            raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status()
@@ -81,9 +75,7 @@ class MinerActionService(MinerActionServiceInterface):
 
         if success:
             if self.logger:
-                self.logger.info(
-                    f"Miner {miner.id} ({miner.name}) started successfully."
-                )
+                self.logger.info(f"Miner {miner.id} ({miner.name}) started successfully.")
 
             # Update domain state
             miner.turn_on()
@@ -99,9 +91,7 @@ class MinerActionService(MinerActionServiceInterface):
 
         return success
 
-    async def stop_miner(
-        self, miner_id: EntityId, notifiers: List[NotificationPort]
-    ) -> bool:
+    async def stop_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
         """Stops the specified miner."""
         if self.logger:
             self.logger.info(f"Stopping miner {miner_id}")
@@ -115,9 +105,7 @@ class MinerActionService(MinerActionServiceInterface):
         miner_controller = self.adapter_service.get_miner_controller(miner)
 
         if not miner_controller:
-            raise MinerControllerConfigurationError(
-                f"Miner controller for miner {miner_id} is not configured."
-            )
+            raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status()
@@ -132,9 +120,7 @@ class MinerActionService(MinerActionServiceInterface):
 
         if success:
             if self.logger:
-                self.logger.info(
-                    f"Miner {miner.id} ({miner.name}) stopped successfully."
-                )
+                self.logger.info(f"Miner {miner.id} ({miner.name}) stopped successfully.")
 
             # Update domain state
             miner.turn_off()
@@ -164,9 +150,7 @@ class MinerActionService(MinerActionServiceInterface):
         miner_controller = self.adapter_service.get_miner_controller(miner)
 
         if not miner_controller:
-            raise MinerControllerConfigurationError(
-                f"Miner controller for miner {miner_id} is not configured."
-            )
+            raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status()
@@ -192,9 +176,7 @@ class MinerActionService(MinerActionServiceInterface):
         miner_controller = self.adapter_service.get_miner_controller(miner)
 
         if not miner_controller:
-            raise MinerControllerConfigurationError(
-                f"Miner controller for miner {miner_id} is not configured."
-            )
+            raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
         current_status = miner_controller.get_miner_status()

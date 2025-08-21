@@ -13,8 +13,6 @@ class Notifier(Entity):
     """Entity for an energy monitor."""
 
     name: str = ""
-    adapter_type: NotificationAdapter = (
-        NotificationAdapter.DUMMY
-    )  # Default to dummy notifier
+    adapter_type: NotificationAdapter = NotificationAdapter.DUMMY  # Default to dummy notifier
     config: Optional[NotificationConfig] = None
     external_service_id: Optional[EntityId] = None

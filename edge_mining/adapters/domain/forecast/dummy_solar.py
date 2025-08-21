@@ -116,9 +116,7 @@ class DummySolarForecastProvider(ForecastProviderPort):
 
             if self.production_start_hour < hour < self.production_end_hour:
                 # Simple sinusoidal based on hour
-                solar_factor = max(
-                    0, 1 - abs(hour - peak_hour) / (total_production_hours / 2)
-                )
+                solar_factor = max(0, 1 - abs(hour - peak_hour) / (total_production_hours / 2))
                 # Add some randomness
                 noise = random.uniform(0.7, 1.0)
                 predicted_power = Watts(base_max_watts * solar_factor * noise)
@@ -129,13 +127,9 @@ class DummySolarForecastProvider(ForecastProviderPort):
             predicted_energy = WattHours(predicted_power)
 
             # Create a forecast power point for this hour
-            forecast_point = ForecastPowerPoint(
-                timestamp=Timestamp(future_time), power=predicted_power
-            )
+            forecast_point = ForecastPowerPoint(timestamp=Timestamp(future_time), power=predicted_power)
 
-            start_time = (
-                Timestamp(now) if i == 0 else Timestamp(now + timedelta(hours=i - 1))
-            )
+            start_time = Timestamp(now) if i == 0 else Timestamp(now + timedelta(hours=i - 1))
             end_time = Timestamp(future_time)
 
             # Create a forecast interval for this hour
@@ -151,7 +145,5 @@ class DummySolarForecastProvider(ForecastProviderPort):
             forecast.intervals.append(interval)
 
         if self.logger:
-            self.logger.debug(
-                f"DummyForecastProvider: Generated {len(forecast.intervals)} predictions."
-            )
+            self.logger.debug(f"DummyForecastProvider: Generated {len(forecast.intervals)} predictions.")
         return forecast

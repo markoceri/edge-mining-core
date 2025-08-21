@@ -47,8 +47,6 @@ class NotifierRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[Notifier]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[Notifier]:
         """Retrieves a list of notifiers by its associated external service ID."""
         raise NotImplementedError

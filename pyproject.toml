@@ -9,10 +9,10 @@ description = "Software to optimize the use of excess energy, especially from re
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Edge Mining Team", email = ""}
+    {name = "Edge Mining Team", email = "asd@asd.it"}
 ]
 maintainers = [
-    {name = "Edge Mining Team", email = ""}
+    {name = "Edge Mining Team", email = "asd@asd.it"}
 ]
 classifiers = [
     "Operating System :: OS Independent",
@@ -68,8 +68,6 @@ all = [
 dev = [
     "pytest>=6.0",
     "pytest-cov",
-    "black",
-    "isort",
     "mypy",
     "ruff",
     "bandit",
@@ -117,14 +115,8 @@ module = "tests.*"
 ignore_errors = true
 
 [tool.ruff]
-select = ["E", "F", "W", "B"]
-ignore = ["BLE001"]  # Add BLE001 to ignore catching too general exception
-fixable = ["ALL"]
-unfixable = []
 line-length = 120
 indent-width = 4
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
@@ -152,8 +144,18 @@ exclude = [
     "dist",
     "node_modules",
     "site-packages",
+    "tests",
     "venv",
 ]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+fixable = ["ALL"]
+unfixable = []
+# Add BLE001 to ignore catching too general exception
+ignore = ["BLE001", "B008"]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

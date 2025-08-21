@@ -80,20 +80,14 @@ from edge_mining.shared.settings.ports import SettingsRepository
 from edge_mining.shared.settings.settings import AppSettings
 
 
-def configure_persistence(
-    logger: LoggerPort, settings: AppSettings
-) -> PersistenceSettings:
+def configure_persistence(logger: LoggerPort, settings: AppSettings) -> PersistenceSettings:
     """
     Configures the persistence layer based on the settings.
     """
     logger.debug("Configuring persistence...")
 
-    persistence_adapter: PersistenceAdapter = PersistenceAdapter(
-        settings.persistence_adapter
-    )
-    policies_persistence_adapter: PersistenceAdapter = PersistenceAdapter(
-        settings.policies_persistence_adapter
-    )
+    persistence_adapter: PersistenceAdapter = PersistenceAdapter(settings.persistence_adapter)
+    policies_persistence_adapter: PersistenceAdapter = PersistenceAdapter(settings.policies_persistence_adapter)
 
     # Initialize SQLite DB base repository if needed
     sqlite_db: Optional[BaseSqliteRepository] = None
@@ -112,8 +106,7 @@ def configure_persistence(
 
     if not sqlite_db:
         raise ValueError(
-            "SQLite DB repository is not initialized. "
-            "Ensure that the persistence adapter is set to SQLITE."
+            "SQLite DB repository is not initialized. Ensure that the persistence adapter is set to SQLITE."
         )
 
     # Initialize repositories based on the selected persistence adapter
@@ -156,9 +149,7 @@ def configure_persistence(
         miner_controller_repo = SqliteMinerControllerRepository(db=sqlite_db)
         forecast_provider_repo = SqliteForecastProviderRepository(db=sqlite_db)
         notifier_repo = SqliteNotifierRepository(db=sqlite_db)
-        mining_performance_tracker_repo = SqliteMiningPerformanceTrackerRepository(
-            db=sqlite_db
-        )
+        mining_performance_tracker_repo = SqliteMiningPerformanceTrackerRepository(db=sqlite_db)
         settings_repo = SqliteSettingsRepository(db=sqlite_db)
         home_profile_repo = SqliteHomeLoadsProfileRepository(db=sqlite_db)
         home_forecast_provider_repo = SqliteHomeForecastProviderRepository(db=sqlite_db)
@@ -169,9 +160,7 @@ def configure_persistence(
         #   db_path=db_path, logger=logger
         # ) # If implemented
     else:
-        raise ValueError(
-            f"Unsupported persistence_adapter: {settings.persistence_adapter}"
-        )
+        raise ValueError(f"Unsupported persistence_adapter: {settings.persistence_adapter}")
 
     # Initialize specific policies repositories based on the selected
     # persistence adapter
@@ -185,9 +174,7 @@ def configure_persistence(
 
         logger.debug("Using SQLite policies persistence adapter.")
     elif policies_persistence_adapter == PersistenceAdapter.YAML:
-        policy_repo = YamlOptimizationPolicyRepository(
-            policies_directory=settings.yaml_policies_dir, logger=logger
-        )
+        policy_repo = YamlOptimizationPolicyRepository(policies_directory=settings.yaml_policies_dir, logger=logger)
         logger.debug("Using YAML policies persistence adapter.")
 
     persistence_settings: PersistenceSettings = PersistenceSettings(
@@ -256,9 +243,7 @@ def configure_dependencies(logger: LoggerPort, settings: AppSettings) -> Service
         logger=logger,
     )
 
-    config_service = ConfigurationService(
-        persistence_settings=persistence_settings, logger=logger
-    )
+    config_service = ConfigurationService(persistence_settings=persistence_settings, logger=logger)
 
     services = Services(
         adapter_service=adapter_service,

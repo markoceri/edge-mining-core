@@ -93,9 +93,7 @@ class Forecast(AggregateRoot):
                         ratio = overlap_duration_sec / interval_duration_sec
                         if interval.energy is not None:
                             # Ensure energy is not None before multiplying
-                            total_energy = WattHours(
-                                total_energy + float(interval.energy) * ratio
-                            )
+                            total_energy = WattHours(total_energy + float(interval.energy) * ratio)
 
         return WattHours(round(total_energy, 3)) if total_energy > 0 else WattHours(0.0)
 
@@ -138,15 +136,11 @@ class Forecast(AggregateRoot):
         if time_diff == 0:
             return point_first.power
         ratio = time_diff_target / time_diff
-        interpolated_power = (
-            point_first.power + (point_last.power - point_first.power) * ratio
-        )
+        interpolated_power = point_first.power + (point_last.power - point_first.power) * ratio
         interpolated_power = round(interpolated_power, 3)  # Round to 3 decimal places
         return Watts(interpolated_power)
 
-    def get_energy_over_interval(
-        self, start: Timestamp, end: Timestamp
-    ) -> Optional[WattHours]:
+    def get_energy_over_interval(self, start: Timestamp, end: Timestamp) -> Optional[WattHours]:
         """Get the total energy forecasted over a specific time interval."""
         total_energy = WattHours(0.0)
 

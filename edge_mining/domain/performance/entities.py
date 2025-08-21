@@ -18,9 +18,7 @@ class MiningPerformanceTracker(Entity):
     """Entity for tracking mining performance."""
 
     name: str = ""
-    adapter_type: MiningPerformanceTrackerAdapter = (
-        MiningPerformanceTrackerAdapter.DUMMY
-    )
+    adapter_type: MiningPerformanceTrackerAdapter = MiningPerformanceTrackerAdapter.DUMMY
     config: Optional[MiningPerformanceTrackerConfig] = None
     external_service_id: Optional[EntityId] = None
 

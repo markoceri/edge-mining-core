@@ -27,21 +27,13 @@ from edge_mining.adapters.infrastructure.cli.utils import (
 )
 
 
-def handle_add_miner(
-    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
-) -> None:
+def handle_add_miner(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> None:
     """Menu to add a new miner."""
     click.echo(click.style("\n--- Add Miner ---", fg="yellow"))
     name: str = click.prompt("Name of the miner", type=str)
-    hash_rate_max: float = click.prompt(
-        "Max HashRate (eg. 100.0)", type=float, default=100.0
-    )
-    hash_rate_unit: str = click.prompt(
-        "HashRate unit (eg. TH/s, GH/s)", type=str, default="TH/s"
-    )
-    power_consumption_max: float = click.prompt(
-        "Max power consumption (Watt, eg. 3200.0)", type=float, default=3200.0
-    )
+    hash_rate_max: float = click.prompt("Max HashRate (eg. 100.0)", type=float, default=100.0)
+    hash_rate_unit: str = click.prompt("HashRate unit (eg. TH/s, GH/s)", type=str, default="TH/s")
+    power_consumption_max: float = click.prompt("Max power consumption (Watt, eg. 3200.0)", type=float, default=3200.0)
 
     new_miner = Miner()
     new_miner.name = name
@@ -117,11 +109,7 @@ def list_miners(configuration_service: ConfigurationServiceInterface):
         click.echo(click.style("No miner configured.", fg="yellow"))
     else:
         for m in miners:
-            hashrate_str = (
-                f"{m.hash_rate_max.value} {m.hash_rate_max.unit}"
-                if m.hash_rate_max
-                else "N/A"
-            )
+            hashrate_str = f"{m.hash_rate_max.value} {m.hash_rate_max.unit}" if m.hash_rate_max else "N/A"
             click.echo(
                 "-> "
                 + "Name: "
@@ -146,9 +134,7 @@ def list_miners(configuration_service: ConfigurationServiceInterface):
     click.echo("")
 
 
-def handle_list_miners(
-    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
-):
+def handle_list_miners(configuration_service: ConfigurationServiceInterface, logger: LoggerPort):
     """Handle List all configured miners."""
     click.echo(click.style("\n--- Configured Miner ---", fg="yellow"))
 
@@ -172,11 +158,7 @@ def select_miner(
 
     default_idx = ""
     for idx, m in enumerate(miners):
-        hashrate_str = (
-            f"{m.hash_rate_max.value} {m.hash_rate_max.unit}"
-            if m.hash_rate_max
-            else "N/A"
-        )
+        hashrate_str = f"{m.hash_rate_max.value} {m.hash_rate_max.unit}" if m.hash_rate_max else "N/A"
         click.echo(
             f"{idx}. "
             + "Name: "
@@ -216,22 +198,16 @@ def update_single_miner(
     logger: LoggerPort,
 ) -> Optional[Miner]:
     """Menu to update a miner's details."""
-    name: str = click.prompt(
-        "New name of the miner", type=str, default=selected_miner.name
-    )
+    name: str = click.prompt("New name of the miner", type=str, default=selected_miner.name)
     hash_rate: float = click.prompt(
         "Max HashRate (eg. 100.0)",
         type=float,
-        default=selected_miner.hash_rate_max.value
-        if selected_miner.hash_rate_max
-        else 100.0,
+        default=selected_miner.hash_rate_max.value if selected_miner.hash_rate_max else 100.0,
     )
     hash_rate_unit: str = click.prompt(
         "HashRate unit (eg. TH/s, GH/s)",
         type=str,
-        default=selected_miner.hash_rate_max.unit
-        if selected_miner.hash_rate_max
-        else "",
+        default=selected_miner.hash_rate_max.unit if selected_miner.hash_rate_max else "",
     )
     power_consumption: float = click.prompt(
         "Max power consumption (Watt, eg. 3200.0)",
@@ -247,9 +223,7 @@ def update_single_miner(
         if miner_controller:
             controller_id = miner_controller.id
         else:
-            click.echo(
-                click.style("Miner Controller will not be changed!", fg="yellow")
-            )
+            click.echo(click.style("Miner Controller will not be changed!", fg="yellow"))
 
     hash_rate_max = HashRate(value=hash_rate, unit=hash_rate_unit)
 
@@ -294,9 +268,7 @@ def delete_single_miner(
         return False
     try:
         removed_miner = configuration_service.remove_miner(miner_id=selected_miner.id)
-        logger.info(
-            f"Miner '{removed_miner.name}' (ID: {removed_miner.id}) successfully removed."
-        )
+        logger.info(f"Miner '{removed_miner.name}' (ID: {removed_miner.id}) successfully removed.")
         click.echo(
             click.style(
                 f"Miner '{removed_miner.name}' (ID: {removed_miner.id}) successfully removed.",
@@ -353,9 +325,7 @@ def assing_controller_to_miner(
     return updated_miner
 
 
-def handle_manage_miner(
-    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
-) -> str:
+def handle_manage_miner(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
     """Menu to manage a miner."""
     selected_miner = select_miner(configuration_service, logger)
 
@@ -395,13 +365,8 @@ def print_miner_details(
         else "N/A"
     )
     click.echo("| Max Power Consumption: " + str(miner.power_consumption_max) + " W")
-    click.echo(
-        "| Active: " + click.style(miner.active, fg="green" if miner.active else "red")
-    )
-    click.echo(
-        "| Controller ID: "
-        + (str(miner.controller_id) if miner.controller_id else "None")
-    )
+    click.echo("| Active: " + click.style(miner.active, fg="green" if miner.active else "red"))
+    click.echo("| Controller ID: " + (str(miner.controller_id) if miner.controller_id else "None"))
 
     if miner.controller_id:
         controller = configuration_service.get_miner_controller(miner.controller_id)
@@ -410,11 +375,7 @@ def print_miner_details(
             print_miner_controller_details(controller, configuration_service, False)
         else:
             # If the controller is not found, we can still show the ID
-            click.echo(
-                "| Controller ID: "
-                + click.style(str(miner.controller_id), fg="red")
-                + " (not found)"
-            )
+            click.echo("| Controller ID: " + click.style(str(miner.controller_id), fg="red") + " (not found)")
 
     click.echo("")
 
@@ -475,9 +436,7 @@ def manage_single_miner_menu(
                 configuration_service=configuration_service,
                 logger=logger,
             )
-            miner = (
-                updated_miner or miner
-            )  # Update miner if it was successfully updated
+            miner = updated_miner or miner  # Update miner if it was successfully updated
             continue
 
         elif choice == "4":
@@ -486,9 +445,7 @@ def manage_single_miner_menu(
                 configuration_service=configuration_service,
                 logger=logger,
             )
-            miner = (
-                updated_miner or miner
-            )  # Update miner if it was successfully updated
+            miner = updated_miner or miner  # Update miner if it was successfully updated
             continue
 
         elif choice == "5":
@@ -519,17 +476,11 @@ def select_miner_controller_type() -> Optional[MinerControllerAdapter]:
     choice: str = click.prompt("Choose a controller", type=str)
     choice = choice.strip().lower()
 
-    if (
-        not choice.isdigit()
-        or int(choice) < 0
-        or int(choice) >= len(MinerControllerAdapter)
-    ):
+    if not choice.isdigit() or int(choice) < 0 or int(choice) >= len(MinerControllerAdapter):
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
 
-    controller_type_values = [
-        controller_type.value for controller_type in MinerControllerAdapter
-    ]
+    controller_type_values = [controller_type.value for controller_type in MinerControllerAdapter]
 
     selected_type = MinerControllerAdapter(controller_type_values[int(choice)])
     return selected_type
@@ -539,26 +490,18 @@ def handle_miner_controller_dummy_config(
     miner: Optional[Miner],
 ) -> MinerControllerConfig:
     """Handle configuration for the Dummy Miner Controller."""
-    click.echo(
-        click.style("\n--- Dummy Miner Controller Configuration ---", fg="yellow")
-    )
+    click.echo(click.style("\n--- Dummy Miner Controller Configuration ---", fg="yellow"))
 
     default_power = miner.power_consumption_max if miner else 3200.0
-    default_hash_rate = (
-        miner.hash_rate_max.value if miner and miner.hash_rate_max else 90.0
-    )
-    default_hash_rate_unit = (
-        miner.hash_rate_max.unit if miner and miner.hash_rate_max else "TH/s"
-    )
+    default_hash_rate = miner.hash_rate_max.value if miner and miner.hash_rate_max else 90.0
+    default_hash_rate_unit = miner.hash_rate_max.unit if miner and miner.hash_rate_max else "TH/s"
 
     power_max: float = click.prompt(
         "Max power consumption (Watt, eg. 3200.0)",
         type=float,
         default=default_power,
     )
-    hash_rate_max_value: float = click.prompt(
-        "Max HashRate value (eg. 90.0)", type=float, default=default_hash_rate
-    )
+    hash_rate_max_value: float = click.prompt("Max HashRate value (eg. 90.0)", type=float, default=default_hash_rate)
     hash_rate_max_unit: str = click.prompt(
         "Max HashRate unit (eg. TH/s)",
         type=str,
@@ -579,9 +522,7 @@ def handle_miner_controller_configuration(
     if adapter_type.value == MinerControllerAdapter.DUMMY.value:
         config = handle_miner_controller_dummy_config(miner)
     else:
-        click.echo(
-            click.style("Unsupported controller type selected. Aborting.", fg="red")
-        )
+        click.echo(click.style("Unsupported controller type selected. Aborting.", fg="red"))
     return config
 
 
@@ -615,16 +556,12 @@ def handle_add_miner_controller(
 
     new_controller.config = config
 
-    needed_external_service = MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP.get(
-        adapter_type, None
-    )
+    needed_external_service = MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP.get(adapter_type, None)
     # If an external service is required for the selected adapter type
     external_service: Optional[ExternalService] = None
     if needed_external_service:
         # If external service is needed, check if some one is already configured
-        external_services: List[ExternalService] = (
-            configuration_service.list_external_services()
-        )
+        external_services: List[ExternalService] = configuration_service.list_external_services()
         if external_services:
             external_service = select_external_service(
                 configuration_service=configuration_service,
@@ -632,9 +569,7 @@ def handle_add_miner_controller(
                 filter_type=[needed_external_service],
             )
             if external_service:
-                new_controller.external_service_id = (
-                    external_service.id if external_service else None
-                )
+                new_controller.external_service_id = external_service.id if external_service else None
         else:
             click.echo("")
             click.echo(
@@ -677,8 +612,7 @@ def handle_add_miner_controller(
         )
         click.echo(
             click.style(
-                f"Miner Controller '{added_controller.name}' "
-                f"(ID: {added_controller.id}) successfully added.",
+                f"Miner Controller '{added_controller.name}' (ID: {added_controller.id}) successfully added.",
                 fg="green",
             )
         )
@@ -693,9 +627,7 @@ def handle_add_miner_controller(
     return added_controller
 
 
-def handle_list_miner_controllers(
-    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
-) -> None:
+def handle_list_miner_controllers(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> None:
     """List all configured Miner Controllers."""
     click.echo(click.style("\n--- Configured Miner Controllers ---", fg="yellow"))
 
@@ -728,12 +660,7 @@ def print_miner_controller_details(
     click.echo("| ID: " + click.style(controller.id, fg="yellow"))
     click.echo("| Adapter Type: " + controller.adapter_type.name)
     click.echo(
-        "| External Service ID:"
-        + (
-            str(controller.external_service_id)
-            if controller.external_service_id
-            else "None"
-        )
+        "| External Service ID:" + (str(controller.external_service_id) if controller.external_service_id else "None")
     )
     print_miner_controller_config(controller)
     click.echo("")
@@ -741,9 +668,7 @@ def print_miner_controller_details(
     if show_miner_list:
         miners = configuration_service.list_miners_by_controller(controller.id)
         if not miners:
-            click.echo(
-                click.style("No miners assigned to this controller.", fg="yellow")
-            )
+            click.echo(click.style("No miners assigned to this controller.", fg="yellow"))
         else:
             click.echo("Miners assigned to this controller:")
             for m in miners:
@@ -761,9 +686,7 @@ def print_miner_controller_details(
 
 def print_miner_controller_config(controller: MinerController) -> None:
     """Print the configuration of a selected Miner Controller."""
-    configuration_class = (
-        controller.config.__class__.__name__ if controller.config else "---"
-    )
+    configuration_class = controller.config.__class__.__name__ if controller.config else "---"
     click.echo("| Configuration: " + click.style(f"{configuration_class}", fg="cyan"))
     if controller.config:
         print_configuration(controller.config.to_dict())
@@ -775,9 +698,7 @@ def update_single_miner_controller(
     logger: LoggerPort,
 ) -> Optional[MinerController]:
     """Menu to update a miner controller"""
-    name: str = click.prompt(
-        "New name of the controller", type=str, default=controller.name
-    )
+    name: str = click.prompt("New name of the controller", type=str, default=controller.name)
     config: Optional[MinerControllerConfig] = handle_miner_controller_configuration(
         adapter_type=controller.adapter_type,
         miner=None,  # No miner needed for controller update
@@ -791,9 +712,7 @@ def update_single_miner_controller(
         updated_controller = configuration_service.update_miner_controller(
             controller_id=controller.id, name=name, config=config
         )
-        logger.info(
-            f"Miner Controller '{updated_controller.name}' (ID: {updated_controller.id}) successfully updated."
-        )
+        logger.info(f"Miner Controller '{updated_controller.name}' (ID: {updated_controller.id}) successfully updated.")
     except Exception as e:
         logger.error(f"Error updating miner controller: {e}")
         click.echo(
@@ -825,12 +744,8 @@ def delete_single_miner_controller(
         return False
 
     try:
-        removed_controller = configuration_service.remove_miner_controller(
-            controller_id=controller.id
-        )
-        logger.info(
-            f"Miner Controller '{removed_controller.name}' (ID: {removed_controller.id}) successfully removed."
-        )
+        removed_controller = configuration_service.remove_miner_controller(controller_id=controller.id)
+        logger.info(f"Miner Controller '{removed_controller.name}' (ID: {removed_controller.id}) successfully removed.")
     except Exception as e:
         logger.error(f"Error removing miner controller: {e}")
         click.echo(
@@ -849,13 +764,9 @@ def manage_single_miner_controller_menu(
 ) -> str:
     """Menu for managing a specific Miner Controller."""
     while True:
-        click.echo(
-            "\n" + click.style("--- MANAGE MINER CONTROLLER ---", fg="blue", bold=True)
-        )
+        click.echo("\n" + click.style("--- MANAGE MINER CONTROLLER ---", fg="blue", bold=True))
 
-        print_miner_controller_details(
-            controller, configuration_service, show_miner_list=True
-        )
+        print_miner_controller_details(controller, configuration_service, show_miner_list=True)
 
         click.echo("1. Update Controller")
         click.echo("2. Delete Controller")
@@ -875,9 +786,7 @@ def manage_single_miner_controller_menu(
                 configuration_service=configuration_service,
                 logger=logger,
             )
-            controller = (
-                updated_controller or controller
-            )  # Update controller if it was successfully updated
+            controller = updated_controller or controller  # Update controller if it was successfully updated
             continue
 
         elif choice == "2":
@@ -944,18 +853,12 @@ def select_miner_controller(
 
     click.echo("\nb. Back to menu\n")
 
-    controller_idx: str = click.prompt(
-        "Choose a Controller index", type=str, default=default_idx
-    )
+    controller_idx: str = click.prompt("Choose a Controller index", type=str, default=default_idx)
     controller_idx = controller_idx.strip().lower()
     if controller_idx == "b":
         return None
 
-    if (
-        not controller_idx.isdigit()
-        or int(controller_idx) < 0
-        or int(controller_idx) >= len(controllers)
-    ):
+    if not controller_idx.isdigit() or int(controller_idx) < 0 or int(controller_idx) >= len(controllers):
         click.echo(click.style("Invalid index. Aborting selection.", fg="red"))
         return None
 
@@ -963,9 +866,7 @@ def select_miner_controller(
     return selected_controller
 
 
-def handle_manage_miner_controller(
-    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
-) -> str:
+def handle_manage_miner_controller(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
     """Menu to manage a miner controller."""
     controller = select_miner_controller(configuration_service, logger)
 
@@ -982,9 +883,7 @@ def handle_manage_miner_controller(
     return choice
 
 
-def miner_menu(
-    configuration_service: ConfigurationServiceInterface, logger: LoggerPort
-) -> str:
+def miner_menu(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
     """Menu for managing Miners."""
     while True:
         click.echo("\n" + click.style("--- MINER ---", fg="blue", bold=True))
@@ -1009,14 +908,10 @@ def miner_menu(
             handle_add_miner(configuration_service=configuration_service, logger=logger)
 
         elif choice == "2":
-            handle_list_miners(
-                configuration_service=configuration_service, logger=logger
-            )
+            handle_list_miners(configuration_service=configuration_service, logger=logger)
 
         elif choice == "3":
-            sub_choice = handle_manage_miner(
-                configuration_service=configuration_service, logger=logger
-            )
+            sub_choice = handle_manage_miner(configuration_service=configuration_service, logger=logger)
             if sub_choice == "q":
                 break
 
@@ -1028,9 +923,7 @@ def miner_menu(
             )
 
         elif choice == "5":
-            handle_list_miner_controllers(
-                configuration_service=configuration_service, logger=logger
-            )
+            handle_list_miner_controllers(configuration_service=configuration_service, logger=logger)
 
         elif choice == "6":
             controller = select_miner_controller(configuration_service, logger)

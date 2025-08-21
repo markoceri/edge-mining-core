@@ -14,12 +14,7 @@ class DummyNotifier(NotificationPort):
     """Prints notifications to the console/log."""
 
     async def send_notification(self, title: str, message: str) -> bool:
-        full_message = (
-            f"--- NOTIFICATION ---\n"
-            f"Title: {title}\n"
-            f"Message: {message}\n"
-            f"--------------------"
-        )
+        full_message = f"--- NOTIFICATION ---\nTitle: {title}\nMessage: {message}\n--------------------"
         print(full_message)
         logger.info("Notification Sent: Title='%s'", title)
         return True

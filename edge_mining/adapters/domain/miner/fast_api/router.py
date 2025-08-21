@@ -24,9 +24,7 @@ from edge_mining.domain.miner.exceptions import MinerNotFoundError
 router = APIRouter()
 
 
-@router.get(
-    "/miners", response_model=List[MinerResponseSchema]
-)  # Use DTOs directly or a Pydantic schema
+@router.get("/miners", response_model=List[MinerResponseSchema])  # Use DTOs directly or a Pydantic schema
 async def get_miners_list(
     config_service: Annotated[ConfigurationService, Depends(get_config_service)],
 ):

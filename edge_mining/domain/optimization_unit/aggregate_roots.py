@@ -21,15 +21,11 @@ class EnergyOptimizationUnit(AggregateRoot):
 
     # References to entities
     policy_id: Optional[EntityId] = None  # Policy to be used for the optimization
-    target_miner_ids: List[EntityId] = field(
-        default_factory=list
-    )  # Miners to be controlled
+    target_miner_ids: List[EntityId] = field(default_factory=list)  # Miners to be controlled
     energy_source_id: Optional[EntityId] = None  # Energy source to be used
 
     # References to adapters
-    home_forecast_provider_id: Optional[EntityId] = (
-        None  # Home load forecast provider to be used
-    )
+    home_forecast_provider_id: Optional[EntityId] = None  # Home load forecast provider to be used
     performance_tracker_id: Optional[EntityId] = None  # Performance tracker to be used
     notifier_ids: List[EntityId] = field(default_factory=list)  # Notifiers to be used
 

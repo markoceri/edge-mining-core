@@ -8,6 +8,6 @@ from edge_mining.shared.adapter_configs.external_services import (
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import ExternalServiceConfig
 
-EXTERNAL_SERVICE_CONFIG_TYPE_MAP: Dict[
-    ExternalServiceAdapter, Optional[type[ExternalServiceConfig]]
-] = {ExternalServiceAdapter.HOME_ASSISTANT_API: ExternalServiceHomeAssistantConfig}
+EXTERNAL_SERVICE_CONFIG_TYPE_MAP: Dict[ExternalServiceAdapter, Optional[type[ExternalServiceConfig]]] = {
+    ExternalServiceAdapter.HOME_ASSISTANT_API: ExternalServiceHomeAssistantConfig
+}

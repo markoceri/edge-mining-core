@@ -29,9 +29,7 @@ class TerminalLogger(LoggerPort):
         logger.add(
             sys.stdout,
             level=self.log_level,
-            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "<level>{message}</level>",
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
             colorize=True,
             backtrace=False,
             diagnose=True,
@@ -91,9 +89,7 @@ class TerminalLogger(LoggerPort):
         else:
             msg = pformat(msg)
 
-        log_method = getattr(
-            logger, level.lower(), logger.debug
-        )  # Default to debug if level is unknown
+        log_method = getattr(logger, level.lower(), logger.debug)  # Default to debug if level is unknown
 
         log_method(msg)
 
@@ -139,6 +135,4 @@ class TerminalLogger(LoggerPort):
         try:
             intentional_error()
         except Exception:
-            self.error(
-                "This error is just for demonstration purposes. Don't worry, I got it covered! 😉"
-            )
+            self.error("This error is just for demonstration purposes. Don't worry, I got it covered! 😉")

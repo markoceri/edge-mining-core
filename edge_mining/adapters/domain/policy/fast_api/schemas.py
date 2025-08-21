@@ -45,9 +45,7 @@ class AutomationRuleResponseSchema(BaseModel):
     id: str
     name: str
     conditions: dict  # Define the structure of conditions if needed
-    action: Optional[MiningDecisionSchema] = (
-        None  # Optional, can be determined by policy
-    )
+    action: Optional[MiningDecisionSchema] = None  # Optional, can be determined by policy
 
 
 class AutomationRuleCreateSchema(BaseModel):
@@ -55,6 +53,4 @@ class AutomationRuleCreateSchema(BaseModel):
 
     name: str
     conditions: dict
-    action: Optional[MiningDecisionSchema] = (
-        None  # Optional, can be determined by policy
-    )
+    action: Optional[MiningDecisionSchema] = None  # Optional, can be determined by policy

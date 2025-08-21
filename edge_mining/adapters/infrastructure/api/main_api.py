@@ -86,9 +86,7 @@ async def health_check():
 @app.post("/api/v1/evaluate", tags=["system"])
 async def trigger_evaluation(
     logger: Annotated[LoggerPort, Depends(get_logger)],  # Inject logger
-    optimization_service: Annotated[
-        OptimizationService, Depends(get_optimization_service)
-    ],  # Inject service
+    optimization_service: Annotated[OptimizationService, Depends(get_optimization_service)],  # Inject service
 ):
     """Manually run all enabled optimization units."""
     logger.info("API run all enabled optimization units...")

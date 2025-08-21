@@ -67,9 +67,7 @@ class OptimizationService(OptimizationServiceInterface):
         self.adapter_service = adapter_service
         self.logger = logger
 
-    async def _notify_unit(
-        self, notifiers: List[NotificationPort], title: str, message: str
-    ):
+    async def _notify_unit(self, notifiers: List[NotificationPort], title: str, message: str):
         """Notify the unit."""
         if not notifiers:
             return
@@ -79,16 +77,10 @@ class OptimizationService(OptimizationServiceInterface):
                 success = await notifier.send_notification(title, message)
                 if not success:
                     if self.logger:
-                        self.logger.warning(
-                            f"Notifier {type(notifier).__name__} "
-                            f"reported failure for: {title}"
-                        )
+                        self.logger.warning(f"Notifier {type(notifier).__name__} reported failure for: {title}")
             except Exception as e:
                 if self.logger:
-                    self.logger.error(
-                        f"Failed to send notification "
-                        f"via {type(notifier).__name__}: {e}"
-                    )
+                    self.logger.error(f"Failed to send notification via {type(notifier).__name__}: {e}")
 
     async def run_all_enabled_units(self):
         """Run the optimization process for all enabled units."""
@@ -107,31 +99,20 @@ class OptimizationService(OptimizationServiceInterface):
         await asyncio.gather(*unit_tasks, return_exceptions=False)
 
         if self.logger:
-            self.logger.info(
-                f"Optimization run for all units finished. "
-                f"{len(enabled_units)} units processed."
-            )
+            self.logger.info(f"Optimization run for all units finished. {len(enabled_units)} units processed.")
 
     async def _process_unit(self, optimization_unit: EnergyOptimizationUnit):
         if self.logger:
-            self.logger.info(
-                f"Processing Optimization Unit: "
-                f"'{optimization_unit.name}' (ID: {optimization_unit.id})"
-            )
+            self.logger.info(f"Processing Optimization Unit: '{optimization_unit.name}' (ID: {optimization_unit.id})")
 
         # --- Notifiers ---
         unit_notifiers: List[NotificationPort] = []
-        unit_notifiers = self.adapter_service.get_notifiers(
-            optimization_unit.notifier_ids
-        )
+        unit_notifiers = self.adapter_service.get_notifiers(optimization_unit.notifier_ids)
 
         # --- Policy ---
         if not optimization_unit.policy_id:
             if self.logger:
-                self.logger.warning(
-                    f"Optimization unit '{optimization_unit.name}' "
-                    "has no policy assigned. Skipping."
-                )
+                self.logger.warning(f"Optimization unit '{optimization_unit.name}' has no policy assigned. Skipping.")
             return
         policy: Optional[OptimizationPolicy] = None
         policy = self.policy_repo.get_by_id(optimization_unit.policy_id)
@@ -144,17 +125,12 @@ class OptimizationService(OptimizationServiceInterface):
             return
         else:
             if self.logger:
-                self.logger.info(
-                    f"Optimization unit '{optimization_unit.name}' > "
-                    f"Using policy '{policy.name}'."
-                )
+                self.logger.info(f"Optimization unit '{optimization_unit.name}' > Using policy '{policy.name}'.")
 
         # --- Energy Source  ---
         energy_source: Optional[EnergySource] = None
         if optimization_unit.energy_source_id:
-            energy_source = self.energy_source_repo.get_by_id(
-                optimization_unit.energy_source_id
-            )
+            energy_source = self.energy_source_repo.get_by_id(optimization_unit.energy_source_id)
         if not energy_source:
             if self.logger:
                 self.logger.error(
@@ -171,8 +147,7 @@ class OptimizationService(OptimizationServiceInterface):
         else:
             if self.logger:
                 self.logger.info(
-                    f"Optimization unit '{optimization_unit.name}' > "
-                    f"Using energy source '{energy_source.name}'."
+                    f"Optimization unit '{optimization_unit.name}' > Using energy source '{energy_source.name}'."
                 )
 
         # --- Energy Monitor ---
@@ -196,9 +171,7 @@ class OptimizationService(OptimizationServiceInterface):
         # --- Forecast Provider ---
         forecast_provider: Optional[ForecastProviderPort] = None
         if energy_source.forecast_provider_id:
-            forecast_provider = self.adapter_service.get_forecast_provider(
-                energy_source
-            )
+            forecast_provider = self.adapter_service.get_forecast_provider(energy_source)
         # Forecast is optional, so log a warning if it's missing but continue
         if not forecast_provider:
             if self.logger:
@@ -211,10 +184,8 @@ class OptimizationService(OptimizationServiceInterface):
         # --- Home Forecast Provider ---
         home_forecast_provider: Optional[HomeForecastProviderPort] = None
         if optimization_unit.home_forecast_provider_id:
-            home_forecast_provider = (
-                self.adapter_service.get_home_load_forecast_provider(
-                    optimization_unit.home_forecast_provider_id
-                )
+            home_forecast_provider = self.adapter_service.get_home_load_forecast_provider(
+                optimization_unit.home_forecast_provider_id
             )
         # Home forecast provider is optional, so log a warning if it's missing but
         # continue
@@ -230,10 +201,8 @@ class OptimizationService(OptimizationServiceInterface):
         # --- Mining Performance Tracker ---
         mining_performance_tracker: Optional[MiningPerformanceTrackerPort] = None
         if optimization_unit.performance_tracker_id:
-            mining_performance_tracker = (
-                self.adapter_service.get_mining_performance_tracker(
-                    optimization_unit.performance_tracker_id
-                )
+            mining_performance_tracker = self.adapter_service.get_mining_performance_tracker(
+                optimization_unit.performance_tracker_id
             )
         # Mining performance tracker is optional, so log a warning if it's missing
         # but continue
@@ -253,8 +222,7 @@ class OptimizationService(OptimizationServiceInterface):
             if not energy_state:
                 if self.logger:
                     self.logger.error(
-                        f"Could not retrieve energy state for optimization unit "
-                        f"'{optimization_unit.name}'. Skipping."
+                        f"Could not retrieve energy state for optimization unit '{optimization_unit.name}'. Skipping."
                     )
                 await self._notify_unit(
                     unit_notifiers,
@@ -264,10 +232,7 @@ class OptimizationService(OptimizationServiceInterface):
                 return
         except Exception as e:
             if self.logger:
-                self.logger.error(
-                    f"Error getting energy state for optimization unit "
-                    f"'{optimization_unit.name}': {e}"
-                )
+                self.logger.error(f"Error getting energy state for optimization unit '{optimization_unit.name}': {e}")
             await self._notify_unit(
                 unit_notifiers,
                 f"Optimizer Error ({optimization_unit.name})",
@@ -290,14 +255,12 @@ class OptimizationService(OptimizationServiceInterface):
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
-                        f"Error getting solar forecast for optimization unit "
-                        f"'{optimization_unit.name}': {e}"
+                        f"Error getting solar forecast for optimization unit '{optimization_unit.name}': {e}"
                     )
         else:
             if self.logger:
                 self.logger.info(
-                    f"No solar forecast provider configured for optimization unit "
-                    f"'{optimization_unit.name}'."
+                    f"No solar forecast provider configured for optimization unit '{optimization_unit.name}'."
                 )
 
         # --- Home Load Forecast ---
@@ -305,30 +268,23 @@ class OptimizationService(OptimizationServiceInterface):
         if home_forecast_provider:
             try:
                 # TODO: Provide parameters if needed
-                home_load_forecast = (
-                    home_forecast_provider.get_home_consumption_forecast()
-                )
+                home_load_forecast = home_forecast_provider.get_home_consumption_forecast()
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
-                        f"Error getting home load forecast for optimization unit "
-                        f"'{optimization_unit.name}': {e}"
+                        f"Error getting home load forecast for optimization unit '{optimization_unit.name}': {e}"
                     )
         else:
             if self.logger:
                 self.logger.info(
-                    f"No home load forecast provider configured for optimization unit "
-                    f"'{optimization_unit.name}'."
+                    f"No home load forecast provider configured for optimization unit '{optimization_unit.name}'."
                 )
 
         # --- Target Miners ---
         # Process each target miner in this optimization unit
         if not optimization_unit.target_miner_ids:
             if self.logger:
-                self.logger.info(
-                    f"No target miners configured for optimization unit "
-                    f"'{optimization_unit.name}'."
-                )
+                self.logger.info(f"No target miners configured for optimization unit '{optimization_unit.name}'.")
             return
 
         # --- Mining Performance Tracker ---
@@ -337,9 +293,7 @@ class OptimizationService(OptimizationServiceInterface):
             try:
                 # TODO: Provide parameters if needed
                 miner_ids = optimization_unit.target_miner_ids
-                tracker_current_hashrate = (
-                    mining_performance_tracker.get_current_hashrate(miner_ids=miner_ids)
-                )
+                tracker_current_hashrate = mining_performance_tracker.get_current_hashrate(miner_ids=miner_ids)
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
@@ -401,13 +355,9 @@ class OptimizationService(OptimizationServiceInterface):
         if not miner:
             if self.logger:
                 self.logger.error(
-                    f"Miner {miner_id} in optimization unit "
-                    f"'{optimization_unit.name}' not found in repository."
+                    f"Miner {miner_id} in optimization unit '{optimization_unit.name}' not found in repository."
                 )
-            message = (
-                f"Miner {miner_id} not found in optimization unit "
-                f"'{optimization_unit.name}'."
-            )
+            message = f"Miner {miner_id} not found in optimization unit '{optimization_unit.name}'."
             await self._notify_unit(
                 notifiers,
                 f"Optimizer Error ({optimization_unit.name})",
@@ -426,10 +376,7 @@ class OptimizationService(OptimizationServiceInterface):
                         f"(Config ID: {miner.controller_id}) not found/initialized. "
                         f"Using default."
                     )
-                message = (
-                    f"Controller for miner {miner_id} not found in optimization unit "
-                    f"'{optimization_unit.name}'."
-                )
+                message = f"Controller for miner {miner_id} not found in optimization unit '{optimization_unit.name}'."
                 await self._notify_unit(
                     notifiers,
                     f"Optimizer Error ({optimization_unit.name})",
@@ -496,9 +443,7 @@ class OptimizationService(OptimizationServiceInterface):
                 )
                 return
 
-            decision = policy.decide_next_action(
-                decisional_context=decisional_context, rule_engine=rule_engine
-            )
+            decision = policy.decide_next_action(decisional_context=decisional_context, rule_engine=rule_engine)
             if self.logger:
                 self.logger.info(
                     f"Optimization unit '{optimization_unit.name}', "
@@ -518,8 +463,7 @@ class OptimizationService(OptimizationServiceInterface):
         except (MinerError, PolicyError) as e:
             if self.logger:
                 self.logger.error(
-                    f"Domain error processing miner {miner_id} in optimization unit "
-                    f"'{optimization_unit.name}': {e}"
+                    f"Domain error processing miner {miner_id} in optimization unit '{optimization_unit.name}': {e}"
                 )
             await self._notify_unit(
                 notifiers,
@@ -554,9 +498,7 @@ class OptimizationService(OptimizationServiceInterface):
 
         if decision == MiningDecision.START_MINING and current_status != MinerStatus.ON:
             if self.logger:
-                self.logger.info(
-                    f"Executing START for miner {miner_id} via {type(controller).__name__}"
-                )
+                self.logger.info(f"Executing START for miner {miner_id} via {type(controller).__name__}")
             success = controller.start_miner()
             action_taken = True
             if success:
@@ -572,13 +514,9 @@ class OptimizationService(OptimizationServiceInterface):
                     f"Attempt to start miner {miner_id} failed." + message_suffix,
                 )
 
-        elif (
-            decision == MiningDecision.STOP_MINING and current_status == MinerStatus.ON
-        ):
+        elif decision == MiningDecision.STOP_MINING and current_status == MinerStatus.ON:
             if self.logger:
-                self.logger.info(
-                    f"Executing STOP for miner {miner_id} via {type(controller).__name__}"
-                )
+                self.logger.info(f"Executing STOP for miner {miner_id} via {type(controller).__name__}")
             success = controller.stop_miner()
             action_taken = True
             if success:
@@ -597,8 +535,7 @@ class OptimizationService(OptimizationServiceInterface):
         if action_taken and not success:
             if self.logger:
                 self.logger.error(
-                    f"Command {decision.name} for miner {miner_id} failed using "
-                    f"controller {type(controller).__name__}."
+                    f"Command {decision.name} for miner {miner_id} failed using controller {type(controller).__name__}."
                 )
         elif action_taken and success:
             # We might want to update the expected state in the miner entity here,

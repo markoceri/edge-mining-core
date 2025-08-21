@@ -20,19 +20,12 @@ class DummyMiningPerformanceTracker(MiningPerformanceTrackerPort):
     def get_current_hashrate(self, miner_ids: List[EntityId]) -> Optional[HashRate]:
         # Requires miner status knowledge - should ideally integrate with controller
         # or miner repo or query pool API
-        print(
-            "DummyMiningPerformanceTracker: Getting hashrate for "
-            f"{miner_ids} (Not Implemented Yet)"
-        )
+        print(f"DummyMiningPerformanceTracker: Getting hashrate for {miner_ids} (Not Implemented Yet)")
         # Simulate based on a known power? Needs more info.
 
         return HashRate(value=random.uniform(90.0, 110.0), unit="TH/s")
 
-    def get_recent_rewards(
-        self, miner_id: Optional[EntityId] = None, limit: int = 10
-    ) -> List[MiningReward]:
-        print(
-            f"DummyPerformanceTracker: Getting rewards for {miner_id} (Not Implemented Yet)"
-        )
+    def get_recent_rewards(self, miner_id: Optional[EntityId] = None, limit: int = 10) -> List[MiningReward]:
+        print(f"DummyPerformanceTracker: Getting rewards for {miner_id} (Not Implemented Yet)")
         # Would query pool API
         return []

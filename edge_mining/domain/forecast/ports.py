@@ -51,8 +51,6 @@ class ForecastProviderRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[ForecastProvider]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[ForecastProvider]:
         """Retrieves a list of forecast providers by its associated external service ID."""
         raise NotImplementedError

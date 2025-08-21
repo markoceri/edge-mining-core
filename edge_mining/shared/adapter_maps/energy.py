@@ -24,9 +24,7 @@ from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.interfaces.config import EnergyMonitorConfig
 
 # Mapping of energy source types to forecast providers types.
-ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP: Dict[
-    EnergySourceType, Optional[List[ForecastProviderAdapter]]
-] = {
+ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP: Dict[EnergySourceType, Optional[List[ForecastProviderAdapter]]] = {
     EnergySourceType.SOLAR: [
         ForecastProviderAdapter.DUMMY_SOLAR,
         ForecastProviderAdapter.HOME_ASSISTANT_API,
@@ -62,11 +60,7 @@ ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP: Dict[
 # Mapping of energy source types to forecast providers instance classes.
 ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CLASS_MAP: Dict[
     EnergySourceType,
-    Optional[
-        List[
-            Union[type[DummySolarForecastProvider], type[HomeAssistantForecastProvider]]
-        ]
-    ],
+    Optional[List[Union[type[DummySolarForecastProvider], type[HomeAssistantForecastProvider]]]],
 ] = {
     EnergySourceType.SOLAR: [
         DummySolarForecastProvider,
@@ -78,9 +72,7 @@ ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CLASS_MAP: Dict[
     EnergySourceType.OTHER: None,
 }
 
-ENERGY_SOURCE_TYPE_ENERGY_MONITOR_MAP: Dict[
-    EnergySourceType, Optional[List[EnergyMonitorAdapter]]
-] = {
+ENERGY_SOURCE_TYPE_ENERGY_MONITOR_MAP: Dict[EnergySourceType, Optional[List[EnergyMonitorAdapter]]] = {
     EnergySourceType.SOLAR: [
         EnergyMonitorAdapter.DUMMY_SOLAR,
         EnergyMonitorAdapter.HOME_ASSISTANT_API,
@@ -93,9 +85,7 @@ ENERGY_SOURCE_TYPE_ENERGY_MONITOR_MAP: Dict[
 
 ENERGY_SOURCE_TYPE_ENERGY_MONITOR_CLASS_MAP: Dict[
     EnergySourceType,
-    Optional[
-        List[Union[type[DummySolarEnergyMonitor], type[HomeAssistantAPIEnergyMonitor]]]
-    ],
+    Optional[List[Union[type[DummySolarEnergyMonitor], type[HomeAssistantAPIEnergyMonitor]]]],
 ] = {
     EnergySourceType.SOLAR: [
         DummySolarEnergyMonitor,
@@ -107,16 +97,12 @@ ENERGY_SOURCE_TYPE_ENERGY_MONITOR_CLASS_MAP: Dict[
     EnergySourceType.OTHER: [HomeAssistantAPIEnergyMonitor],
 }
 
-ENERGY_MONITOR_CONFIG_TYPE_MAP: Dict[
-    EnergyMonitorAdapter, Optional[type[EnergyMonitorConfig]]
-] = {
+ENERGY_MONITOR_CONFIG_TYPE_MAP: Dict[EnergyMonitorAdapter, Optional[type[EnergyMonitorConfig]]] = {
     EnergyMonitorAdapter.DUMMY_SOLAR: EnergyMonitorDummySolarConfig,
     EnergyMonitorAdapter.HOME_ASSISTANT_API: EnergyMonitorHomeAssistantConfig,
 }
 
-ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP: Dict[
-    EnergyMonitorAdapter, Optional[ExternalServiceAdapter]
-] = {
+ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP: Dict[EnergyMonitorAdapter, Optional[ExternalServiceAdapter]] = {
     EnergyMonitorAdapter.DUMMY_SOLAR: None,  # Dummy does not use an external service
     EnergyMonitorAdapter.HOME_ASSISTANT_API: ExternalServiceAdapter.HOME_ASSISTANT_API,
 }

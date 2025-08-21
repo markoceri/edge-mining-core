@@ -112,9 +112,7 @@ class AdapterService(AdapterServiceInterface):
 
         self.logger = logger
 
-    def _initialize_external_service(
-        self, external_service: ExternalService
-    ) -> Optional[ExternalServicePort]:
+    def _initialize_external_service(self, external_service: ExternalService) -> Optional[ExternalServicePort]:
         """Initialize an external service"""
         # If the external service already exists, we use it
         if external_service.id in self._service_cache:
@@ -129,22 +127,14 @@ class AdapterService(AdapterServiceInterface):
         try:
             external_service_factory: Optional[ExternalServiceFactory] = None
 
-            if (
-                external_service.adapter_type
-                == ExternalServiceAdapter.HOME_ASSISTANT_API
-            ):
+            if external_service.adapter_type == ExternalServiceAdapter.HOME_ASSISTANT_API:
                 # --- Home Assistant API ---
 
                 external_service_factory = ServiceHomeAssistantAPIFactory()
             else:
-                raise ValueError(
-                    f"Unsupported external service type: "
-                    f"{external_service.adapter_type}"
-                )
+                raise ValueError(f"Unsupported external service type: {external_service.adapter_type}")
 
-            instance_service = external_service_factory.create(
-                config=external_service.config, logger=self.logger
-            )
+            instance_service = external_service_factory.create(config=external_service.config, logger=self.logger)
 
             self._service_cache[external_service.id] = instance_service
             return instance_service
@@ -176,8 +166,7 @@ class AdapterService(AdapterServiceInterface):
                 # to indicate that the adapter was not initialized.
                 if self.logger:
                     self.logger.warning(
-                        f"Cached instance for energy monitor ID {energy_monitor.id} "
-                        f"is None. Reinitializing adapter."
+                        f"Cached instance for energy monitor ID {energy_monitor.id} is None. Reinitializing adapter."
                     )
                 return None
 
@@ -195,9 +184,7 @@ class AdapterService(AdapterServiceInterface):
 
         # Retrieve the external service associated to the energy monitor
         if energy_monitor.external_service_id:
-            external_service = self.get_external_service(
-                energy_monitor.external_service_id
-            )
+            external_service = self.get_external_service(energy_monitor.external_service_id)
             if not external_service:
                 raise ValueError(
                     "Unable to load external service "
@@ -211,9 +198,7 @@ class AdapterService(AdapterServiceInterface):
             if energy_monitor.adapter_type == EnergyMonitorAdapter.DUMMY_SOLAR:
                 # --- Dummy Solar ---
                 if not energy_source:
-                    raise ValueError(
-                        "EnergySource is required for DummySolar energy monitor."
-                    )
+                    raise ValueError("EnergySource is required for DummySolar energy monitor.")
 
                 energy_monitor_adapter_factory = DummySolarEnergyMonitorFactory()
 
@@ -222,19 +207,13 @@ class AdapterService(AdapterServiceInterface):
             elif energy_monitor.adapter_type == EnergyMonitorAdapter.HOME_ASSISTANT_API:
                 # --- Home Assistant API ---
                 if not energy_monitor.config:
-                    raise ValueError(
-                        "EnergyMonitor config is required "
-                        "for HomeAssistantAPI energy monitor."
-                    )
+                    raise ValueError("EnergyMonitor config is required for HomeAssistantAPI energy monitor.")
 
                 energy_monitor_adapter_factory = HomeAssistantAPIEnergyMonitorFactory()
                 # Actually HomeAssistantAPI Energy Monitor
                 # does not needs an energy source as reference
             else:
-                raise ValueError(
-                    f"Unsupported energy monitor adapter type: "
-                    f"{energy_monitor.adapter_type}"
-                )
+                raise ValueError(f"Unsupported energy monitor adapter type: {energy_monitor.adapter_type}")
 
             instance = energy_monitor_adapter_factory.create(
                 config=energy_monitor.config,
@@ -292,8 +271,7 @@ class AdapterService(AdapterServiceInterface):
             if miner_controller.adapter_type == MinerControllerAdapter.DUMMY:
                 if miner.power_consumption_max is None or miner.hash_rate_max is None:
                     raise ValueError(
-                        "Miner power consumption max and hash rate max "
-                        "are required for DummyMinerController."
+                        "Miner power consumption max and hash rate max are required for DummyMinerController."
                     )
                 # --- Dummy Controller ---
                 instance = DummyMinerController(
@@ -302,9 +280,7 @@ class AdapterService(AdapterServiceInterface):
                     logger=self.logger,
                 )
             else:
-                raise ValueError(
-                    f"Unsupported miner controller adapter type: {miner_controller.adapter_type}"
-                )
+                raise ValueError(f"Unsupported miner controller adapter type: {miner_controller.adapter_type}")
 
             self._instance_cache[miner_controller.id] = instance
             return instance
@@ -316,16 +292,13 @@ class AdapterService(AdapterServiceInterface):
                 )
             return None
 
-    def _initialize_notifier_adapter(
-        self, notifier: Notifier
-    ) -> Optional[NotificationPort]:
+    def _initialize_notifier_adapter(self, notifier: Notifier) -> Optional[NotificationPort]:
         """Initialize a notifier adapter."""
         # If the adapter has already been created, we use it.
         if notifier.id in self._instance_cache:
             if self.logger:
                 self.logger.debug(
-                    f"Returning cached adapter instance "
-                    f"for notifier ID {notifier.id} (Type: {notifier.adapter_type})"
+                    f"Returning cached adapter instance for notifier ID {notifier.id} (Type: {notifier.adapter_type})"
                 )
 
             cached_instance = self._instance_cache[notifier.id]
@@ -335,8 +308,7 @@ class AdapterService(AdapterServiceInterface):
                 # to indicate that the adapter was not initialized.
                 if self.logger:
                     self.logger.warning(
-                        f"Cached instance for notifier ID {notifier.id} "
-                        f"is None. Reinitializing adapter."
+                        f"Cached instance for notifier ID {notifier.id} is None. Reinitializing adapter."
                     )
                 return None
 
@@ -357,8 +329,7 @@ class AdapterService(AdapterServiceInterface):
             external_service = self.get_external_service(notifier.external_service_id)
             if not external_service:
                 raise ValueError(
-                    f"Unable to load external service {notifier.external_service_id} "
-                    f"for notifier {notifier.name}"
+                    f"Unable to load external service {notifier.external_service_id} for notifier {notifier.name}"
                 )
         try:
             instance: Optional[NotificationPort] = None
@@ -374,17 +345,14 @@ class AdapterService(AdapterServiceInterface):
                     external_service=external_service,
                 )
             else:
-                raise ValueError(
-                    f"Unsupported notifier adapter type: {notifier.adapter_type}"
-                )
+                raise ValueError(f"Unsupported notifier adapter type: {notifier.adapter_type}")
 
             self._instance_cache[notifier.id] = instance
             return instance
         except Exception as e:
             if self.logger:
                 self.logger.error(
-                    f"Failed to initialize adapter '{notifier.name}' "
-                    f"(Type: {notifier.adapter_type}) using factory: {e}"
+                    f"Failed to initialize adapter '{notifier.name}' (Type: {notifier.adapter_type}) using factory: {e}"
                 )
             return None
 
@@ -428,9 +396,7 @@ class AdapterService(AdapterServiceInterface):
 
         # Retrieve the external service associated to the forecast provider
         if forecast_provider.external_service_id:
-            external_service = self.get_external_service(
-                forecast_provider.external_service_id
-            )
+            external_service = self.get_external_service(forecast_provider.external_service_id)
             if not external_service:
                 raise ValueError(
                     f"Unable to load external service {forecast_provider.external_service_id} "
@@ -443,33 +409,20 @@ class AdapterService(AdapterServiceInterface):
             if forecast_provider.adapter_type == ForecastProviderAdapter.DUMMY_SOLAR:
                 # --- Dummy Forecast Provider ---
                 if not energy_source:
-                    raise ValueError(
-                        "EnergySource is required for DummySolar forecast provider."
-                    )
+                    raise ValueError("EnergySource is required for DummySolar forecast provider.")
 
                 forecast_provider_adapter_factory = DummyForecastProviderFactory()
 
                 # Set energy source as reference
                 forecast_provider_adapter_factory.from_energy_source(energy_source)
-            elif (
-                forecast_provider.adapter_type
-                == ForecastProviderAdapter.HOME_ASSISTANT_API
-            ):
+            elif forecast_provider.adapter_type == ForecastProviderAdapter.HOME_ASSISTANT_API:
                 # --- Home Assistant API Forecast Provider ---
                 if not forecast_provider.config:
-                    raise ValueError(
-                        "ForecastProvider config is required "
-                        "for HomeAssistantAPI forecast provider."
-                    )
+                    raise ValueError("ForecastProvider config is required for HomeAssistantAPI forecast provider.")
 
-                forecast_provider_adapter_factory = (
-                    HomeAssistantForecastProviderFactory()
-                )
+                forecast_provider_adapter_factory = HomeAssistantForecastProviderFactory()
             else:
-                raise ValueError(
-                    f"Unsupported forecast provider adapter type: "
-                    f"{forecast_provider.adapter_type}"
-                )
+                raise ValueError(f"Unsupported forecast provider adapter type: {forecast_provider.adapter_type}")
 
             instance = forecast_provider_adapter_factory.create(
                 config=forecast_provider.config,
@@ -532,8 +485,7 @@ class AdapterService(AdapterServiceInterface):
                 instance = DummyHomeForecastProvider(load_power_max=800)
             else:
                 raise ValueError(
-                    f"Unsupported home forecast provider adapter type: "
-                    f"{home_forecast_provider.adapter_type}"
+                    f"Unsupported home forecast provider adapter type: {home_forecast_provider.adapter_type}"
                 )
 
             self._instance_cache[home_forecast_provider.id] = instance
@@ -605,40 +557,28 @@ class AdapterService(AdapterServiceInterface):
 
                 instance = DummyMiningPerformanceTracker()
             else:
-                raise ValueError(
-                    f"Unsupported mining performance tracker adapter type: "
-                    f"{tracker.adapter_type}"
-                )
+                raise ValueError(f"Unsupported mining performance tracker adapter type: {tracker.adapter_type}")
 
             self._instance_cache[tracker.id] = instance
             return instance
         except Exception as e:
             if self.logger:
                 self.logger.error(
-                    f"Failed to initialize adapter '{tracker.name}' "
-                    f"(Type: {tracker.adapter_type}) using factory: {e}"
+                    f"Failed to initialize adapter '{tracker.name}' (Type: {tracker.adapter_type}) using factory: {e}"
                 )
             return None
 
-    def get_energy_monitor(
-        self, energy_source: EnergySource
-    ) -> Optional[EnergyMonitorPort]:
+    def get_energy_monitor(self, energy_source: EnergySource) -> Optional[EnergyMonitorPort]:
         """Get an energy monitor adapter instance."""
         if not energy_source.energy_monitor_id:
             if self.logger:
-                self.logger.error(
-                    f"EnergySource {energy_source.name} does not have "
-                    "an associated EnergyMonitor ID."
-                )
+                self.logger.error(f"EnergySource {energy_source.name} does not have an associated EnergyMonitor ID.")
             return None
-        energy_monitor = self.energy_monitor_repo.get_by_id(
-            energy_source.energy_monitor_id
-        )
+        energy_monitor = self.energy_monitor_repo.get_by_id(energy_source.energy_monitor_id)
         if not energy_monitor:
             if self.logger:
                 self.logger.error(
-                    f"EnergyMonitor ID {energy_source.energy_monitor_id} not found "
-                    f"or not an EnergyMonitor."
+                    f"EnergyMonitor ID {energy_source.energy_monitor_id} not found or not an EnergyMonitor."
                 )
             return None
         return self._initialize_energy_monitor_adapter(energy_source, energy_monitor)
@@ -647,18 +587,12 @@ class AdapterService(AdapterServiceInterface):
         """Get a miner controller adapter instance"""
         if not miner.controller_id:
             if self.logger:
-                self.logger.error(
-                    f"Miner {miner.name} does not have an associated "
-                    "MinerController ID."
-                )
+                self.logger.error(f"Miner {miner.name} does not have an associated MinerController ID.")
             return None
         miner_controller = self.miner_controller_repo.get_by_id(miner.controller_id)
         if not miner_controller:
             if self.logger:
-                self.logger.error(
-                    f"Miner Controller ID {miner.controller_id} not found "
-                    "or not a MinerController."
-                )
+                self.logger.error(f"Miner Controller ID {miner.controller_id} not found or not a MinerController.")
             return None
         return self._initialize_miner_controller_adapter(miner, miner_controller)
 
@@ -677,10 +611,7 @@ class AdapterService(AdapterServiceInterface):
                 notifier_instances.append(instance)
             else:
                 if self.logger:
-                    self.logger.warning(
-                        f"Notifier ID {notifier.id} not found "
-                        "or not a Notification category."
-                    )
+                    self.logger.warning(f"Notifier ID {notifier.id} not found or not a Notification category.")
         return notifier_instances
 
     def get_notifier(self, notifier_id: EntityId) -> Optional[NotificationPort]:
@@ -688,9 +619,7 @@ class AdapterService(AdapterServiceInterface):
         notifier = self.notifier_repo.get_by_id(notifier_id)
         if not notifier:
             if self.logger:
-                self.logger.error(
-                    f"Notifier ID {notifier_id} not found or not a Notifier."
-                )
+                self.logger.error(f"Notifier ID {notifier_id} not found or not a Notifier.")
             return None
         return self._initialize_notifier_adapter(notifier)
 
@@ -701,9 +630,7 @@ class AdapterService(AdapterServiceInterface):
             notifier = self.notifier_repo.get_by_id(notifier_id)
             if not notifier:
                 if self.logger:
-                    self.logger.error(
-                        f"Notifier ID {notifier_id} not found or not a Notifier."
-                    )
+                    self.logger.error(f"Notifier ID {notifier_id} not found or not a Notifier.")
                 continue
 
             instance = self._initialize_notifier_adapter(notifier)
@@ -711,78 +638,54 @@ class AdapterService(AdapterServiceInterface):
                 notifier_instances.append(instance)
             else:
                 if self.logger:
-                    self.logger.warning(
-                        f"Notifier ID {notifier.id} not found "
-                        "or not a Notification category."
-                    )
+                    self.logger.warning(f"Notifier ID {notifier.id} not found or not a Notification category.")
         return notifier_instances
 
-    def get_forecast_provider(
-        self, energy_source: EnergySource
-    ) -> Optional[ForecastProviderPort]:
+    def get_forecast_provider(self, energy_source: EnergySource) -> Optional[ForecastProviderPort]:
         """Get a forecast provider adapter instance."""
         if not energy_source.forecast_provider_id:
             if self.logger:
-                self.logger.error(
-                    f"EnergySource {energy_source.name} does not have "
-                    "an associated ForecastProvider ID."
-                )
+                self.logger.error(f"EnergySource {energy_source.name} does not have an associated ForecastProvider ID.")
             return None
-        forecast_provider = self.forecast_provider_repo.get_by_id(
-            energy_source.forecast_provider_id
-        )
+        forecast_provider = self.forecast_provider_repo.get_by_id(energy_source.forecast_provider_id)
         if not forecast_provider:
             if self.logger:
                 self.logger.error(
-                    f"Forecast Provider ID {energy_source.forecast_provider_id} "
-                    "not found or not a Forecast Provider."
+                    f"Forecast Provider ID {energy_source.forecast_provider_id} not found or not a Forecast Provider."
                 )
             return None
-        return self._initialize_forecast_provider_adapter(
-            energy_source, forecast_provider
-        )
+        return self._initialize_forecast_provider_adapter(energy_source, forecast_provider)
 
     def get_home_load_forecast_provider(
         self, home_forecast_provider_id: EntityId
     ) -> Optional[HomeForecastProviderPort]:
         """Get an home load forecast provider adapter instance."""
-        home_forecast_provider = self.home_forecast_provider_repo.get_by_id(
-            home_forecast_provider_id
-        )
+        home_forecast_provider = self.home_forecast_provider_repo.get_by_id(home_forecast_provider_id)
         if not home_forecast_provider:
             if self.logger:
                 self.logger.error(
-                    f"Home Forecast Provider ID {home_forecast_provider_id} "
-                    f"not found or not a Home Forecast Provider."
+                    f"Home Forecast Provider ID {home_forecast_provider_id} not found or not a Home Forecast Provider."
                 )
             return None
         return self._initialize_home_forecast_provider_adapter(home_forecast_provider)
 
-    def get_mining_performance_tracker(
-        self, tracker_id: EntityId
-    ) -> Optional[MiningPerformanceTrackerPort]:
+    def get_mining_performance_tracker(self, tracker_id: EntityId) -> Optional[MiningPerformanceTrackerPort]:
         """Get a mining performance tracker adapter instance."""
         tracker = self.mining_performance_tracker_repo.get_by_id(tracker_id)
         if not tracker:
             if self.logger:
                 self.logger.error(
-                    f"Mining Performance Tracker ID {tracker_id} not found "
-                    "or not a Mining Performance Tracker."
+                    f"Mining Performance Tracker ID {tracker_id} not found or not a Mining Performance Tracker."
                 )
             return None
         return self._initialize_mining_performance_tracker_adapter(tracker)
 
-    def get_external_service(
-        self, external_service_id: EntityId
-    ) -> Optional[ExternalServicePort]:
+    def get_external_service(self, external_service_id: EntityId) -> Optional[ExternalServicePort]:
         """Get a specific external service instance by ID."""
         external_service = self.external_service_repo.get_by_id(external_service_id)
         if not external_service:
             if self.logger:
-                self.logger.error(
-                    f"External Service ID {external_service_id} not found "
-                    "or not an External Service."
-                )
+                self.logger.error(f"External Service ID {external_service_id} not found or not an External Service.")
             return None
         return self._initialize_external_service(external_service)
 
@@ -792,9 +695,7 @@ class AdapterService(AdapterServiceInterface):
             # For now, we default to the 'custom' engine.
             # This could be driven by configuration in the future.
             factory = RuleEngineFactory()
-            engine = factory.create(
-                engine_type=RuleEngineType.CUSTOM, logger=self.logger
-            )
+            engine = factory.create(engine_type=RuleEngineType.CUSTOM, logger=self.logger)
             return engine
         except Exception as e:
             if self.logger:
@@ -828,13 +729,7 @@ class AdapterService(AdapterServiceInterface):
         if external_service_id in self._service_cache:
             del self._service_cache[external_service_id]
             if self.logger:
-                self.logger.info(
-                    f"Removed external service with ID {external_service_id} "
-                    "from cache."
-                )
+                self.logger.info(f"Removed external service with ID {external_service_id} from cache.")
         else:
             if self.logger:
-                self.logger.warning(
-                    f"No external service found with ID {external_service_id} "
-                    "to remove."
-                )
+                self.logger.warning(f"No external service found with ID {external_service_id} to remove.")

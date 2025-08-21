@@ -11,15 +11,11 @@ class SettingsRepository(ABC):
     """Port for the Settings Repository."""
 
     @abstractmethod
-    def get_settings(
-        self, user_id: Optional[UserId]
-    ) -> Optional[SystemSettings]:  # Assuming single settings object
+    def get_settings(self, user_id: Optional[UserId]) -> Optional[SystemSettings]:  # Assuming single settings object
         """Gets the settings."""
         raise NotImplementedError
 
     @abstractmethod
-    def save_settings(
-        self, user_id: Optional[UserId], settings: SystemSettings
-    ) -> None:
+    def save_settings(self, user_id: Optional[UserId], settings: SystemSettings) -> None:
         """Saves the settings."""
         raise NotImplementedError

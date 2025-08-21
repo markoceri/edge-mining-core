@@ -45,9 +45,7 @@ def optimization_unit():
 @click.option("--energy_source_id", help="ID of the energy source to use")
 @click.option("--target_miner_ids", help="Comma-separated list of target miner IDs")
 @click.option("--policy_id", help="ID of the policy to use")
-@click.option(
-    "--home_forecast_provider_id", help="ID of the home load forecast provider"
-)
+@click.option("--home_forecast_provider_id", help="ID of the home load forecast provider")
 @click.option("--performance_tracker_id", help="ID of the performance tracker")
 @click.option("--notifier_ids", help="Comma-separated list of notifier IDs")
 @click.pass_context
@@ -72,34 +70,22 @@ def create_optimization_unit(
 
     try:
         target_miner_ids = (
-            [
-                EntityId(cast(UUID, miner_id.strip()))
-                for miner_id in target_miner_ids_str.split(",")
-            ]
+            [EntityId(cast(UUID, miner_id.strip())) for miner_id in target_miner_ids_str.split(",")]
             if target_miner_ids_str
             else []
         )
         notifier_ids = (
-            [
-                EntityId(cast(UUID, notifier_id.strip()))
-                for notifier_id in notifier_ids_str.split(",")
-            ]
+            [EntityId(cast(UUID, notifier_id.strip())) for notifier_id in notifier_ids_str.split(",")]
             if notifier_ids_str
             else []
         )
-        energy_source_id = (
-            EntityId(cast(UUID, energy_source_id_str)) if energy_source_id_str else None
-        )
+        energy_source_id = EntityId(cast(UUID, energy_source_id_str)) if energy_source_id_str else None
         policy_id = EntityId(cast(UUID, policy_id_str)) if policy_id_str else None
         home_forecast_provider_id = (
-            EntityId(cast(UUID, home_forecast_provider_id_str))
-            if home_forecast_provider_id_str
-            else None
+            EntityId(cast(UUID, home_forecast_provider_id_str)) if home_forecast_provider_id_str else None
         )
         performance_tracker_id = (
-            EntityId(cast(UUID, performance_tracker_id_str))
-            if performance_tracker_id_str
-            else None
+            EntityId(cast(UUID, performance_tracker_id_str)) if performance_tracker_id_str else None
         )
 
         created = configuration_service.create_optimization_unit(
@@ -142,18 +128,10 @@ def miner():
 
 @miner.command("add")
 @click.argument("name")
-@click.option(
-    "--hash_rate", help="Max HashRate of the miner", type=float, default=100.0
-)
-@click.option(
-    "--hash_rate_units", help="HashRate units (e.g. TH/s, GH/s)", default="TH/s"
-)
-@click.option(
-    "--power_consumption", help="Max power consumption", type=float, default=3200.0
-)
-@click.option(
-    "--controller_id", help="Reference ID of miner controller", type=int, default=None
-)
+@click.option("--hash_rate", help="Max HashRate of the miner", type=float, default=100.0)
+@click.option("--hash_rate_units", help="HashRate units (e.g. TH/s, GH/s)", default="TH/s")
+@click.option("--power_consumption", help="Max power consumption", type=float, default=3200.0)
+@click.option("--controller_id", help="Reference ID of miner controller", type=int, default=None)
 @click.pass_context
 def add_miner(
     ctx: click.Context,
@@ -171,9 +149,7 @@ def add_miner(
         click.echo("Error: Configuration Services not initialized.", err=True)
         return
     try:
-        controller_id = (
-            EntityId(cast(UUID, controller_id_str)) if controller_id_str else None
-        )
+        controller_id = EntityId(cast(UUID, controller_id_str)) if controller_id_str else None
         hash_rate = HashRate(value=float(hash_rate_str), unit=hash_rate_unit_str)
         power_consumption = Watts(float(power_consumption_str))
 
@@ -243,12 +219,8 @@ def create_policy(ctx: click.Context, name: str, description: str):
         return
 
     try:
-        created = configuration_service.create_policy(
-            name=name, description=description
-        )
-        click.echo(
-            f"Optimization Policy '{created.name}' ({created.description}) created successfully."
-        )
+        created = configuration_service.create_policy(name=name, description=description)
+        click.echo(f"Optimization Policy '{created.name}' ({created.description}) created successfully.")
     except Exception as e:
         click.echo(f"Error adding miner: {e}", err=True)
 

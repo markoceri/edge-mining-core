@@ -45,9 +45,7 @@ class AstralSunFactory(SunFactoryInterface):
         night_duration = night_end - night_start
 
         # Obtain zenith and azimuth values
-        zenith_value, azimuth_value = zenith_and_azimuth(
-            self._location.observer, dateandtime=for_date
-        )
+        zenith_value, azimuth_value = zenith_and_azimuth(self._location.observer, dateandtime=for_date)
 
         # Calculate daylight duration
         daylight_start, daylight_end = daylight(self._location.observer, date=for_date)

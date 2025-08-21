@@ -17,9 +17,7 @@ from edge_mining.shared.logging.port import LoggerPort
 class DummyHomeForecastProvider(HomeForecastProviderPort):
     """Generates a very basic fake home load forecast."""
 
-    def __init__(
-        self, load_power_max: float = 500.0, logger: Optional[LoggerPort] = None
-    ):
+    def __init__(self, load_power_max: float = 500.0, logger: Optional[LoggerPort] = None):
         """Initializes the DummyHomeForecastProvider."""
         super().__init__(home_forecast_provider_type=HomeForecastProviderAdapter.DUMMY)
         self.logger = logger
@@ -27,9 +25,7 @@ class DummyHomeForecastProvider(HomeForecastProviderPort):
         self.load_power_max = load_power_max
         # You can set default values or use the ones from settings if needed
 
-    def get_home_consumption_forecast(
-        self, hours_ahead: int = 3
-    ) -> Optional[ConsumptionForecast]:
+    def get_home_consumption_forecast(self, hours_ahead: int = 3) -> Optional[ConsumptionForecast]:
         """Get the home consumption forecast."""
         # Super simple: return a random average load expected soon for next hours_ahead hours.
         if self.logger:
@@ -53,13 +49,10 @@ class DummyHomeForecastProvider(HomeForecastProviderPort):
             predicted_power = avg_load
             predictions[Timestamp(future_time)] = predicted_power
 
-        home_forecast = ConsumptionForecast(
-            predicted_watts=predictions, generated_at=Timestamp(now)
-        )
+        home_forecast = ConsumptionForecast(predicted_watts=predictions, generated_at=Timestamp(now))
 
         if self.logger:
             self.logger.debug(
-                f"DummyHomeForecastProvider: Estimated avg home load: "
-                f"{avg_load:.0f}W for next {hours_ahead} hours"
+                f"DummyHomeForecastProvider: Estimated avg home load: {avg_load:.0f}W for next {hours_ahead} hours"
             )
         return home_forecast

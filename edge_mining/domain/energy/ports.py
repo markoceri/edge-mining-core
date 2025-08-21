@@ -80,8 +80,6 @@ class EnergyMonitorRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_external_service_id(
-        self, external_service_id: EntityId
-    ) -> List[EnergyMonitor]:
+    def get_by_external_service_id(self, external_service_id: EntityId) -> List[EnergyMonitor]:
         """Retrieves a list of energy monitors by its associated external service ID."""
         raise NotImplementedError
