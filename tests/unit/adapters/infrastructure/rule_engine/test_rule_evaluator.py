@@ -54,9 +54,7 @@ class TestRuleEvaluator(unittest.TestCase):
             "value": 50,
         }
 
-        result = RuleEvaluator.evaluate_rule_conditions(
-            self.mock_context, conditions_dict
-        )
+        result = RuleEvaluator.evaluate_rule_conditions(self.mock_context, conditions_dict)
 
         self.assertTrue(result)
 
@@ -77,9 +75,7 @@ class TestRuleEvaluator(unittest.TestCase):
             ]
         }
 
-        result = RuleEvaluator.evaluate_rule_conditions(
-            self.mock_context, conditions_dict
-        )
+        result = RuleEvaluator.evaluate_rule_conditions(self.mock_context, conditions_dict)
 
         self.assertTrue(result)
 
@@ -87,9 +83,7 @@ class TestRuleEvaluator(unittest.TestCase):
         """Test that unsupported condition types raise ValueError."""
         # The method expects a dict but we pass a string
         with self.assertRaises(ValueError) as cm:
-            RuleEvaluator.evaluate_rule_conditions(
-                self.mock_context, "invalid_condition"
-            )
+            RuleEvaluator.evaluate_rule_conditions(self.mock_context, "invalid_condition")
 
         # The actual error message will be about unsupported condition type
         self.assertIn("Unsupported condition type", str(cm.exception))
@@ -113,9 +107,7 @@ class TestRuleEvaluator(unittest.TestCase):
 
     def test_convert_conditions_to_schema_logical_group(self):
         """Test converting dict to LogicalGroupSchema."""
-        conditions_dict = {
-            "all_of": [{"field": "test.field", "operator": "eq", "value": 1}]
-        }
+        conditions_dict = {"all_of": [{"field": "test.field", "operator": "eq", "value": 1}]}
 
         result = RuleEvaluator._convert_conditions_to_schema(conditions_dict)
 
@@ -167,9 +159,7 @@ class TestRuleEvaluator(unittest.TestCase):
 
     def test_evaluate_single_condition_field_not_found(self):
         """Test single condition with non-existent field."""
-        condition = RuleConditionSchema(
-            field="non.existent.field", operator=OperatorType.EQ, value=100
-        )
+        condition = RuleConditionSchema(field="non.existent.field", operator=OperatorType.EQ, value=100)
 
         result = RuleEvaluator._evaluate_single_condition(self.mock_context, condition)
 
@@ -189,16 +179,12 @@ class TestRuleEvaluator(unittest.TestCase):
 
         self.assertFalse(result)
 
-    @patch(
-        "edge_mining.adapters.infrastructure.rule_engine.custom.helpers.RuleEvaluator._get_field_value"
-    )
+    @patch("edge_mining.adapters.infrastructure.rule_engine.custom.helpers.RuleEvaluator._get_field_value")
     def test_evaluate_single_condition_exception_handling(self, mock_get_field):
         """Test exception handling in single condition evaluation."""
         mock_get_field.side_effect = Exception("Field access error")
 
-        condition = RuleConditionSchema(
-            field="test.field", operator=OperatorType.EQ, value=100
-        )
+        condition = RuleConditionSchema(field="test.field", operator=OperatorType.EQ, value=100)
 
         result = RuleEvaluator._evaluate_single_condition(self.mock_context, condition)
 
@@ -252,9 +238,7 @@ class TestRuleEvaluator(unittest.TestCase):
                     "value": expected_value,
                 }
 
-                result = RuleEvaluator.evaluate_rule_conditions(
-                    self.mock_context, conditions_dict
-                )
+                result = RuleEvaluator.evaluate_rule_conditions(self.mock_context, conditions_dict)
                 self.assertEqual(result, expected_result)
 
     def test_field_access_edge_cases(self):
@@ -324,9 +308,7 @@ class TestRuleEvaluator(unittest.TestCase):
 
     def test_get_field_value_nested_path(self):
         """Test getting field value with nested path."""
-        result = RuleEvaluator._get_field_value(
-            self.mock_context, "energy_state.battery.state_of_charge"
-        )
+        result = RuleEvaluator._get_field_value(self.mock_context, "energy_state.battery.state_of_charge")
 
         self.assertEqual(result, 75)
 
@@ -345,9 +327,7 @@ class TestRuleEvaluator(unittest.TestCase):
             else None
         )
 
-        result = RuleEvaluator._get_field_value(
-            self.mock_context, "energy_state.missing.field"
-        )
+        result = RuleEvaluator._get_field_value(self.mock_context, "energy_state.missing.field")
 
         self.assertIsNone(result)
 
@@ -425,72 +405,52 @@ class TestRuleEvaluator(unittest.TestCase):
 
     def test_apply_operator_in_true(self):
         """Test IN operator when value is in list."""
-        result = RuleEvaluator._apply_operator(
-            "ON", OperatorType.IN, ["ON", "OFF", "ERROR"]
-        )
+        result = RuleEvaluator._apply_operator("ON", OperatorType.IN, ["ON", "OFF", "ERROR"])
         self.assertTrue(result)
 
     def test_apply_operator_in_false(self):
         """Test IN operator when value is not in list."""
-        result = RuleEvaluator._apply_operator(
-            "STARTING", OperatorType.IN, ["ON", "OFF", "ERROR"]
-        )
+        result = RuleEvaluator._apply_operator("STARTING", OperatorType.IN, ["ON", "OFF", "ERROR"])
         self.assertFalse(result)
 
     def test_apply_operator_not_in_true(self):
         """Test NOT_IN operator when value is not in list."""
-        result = RuleEvaluator._apply_operator(
-            "STARTING", OperatorType.NOT_IN, ["ON", "OFF", "ERROR"]
-        )
+        result = RuleEvaluator._apply_operator("STARTING", OperatorType.NOT_IN, ["ON", "OFF", "ERROR"])
         self.assertTrue(result)
 
     def test_apply_operator_not_in_false(self):
         """Test NOT_IN operator when value is in list."""
-        result = RuleEvaluator._apply_operator(
-            "ON", OperatorType.NOT_IN, ["ON", "OFF", "ERROR"]
-        )
+        result = RuleEvaluator._apply_operator("ON", OperatorType.NOT_IN, ["ON", "OFF", "ERROR"])
         self.assertFalse(result)
 
     def test_apply_operator_contains_true(self):
         """Test CONTAINS operator when expected value is in field value."""
-        result = RuleEvaluator._apply_operator(
-            "solar_panel_1", OperatorType.CONTAINS, "solar"
-        )
+        result = RuleEvaluator._apply_operator("solar_panel_1", OperatorType.CONTAINS, "solar")
         self.assertTrue(result)
 
     def test_apply_operator_contains_false(self):
         """Test CONTAINS operator when expected value is not in field value."""
-        result = RuleEvaluator._apply_operator(
-            "battery_monitor", OperatorType.CONTAINS, "solar"
-        )
+        result = RuleEvaluator._apply_operator("battery_monitor", OperatorType.CONTAINS, "solar")
         self.assertFalse(result)
 
     def test_apply_operator_starts_with_true(self):
         """Test STARTS_WITH operator when field value starts with expected value."""
-        result = RuleEvaluator._apply_operator(
-            "HIGH_PRIORITY", OperatorType.STARTS_WITH, "HIGH"
-        )
+        result = RuleEvaluator._apply_operator("HIGH_PRIORITY", OperatorType.STARTS_WITH, "HIGH")
         self.assertTrue(result)
 
     def test_apply_operator_starts_with_false(self):
         """Test STARTS_WITH operator when field value doesn't start with expected value."""
-        result = RuleEvaluator._apply_operator(
-            "LOW_PRIORITY", OperatorType.STARTS_WITH, "HIGH"
-        )
+        result = RuleEvaluator._apply_operator("LOW_PRIORITY", OperatorType.STARTS_WITH, "HIGH")
         self.assertFalse(result)
 
     def test_apply_operator_ends_with_true(self):
         """Test ENDS_WITH operator when field value ends with expected value."""
-        result = RuleEvaluator._apply_operator(
-            "SYSTEM_LEVEL", OperatorType.ENDS_WITH, "LEVEL"
-        )
+        result = RuleEvaluator._apply_operator("SYSTEM_LEVEL", OperatorType.ENDS_WITH, "LEVEL")
         self.assertTrue(result)
 
     def test_apply_operator_ends_with_false(self):
         """Test ENDS_WITH operator when field value doesn't end with expected value."""
-        result = RuleEvaluator._apply_operator(
-            "SYSTEM_STATE", OperatorType.ENDS_WITH, "LEVEL"
-        )
+        result = RuleEvaluator._apply_operator("SYSTEM_STATE", OperatorType.ENDS_WITH, "LEVEL")
         self.assertFalse(result)
 
     def test_apply_operator_regex_true(self):
@@ -547,9 +507,7 @@ class TestRuleEvaluator(unittest.TestCase):
             ]
         }
 
-        result = RuleEvaluator.evaluate_rule_conditions(
-            self.mock_context, conditions_dict
-        )
+        result = RuleEvaluator.evaluate_rule_conditions(self.mock_context, conditions_dict)
 
         self.assertTrue(result)
 
@@ -573,9 +531,7 @@ class TestRuleEvaluator(unittest.TestCase):
             ]
         }
 
-        result = RuleEvaluator.evaluate_rule_conditions(
-            self.mock_context, conditions_dict
-        )
+        result = RuleEvaluator.evaluate_rule_conditions(self.mock_context, conditions_dict)
 
         self.assertTrue(result)
 
@@ -594,9 +550,7 @@ class TestRuleEvaluator(unittest.TestCase):
 
         # We need to mock the _get_field_value since timestamp.weekday requires special handling
         with patch.object(RuleEvaluator, "_get_field_value", return_value=5):
-            result = RuleEvaluator.evaluate_rule_conditions(
-                self.mock_context, conditions_dict
-            )
+            result = RuleEvaluator.evaluate_rule_conditions(self.mock_context, conditions_dict)
             self.assertTrue(result)
 
 

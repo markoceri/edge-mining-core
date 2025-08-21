@@ -126,9 +126,7 @@ class TestEnergySource:
     def test_energy_source_type_variations(self):
         """Test creating energy sources with different types."""
         wind_source = EnergySource(name="Wind Turbine", type=EnergySourceType.WIND)
-        hydro_source = EnergySource(
-            name="Hydro Plant", type=EnergySourceType.HYDROELECTRIC
-        )
+        hydro_source = EnergySource(name="Hydro Plant", type=EnergySourceType.HYDROELECTRIC)
         solar_source = EnergySource(name="Solar Plant", type=EnergySourceType.SOLAR)
 
         assert wind_source.type == EnergySourceType.WIND
@@ -224,9 +222,7 @@ class TestEnergySource:
 class TestEnergySourceWithFixtures:
     """Additional tests using fixtures."""
 
-    def test_energy_source_with_fixtures(
-        self, sample_energy_source, sample_battery, sample_grid
-    ):
+    def test_energy_source_with_fixtures(self, sample_energy_source, sample_battery, sample_grid):
         """Test energy source operations using fixtures."""
         # Use fixtures
         sample_energy_source.connect_to_storage(sample_battery)

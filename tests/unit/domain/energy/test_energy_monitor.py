@@ -44,9 +44,7 @@ class TestEnergyMonitor:
             adapter_type=EnergyMonitorAdapter.HOME_ASSISTANT_API,
         )
 
-        dummy_monitor = EnergyMonitor(
-            name="Dummy Monitor", adapter_type=EnergyMonitorAdapter.DUMMY_SOLAR
-        )
+        dummy_monitor = EnergyMonitor(name="Dummy Monitor", adapter_type=EnergyMonitorAdapter.DUMMY_SOLAR)
 
         mqtt_monitor = EnergyMonitor(
             name="HomeAssistant MQTT Monitor",

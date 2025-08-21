@@ -57,9 +57,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         self.engine.load_rules(rules)
 
         self.assertEqual(self.engine.rules, [])
-        self.mock_logger.debug.assert_called_once_with(
-            "Successfully loaded 0 rules into CustomRuleEngine"
-        )
+        self.mock_logger.debug.assert_called_once_with("Successfully loaded 0 rules into CustomRuleEngine")
 
     def test_load_rules_single_rule(self):
         """Test loading a single rule."""
@@ -68,9 +66,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         self.engine.load_rules(rules)
 
         self.assertEqual(self.engine.rules, rules)
-        self.mock_logger.debug.assert_called_once_with(
-            "Successfully loaded 1 rules into CustomRuleEngine"
-        )
+        self.mock_logger.debug.assert_called_once_with("Successfully loaded 1 rules into CustomRuleEngine")
 
     def test_load_rules_multiple_rules(self):
         """Test loading multiple rules."""
@@ -79,9 +75,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         self.engine.load_rules(rules)
 
         self.assertEqual(self.engine.rules, rules)
-        self.mock_logger.debug.assert_called_once_with(
-            "Successfully loaded 2 rules into CustomRuleEngine"
-        )
+        self.mock_logger.debug.assert_called_once_with("Successfully loaded 2 rules into CustomRuleEngine")
 
     def test_load_rules_overwrites_existing(self):
         """Test that loading rules overwrites existing rules."""
@@ -205,32 +199,24 @@ class TestCustomRuleEngine(unittest.TestCase):
     @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_handles_value_error(self, mock_rule_evaluator):
         """Test evaluation handles ValueError exceptions gracefully."""
-        mock_rule_evaluator.evaluate_rule_conditions.side_effect = ValueError(
-            "Test error"
-        )
+        mock_rule_evaluator.evaluate_rule_conditions.side_effect = ValueError("Test error")
 
         self.engine.load_rules([self.mock_rule_high_priority])
         result = self.engine.evaluate(self.mock_context)
 
         self.assertFalse(result)
-        self.mock_logger.error.assert_called_once_with(
-            "Error evaluating rule 'High Priority Rule': Test error"
-        )
+        self.mock_logger.error.assert_called_once_with("Error evaluating rule 'High Priority Rule': Test error")
 
     @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_handles_attribute_error(self, mock_rule_evaluator):
         """Test evaluation handles AttributeError exceptions gracefully."""
-        mock_rule_evaluator.evaluate_rule_conditions.side_effect = AttributeError(
-            "Test error"
-        )
+        mock_rule_evaluator.evaluate_rule_conditions.side_effect = AttributeError("Test error")
 
         self.engine.load_rules([self.mock_rule_high_priority])
         result = self.engine.evaluate(self.mock_context)
 
         self.assertFalse(result)
-        self.mock_logger.error.assert_called_once_with(
-            "Error evaluating rule 'High Priority Rule': Test error"
-        )
+        self.mock_logger.error.assert_called_once_with("Error evaluating rule 'High Priority Rule': Test error")
 
     @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
     def test_evaluate_continues_after_error(self, mock_rule_evaluator):
@@ -247,9 +233,7 @@ class TestCustomRuleEngine(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertEqual(mock_rule_evaluator.evaluate_rule_conditions.call_count, 2)
-        self.mock_logger.error.assert_called_once_with(
-            "Error evaluating rule 'High Priority Rule': Test error"
-        )
+        self.mock_logger.error.assert_called_once_with("Error evaluating rule 'High Priority Rule': Test error")
         self.mock_logger.debug.assert_any_call("Rule 'Low Priority Rule' matched!")
 
     @patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator")
@@ -273,9 +257,7 @@ class TestCustomRuleEngine(unittest.TestCase):
         enabled_rule.enabled = True
         enabled_rule.conditions = ["condition"]
 
-        with patch(
-            "edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator"
-        ) as mock_evaluator:
+        with patch("edge_mining.adapters.infrastructure.rule_engine.engine.RuleEvaluator") as mock_evaluator:
             mock_evaluator.evaluate_rule_conditions.return_value = True
 
             rules = [
@@ -289,9 +271,7 @@ class TestCustomRuleEngine(unittest.TestCase):
             self.assertTrue(result)
             # Should only evaluate enabled rules
             self.assertEqual(mock_evaluator.evaluate_rule_conditions.call_count, 1)
-            mock_evaluator.evaluate_rule_conditions.assert_called_with(
-                self.mock_context, enabled_rule.conditions
-            )
+            mock_evaluator.evaluate_rule_conditions.assert_called_with(self.mock_context, enabled_rule.conditions)
 
 
 if __name__ == "__main__":

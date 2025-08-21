@@ -29,9 +29,7 @@ def solar_energy_source():
 @pytest.fixture
 def wind_energy_source():
     """Fixture providing a wind energy source."""
-    return EnergySource(
-        name="Wind Turbine", type=EnergySourceType.WIND, nominal_power_max=Watts(3000)
-    )
+    return EnergySource(name="Wind Turbine", type=EnergySourceType.WIND, nominal_power_max=Watts(3000))
 
 
 @pytest.fixture
@@ -61,9 +59,7 @@ def high_power_grid():
 @pytest.fixture
 def energy_monitor():
     """Fixture providing a dummy energy monitor."""
-    return EnergyMonitor(
-        name="Test Monitor", adapter_type=EnergyMonitorAdapter.DUMMY_SOLAR
-    )
+    return EnergyMonitor(name="Test Monitor", adapter_type=EnergyMonitorAdapter.DUMMY_SOLAR)
 
 
 @pytest.fixture
@@ -124,9 +120,7 @@ def home_assistant_mqtt_monitor():
 @pytest.fixture
 def dummy_monitor():
     """Fixture providing a dummy energy monitor."""
-    return EnergyMonitor(
-        name="Dummy Monitor", adapter_type=EnergyMonitorAdapter.DUMMY_SOLAR
-    )
+    return EnergyMonitor(name="Dummy Monitor", adapter_type=EnergyMonitorAdapter.DUMMY_SOLAR)
 
 
 @pytest.fixture
