@@ -1,14 +1,6 @@
 {
     "python.defaultInterpreterPath": "./.venv/bin/python",
     "python.terminal.activateEnvironment": true,
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.pylintEnabled": false,
-    "python.linting.banditEnabled": true,
-    "python.linting.mypyEnabled": true,
-    "python.formatting.provider": "black",
-    "python.formatting.blackArgs": ["--line-length=120"],
-    "python.sortImports.args": ["--profile=black"],
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "python.testing.pytestArgs": [
@@ -16,16 +8,17 @@
     ],
     "editor.formatOnSave": false,
     "editor.formatOnPaste": false,
-    "editor.rulers": [88, 120],
+    "editor.rulers": [120],
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
     "[python]": {
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
-        "editor.formatOnSave": false,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-            "source.organizeImports": "never"
+            "source.organizeImports": "explicit"
         }
     },
     "[yaml]": {
@@ -39,15 +32,6 @@
     "emmet.includeLanguages": {
         "yaml": "yaml"
     },
-    "pylint.args": [
-        "--max-line-length=120"
-    ],
-    "python.linting.pylintArgs": [
-        "--max-line-length=120"
-    ],
-    "python.linting.flake8Args": [
-        "--max-line-length=120"
-    ],
     "cSpell.words": [
         "edgemining",
         "mqtt",

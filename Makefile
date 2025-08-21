@@ -14,7 +14,7 @@ help:
 	@echo "  setup          - Set up development environment"
 	@echo "  install        - Install dependencies"
 	@echo "  install-dev    - Install development dependencies"
-	@echo "  format         - Format code with black and isort"
+	@echo "  format         - Format code with ruff"
 	@echo "  lint           - Run all linting checks"
 	@echo "  lint-fix       - Run linting and fix what can be auto-fixed"
 	@echo "  test           - Run tests"
@@ -38,22 +38,22 @@ install-dev:
 # Format code
 format:
 	@echo "🔧 Formatting code..."
-	$(PYTHON) -m black edge_mining/ tests/
-	$(PYTHON) -m isort edge_mining/ tests/
+	$(PYTHON) -m ruff format edge_mining/ tests/
 	@echo "✅ Code formatting complete!"
 
 # Run linting
 lint:
 	@echo "🔍 Running linting checks..."
-	$(PYTHON) -m flake8 edge_mining/
+	$(PYTHON) -m ruff check edge_mining/ tests/
 	$(PYTHON) -m mypy edge_mining/ || true
 	$(PYTHON) -m bandit -r edge_mining/ || true
 	@echo "✅ Linting complete!"
 
 # Run linting and fix what can be auto-fixed
-lint-fix: format
+lint-fix:
 	@echo "🔧 Running auto-fixable linting..."
-	$(PYTHON) -m autopep8 --in-place --recursive --max-line-length=88 edge_mining/ tests/
+	$(PYTHON) -m ruff check --fix edge_mining/ tests/
+	$(PYTHON) -m ruff format edge_mining/ tests/
 	@echo "✅ Auto-fix complete!"
 
 # Run tests
