@@ -7,8 +7,8 @@ This guide describes the recommended workflow for contributing to the Edge Minin
 ### 1. Clone the repository and enter the directory
 
 ```bash
-git clone <repository-url>
-cd edge-mining/core
+git clone https://github.com/edge-mining/core.git
+cd core
 ```
 
 ### 2. Setup development environment
@@ -98,6 +98,7 @@ make lint-fix
 
 ```bash
 make clean
+
 # Remove virtual environment if necessary
 rm -rf .venv
 python -m venv .venv
@@ -115,50 +116,18 @@ This will generate an HTML report in `htmlcov/index.html`
 #### Security check
 
 ```bash
-.venv/bin/bandit -r edge_mining/
+bandit -r edge_mining/
 ```
 
 #### Type checking con mypy
 
 ```bash
-.venv/bin/mypy edge_mining/
+mypy edge_mining/
 ```
 
 ## Tools Structure
 
-### Configuration Files
-
-- **`.pre-commit-config.yaml`**: Pre-commit hooks configuration
-- **`pyproject.toml`**: Configuration for black, isort, pytest and coverage
-- **`requirements-dev.txt`**: Development dependencies
-- **`Makefile`**: Automation commands
-
-### Useful Scripts
-
-- **`Makefile`**: Automation with make (recommended)
-
-## Code Quality Rules
-
-### Formatting
-
-- **Black**: Automatic Python code formatting
-- **isort**: Automatic import sorting
-- Maximum line length: 120 characters (for black) / 120 characters (for flake8)
-
-### Linting
-
-- **flake8**: Style checking and syntax errors
-- **bandit**: Security checking
-- **mypy**: Type checking (optional but recommended)
-
-### Testing
-
-- **pytest**: Testing framework
-
-### Git Hooks
-
-- **pre-commit**: Automatic execution of all checks before commit
-- **yamllint**: YAML file syntax checking
+See the [DEV_TOOLS.md](DEV_TOOLS.md) file for detailed information about the tools used in this project.
 
 ## Troubleshooting
 
@@ -166,11 +135,11 @@ This will generate an HTML report in `htmlcov/index.html`
 
 ```bash
 # Reinstall pre-commit
-.venv/bin/pre-commit uninstall
+pre-commit uninstall
 make pre-commit-install
 
 # Update hooks
-.venv/bin/pre-commit autoupdate
+pre-commit autoupdate
 ```
 
 ### Import or dependency errors
@@ -192,7 +161,7 @@ make install-dev
 # Errors don't block commits but it's good to resolve them
 
 # To run mypy manually:
-.venv/bin/mypy edge_mining/
+mypy edge_mining/
 ```
 
 ### Formatting conflicts
@@ -227,7 +196,7 @@ Use conventional commits:
 - `test:` for adding/modifying tests
 - `chore:` for maintenance tasks
 
-Esempio:
+Example commit messages:
 
 ```bash
 git commit -m "feat: add energy monitoring adapter for solar panels"

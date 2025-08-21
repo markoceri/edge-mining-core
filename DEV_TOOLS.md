@@ -86,22 +86,21 @@ make test-cov
 
 ## Linting and Formatting Tools
 
-### Black - Code formatting
+### Ruff - Code formatting
 
 ```bash
-black edge_mining/ tests/
+ruff format edge_mining/
 ```
 
-### isort - Import sorting
+### Ruff - Linting
 
 ```bash
-isort edge_mining/ tests/
+ruff check edge_mining/
 ```
 
-### flake8 - Linting
-
+Use the option `--ignore=E501` to disable line length checks.
 ```bash
-flake8 edge_mining/ tests/
+ruff check edge_mining/ --ignore=E501
 ```
 
 ### mypy - Type checking
@@ -118,12 +117,10 @@ bandit -r edge_mining/
 
 ## Configurations
 
-- **Black**: Configured in `pyproject.toml` with 88 character line length
-- **isort**: Configured to be compatible with Black
-- **flake8**: Configured in `.flake8` with exclusions for specific directories and 120 character line length
-- **mypy**: Configured in `mypy.ini` with type checking settings
-- **pre-commit**: Configured in `.pre-commit-config.yaml` with all necessary hooks
-- **pytest**: Configured in `pyproject.toml` for testing and coverage
+- **`.pre-commit-config.yaml`**: Pre-commit hooks configuration
+- **`pyproject.toml`**: Configuration for mypy, ruff, bandit, pytest and coverage
+- **`requirements-dev.txt`**: Development dependencies
+- **`Makefile`**: Automation commands
 
 ## Troubleshooting
 
