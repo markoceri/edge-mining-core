@@ -1334,6 +1334,18 @@ class ConfigurationService(ConfigurationServiceInterface):
         self.logger.debug(f"Miner controller {controller.id} ({controller.name}) is valid.")
         return True
 
+    def get_miner_controller_config_by_type(
+        self, adapter_type: MinerControllerAdapter
+    ) -> Optional[type[MinerControllerConfig]]:
+        """Get the configuration class for a specific miner controller adapter type."""
+        self.logger.debug(f"Getting configuration for miner controller adapter {adapter_type}")
+        if adapter_type not in MINER_CONTROLLER_CONFIG_TYPE_MAP:
+            raise MinerControllerConfigurationError(
+                f"Adapter type {adapter_type} is not supported for miner controller configuration."
+            )
+
+        return MINER_CONTROLLER_CONFIG_TYPE_MAP.get(adapter_type, None)
+
     # --- Notifier Management ---
     def add_notifier(
         self,

@@ -7,35 +7,29 @@ from typing import Any, Dict, List, Optional
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.energy.common import EnergyMonitorAdapter, EnergySourceType
 from edge_mining.domain.energy.entities import EnergyMonitor, EnergySource
-from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.domain.energy.ports import EnergyMonitorPort
+from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
 from edge_mining.domain.forecast.ports import ForecastProviderPort
 from edge_mining.domain.home_load.ports import HomeForecastProviderPort
-from edge_mining.domain.performance.ports import MiningPerformanceTrackerPort
-from edge_mining.domain.miner.common import MinerStatus, MinerControllerAdapter
+from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.ports import MinerControlPort
 from edge_mining.domain.miner.value_objects import HashRate
+from edge_mining.domain.notification.common import NotificationAdapter
+from edge_mining.domain.notification.entities import Notifier
 from edge_mining.domain.notification.ports import NotificationPort
-from edge_mining.domain.policy.aggregate_roots import (
-    AutomationRule,
-    OptimizationPolicy,
-)
+from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
+from edge_mining.domain.performance.ports import MiningPerformanceTrackerPort
+from edge_mining.domain.policy.aggregate_roots import AutomationRule, OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.domain.policy.value_objects import Sun
-from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
-from edge_mining.domain.notification.common import NotificationAdapter
-from edge_mining.domain.notification.entities import Notifier
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
-from edge_mining.shared.external_services.value_objects import (
-    ExternalServiceLinkedEntities,
-)
 from edge_mining.shared.external_services.ports import ExternalServicePort
-
+from edge_mining.shared.external_services.value_objects import ExternalServiceLinkedEntities
 from edge_mining.shared.interfaces.config import (
     EnergyMonitorConfig,
     ExternalServiceConfig,
@@ -234,6 +228,12 @@ class ConfigurationServiceInterface(ABC):
     @abstractmethod
     def check_miner_controller(self, controller: MinerController) -> bool:
         """Check if a miner controller is valid and can be used."""
+
+    @abstractmethod
+    def get_miner_controller_config_by_type(
+        self, adapter_type: MinerControllerAdapter
+    ) -> Optional[type[MinerControllerConfig]]:
+        """Get the configuration class for a specific miner controller adapter type."""
 
     # --- Notifier Management ---
     @abstractmethod
