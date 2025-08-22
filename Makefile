@@ -46,7 +46,7 @@ lint:
 	@echo "🔍 Running linting checks..."
 	$(PYTHON) -m ruff check edge_mining/
 	$(PYTHON) -m mypy edge_mining/ || true
-	$(PYTHON) -m bandit -r edge_mining/ || true
+	$(PYTHON) -m bandit -r edge_mining/ --skip B311,B104 || true
 	@echo "✅ Linting complete!"
 
 # Run linting and fix what can be auto-fixed
