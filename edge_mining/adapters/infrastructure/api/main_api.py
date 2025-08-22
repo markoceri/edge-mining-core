@@ -11,14 +11,8 @@ from edge_mining.adapters.domain.miner.fast_api.router import router as miner_ro
 from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
 
 # Import dependency injection setup functions
-from edge_mining.adapters.infrastructure.api.setup import (
-    get_logger,
-    get_optimization_service,
-    get_service_container,
-)
-from edge_mining.application.services.optimization_service import (
-    OptimizationService,
-)
+from edge_mining.adapters.infrastructure.api.setup import get_logger, get_optimization_service, get_service_container
+from edge_mining.application.services.optimization_service import OptimizationService
 from edge_mining.shared.logging.port import LoggerPort
 
 

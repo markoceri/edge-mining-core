@@ -17,10 +17,7 @@ from edge_mining.domain.energy.exceptions import (
     EnergySourceError,
     EnergySourceNotFoundError,
 )
-from edge_mining.domain.energy.ports import (
-    EnergyMonitorRepository,
-    EnergySourceRepository,
-)
+from edge_mining.domain.energy.ports import EnergyMonitorRepository, EnergySourceRepository
 from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.shared.adapter_maps.energy import ENERGY_MONITOR_CONFIG_TYPE_MAP
 from edge_mining.shared.interfaces.config import EnergyMonitorConfig
@@ -144,7 +141,8 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
         self.logger.debug(f"Adding energy source {energy_source.id} to SQLite.")
 
         sql = """
-            INSERT INTO energy_sources (id, name, type, nominal_power_max, storage, grid, external_source, energy_monitor_id, forecast_provider_id)
+            INSERT INTO energy_sources (id, name, type, nominal_power_max, storage, grid, external_source,
+            energy_monitor_id, forecast_provider_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         conn = self._db.get_connection()
@@ -229,7 +227,8 @@ class SqliteEnergySourceRepository(EnergySourceRepository):
 
         sql = """
             UPDATE energy_sources
-            SET name = ?, type = ?, nominal_power_max = ?, storage = ?, grid = ?, external_source = ?, energy_monitor_id = ?, forecast_provider_id = ?
+            SET name = ?, type = ?, nominal_power_max = ?, storage = ?, grid = ?, external_source = ?,
+            energy_monitor_id = ?, forecast_provider_id = ?
             WHERE id = ?
         """
         conn = self._db.get_connection()

@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import click
 
+from edge_mining.adapters.infrastructure.cli.utils import print_configuration, process_filters
 from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     print_external_service_details,
     select_external_service,
@@ -16,18 +17,11 @@ from edge_mining.shared.adapter_configs.forecast import (
     ForecastProviderDummySolarConfig,
     ForecastProviderHomeAssistantConfig,
 )
-from edge_mining.shared.adapter_maps.forecast import (
-    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP,
-)
+from edge_mining.shared.adapter_maps.forecast import FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import ForecastProviderConfig
 from edge_mining.shared.logging.port import LoggerPort
-
-from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters,
-    print_configuration,
-)
 
 
 def select_forecast_provider_adapter() -> Optional[ForecastProviderAdapter]:
@@ -465,7 +459,8 @@ def delete_single_forecast_provider(
 ) -> bool:
     """Delete a single forecast provider."""
     delete_confirm: bool = click.confirm(
-        f"Are you sure you want to delete the forecast provider '{forecast_provider.name}' (ID: {forecast_provider.id})?",
+        f"Are you sure you want to delete the forecast provider '{forecast_provider.name}' "
+        f"(ID: {forecast_provider.id})?",
         abort=False,
         default=False,
         prompt_suffix="",

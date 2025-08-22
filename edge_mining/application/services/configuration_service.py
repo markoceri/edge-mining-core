@@ -4,6 +4,7 @@ Configuration service for managing all domain entities of edge mining applicatio
 
 from typing import Any, Dict, List, Optional
 
+from edge_mining.application.interfaces import ConfigurationServiceInterface
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.energy.common import EnergyMonitorAdapter, EnergySourceType
 from edge_mining.domain.energy.entities import EnergyMonitor, EnergySource
@@ -12,17 +13,11 @@ from edge_mining.domain.energy.exceptions import (
     EnergyMonitorNotFoundError,
     EnergySourceNotFoundError,
 )
-from edge_mining.domain.energy.ports import (
-    EnergyMonitorRepository,
-    EnergySourceRepository,
-)
+from edge_mining.domain.energy.ports import EnergyMonitorRepository, EnergySourceRepository
 from edge_mining.domain.energy.value_objects import Battery, Grid
 from edge_mining.domain.forecast.common import ForecastProviderAdapter
 from edge_mining.domain.forecast.entities import ForecastProvider
-from edge_mining.domain.forecast.exceptions import (
-    ForecastProviderConfigurationError,
-    ForecastProviderNotFoundError,
-)
+from edge_mining.domain.forecast.exceptions import ForecastProviderConfigurationError, ForecastProviderNotFoundError
 from edge_mining.domain.forecast.ports import ForecastProviderRepository
 from edge_mining.domain.home_load.entities import HomeForecastProvider
 from edge_mining.domain.home_load.exceptions import HomeForecastProviderNotFoundError
@@ -38,29 +33,20 @@ from edge_mining.domain.miner.ports import MinerControllerRepository, MinerRepos
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.notification.common import NotificationAdapter
 from edge_mining.domain.notification.entities import Notifier
-from edge_mining.domain.notification.exceptions import (
-    NotifierConfigurationError,
-    NotifierNotFoundError,
-)
+from edge_mining.domain.notification.exceptions import NotifierConfigurationError, NotifierNotFoundError
 from edge_mining.domain.notification.ports import NotifierRepository
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
 from edge_mining.domain.optimization_unit.exceptions import (
-    OptimizationUnitNotFoundError,
     OptimizationUnitConfigurationError,
+    OptimizationUnitNotFoundError,
 )
 from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
-from edge_mining.domain.performance.exceptions import (
-    MiningPerformanceTrackerNotFoundError,
-)
+from edge_mining.domain.performance.exceptions import MiningPerformanceTrackerNotFoundError
 from edge_mining.domain.performance.ports import MiningPerformanceTrackerRepository
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.exceptions import (
-    PolicyConfigurationError,
-    PolicyError,
-    PolicyNotFoundError,
-)
+from edge_mining.domain.policy.exceptions import PolicyConfigurationError, PolicyError, PolicyNotFoundError
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.user.common import UserId
 from edge_mining.domain.user.entities import SystemSettings
@@ -69,13 +55,9 @@ from edge_mining.shared.adapter_maps.energy import (
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP,
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP,
 )
-from edge_mining.shared.adapter_maps.forecast import (
-    FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP,
-)
+from edge_mining.shared.adapter_maps.forecast import FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP
 from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
-from edge_mining.shared.adapter_maps.notification import (
-    NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP,
-)
+from edge_mining.shared.adapter_maps.notification import NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.external_services.exceptions import (
@@ -83,9 +65,7 @@ from edge_mining.shared.external_services.exceptions import (
     ExternalServiceNotFoundError,
 )
 from edge_mining.shared.external_services.ports import ExternalServiceRepository
-from edge_mining.shared.external_services.value_objects import (
-    ExternalServiceLinkedEntities,
-)
+from edge_mining.shared.external_services.value_objects import ExternalServiceLinkedEntities
 from edge_mining.shared.infrastructure import PersistenceSettings
 from edge_mining.shared.interfaces.config import (
     EnergyMonitorConfig,
@@ -96,7 +76,6 @@ from edge_mining.shared.interfaces.config import (
 )
 from edge_mining.shared.logging.port import LoggerPort
 from edge_mining.shared.settings.ports import SettingsRepository
-from edge_mining.application.interfaces import ConfigurationServiceInterface
 
 
 class ConfigurationService(ConfigurationServiceInterface):
@@ -200,7 +179,8 @@ class ConfigurationService(ConfigurationServiceInterface):
         # Unlink from forecast providers
         for forecast_provider in external_service_linked_entities.forecast_providers:
             self.logger.debug(
-                f"Unlinking forecast provider {forecast_provider.name} ({forecast_provider.id}) from external service {service_id}"
+                f"Unlinking forecast provider {forecast_provider.name} "
+                f"({forecast_provider.id}) from external service {service_id}"
             )
             forecast_provider.external_service_id = None
             self.forecast_provider_repo.update(forecast_provider)
@@ -208,7 +188,8 @@ class ConfigurationService(ConfigurationServiceInterface):
         # Unlink from home forecast providers
         for home_forecast_provider in external_service_linked_entities.home_forecast_providers:
             self.logger.debug(
-                f"Unlinking home forecast provider {home_forecast_provider.name} ({home_forecast_provider.id}) from external service {service_id}"
+                f"Unlinking home forecast provider {home_forecast_provider.name} "
+                f"({home_forecast_provider.id}) from external service {service_id}"
             )
             home_forecast_provider.external_service_id = None
             self.home_forecast_provider_repo.update(home_forecast_provider)
@@ -272,7 +253,8 @@ class ConfigurationService(ConfigurationServiceInterface):
         # Checks if the configuration is valid for the given adapter type
         if external_service.config is None or not external_service.config.is_valid(external_service.adapter_type):
             raise ExternalServiceConfigurationError(
-                f"Invalid configuration for External Service {external_service.name} with adapter {external_service.adapter_type}."
+                f"Invalid configuration for External Service {external_service.name} "
+                f"with adapter {external_service.adapter_type}."
             )
 
         self.logger.debug(f"External Service {external_service.id} ({external_service.name}) is valid.")
@@ -403,7 +385,7 @@ class ConfigurationService(ConfigurationServiceInterface):
 
             if not provider.config.is_valid(provider.adapter_type):
                 raise ForecastProviderConfigurationError(
-                    f"Missmatch between Forecast Provider {provider.id} configuration "
+                    f"Mismatch between Forecast Provider {provider.id} configuration "
                     f"and adapter type {provider.adapter_type} for "
                     f"Energy Source {energy_source.name}."
                 )
@@ -599,7 +581,8 @@ class ConfigurationService(ConfigurationServiceInterface):
         # Checks if the configuration is valid for the given adapter type
         if energy_monitor.config is None or not energy_monitor.config.is_valid(energy_monitor.adapter_type):
             raise EnergyMonitorConfigurationError(
-                f"Invalid configuration for Energy Monitor {energy_monitor.name} with adapter {energy_monitor.adapter_type}."
+                f"Invalid configuration for Energy Monitor {energy_monitor.name} "
+                f"with adapter {energy_monitor.adapter_type}."
             )
 
         self.logger.debug(f"Energy monitor {energy_monitor.id} ({energy_monitor.name}) is valid.")
@@ -1232,7 +1215,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         self,
         name: str,
         adapter: MinerControllerAdapter,
-        config: MinerControllerConfig,
+        config: Optional[MinerControllerConfig],
         external_service_id: Optional[EntityId] = None,
     ) -> MinerController:
         """Add a miner controller to the system."""

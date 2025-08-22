@@ -6,18 +6,15 @@ from edge_mining.adapters.domain.energy.cli.commands import energy_menu
 from edge_mining.adapters.domain.forecast.cli.commands import forecast_menu
 from edge_mining.adapters.domain.miner.cli.commands import miner_menu
 from edge_mining.adapters.domain.notification.cli.commands import notifier_menu
-from edge_mining.adapters.domain.optimization_unit.cli.commands import (
-    optimization_unit_menu,
-)
+from edge_mining.adapters.domain.optimization_unit.cli.commands import \
+    optimization_unit_menu
 from edge_mining.adapters.domain.policy.cli.commands import policy_menu
-from edge_mining.adapters.infrastructure.external_services.cli.commands import (
-    external_services_menu,
-)
-from edge_mining.shared.infrastructure import Services
-from edge_mining.shared.logging.port import LoggerPort
-
 from edge_mining.adapters.infrastructure.cli.setup import cli
 from edge_mining.adapters.infrastructure.cli.utils import run_evaluation
+from edge_mining.adapters.infrastructure.external_services.cli.commands import \
+    external_services_menu
+from edge_mining.shared.infrastructure import Services
+from edge_mining.shared.logging.port import LoggerPort
 
 
 # --- Main Menu Logic ---

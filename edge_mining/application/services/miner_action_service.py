@@ -2,16 +2,12 @@
 
 from typing import List, Optional
 
-from edge_mining.application.interfaces import (
-    MinerActionServiceInterface,
-    AdapterServiceInterface,
-)
+from edge_mining.application.interfaces import AdapterServiceInterface, MinerActionServiceInterface
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.entities import Miner
-from edge_mining.domain.miner.exceptions import MinerNotFoundError
+from edge_mining.domain.miner.exceptions import MinerControllerConfigurationError, MinerNotFoundError
 from edge_mining.domain.miner.ports import MinerRepository
 from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.domain.miner.exceptions import MinerControllerConfigurationError
 from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -46,7 +42,7 @@ class MinerActionService(MinerActionServiceInterface):
                         self.logger.error(f"Failed to send notification: {e}")
 
     # --- Miner Actions ---
-    async def start_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
+    async def start_miner(self, miner_id: EntityId, notifiers: Optional[List[NotificationPort]] = None) -> bool:
         """Starts the specified miner."""
         if self.logger:
             self.logger.info(f"Starting miner {miner_id}")
@@ -80,18 +76,19 @@ class MinerActionService(MinerActionServiceInterface):
             # Update domain state
             miner.turn_on()
             self.miner_repo.update(miner)
-            await self._notify(
-                notifiers,
-                "Edge Mining Info",
-                f"Miner {miner.id} ({miner.name}) started.",
-            )
+            if notifiers:
+                await self._notify(
+                    notifiers,
+                    "Edge Mining Info",
+                    f"Miner {miner.id} ({miner.name}) started.",
+                )
         else:
             if self.logger:
                 self.logger.error(f"Failed to start miner {miner.id} ({miner.name}).")
 
         return success
 
-    async def stop_miner(self, miner_id: EntityId, notifiers: List[NotificationPort]) -> bool:
+    async def stop_miner(self, miner_id: EntityId, notifiers: Optional[List[NotificationPort]] = None) -> bool:
         """Stops the specified miner."""
         if self.logger:
             self.logger.info(f"Stopping miner {miner_id}")
@@ -125,11 +122,12 @@ class MinerActionService(MinerActionServiceInterface):
             # Update domain state
             miner.turn_off()
             self.miner_repo.update(miner)
-            await self._notify(
-                notifiers,
-                "Edge Mining Info",
-                f"Miner {miner.id} ({miner.name}) stopped.",
-            )
+            if notifiers:
+                await self._notify(
+                    notifiers,
+                    "Edge Mining Info",
+                    f"Miner {miner.id} ({miner.name}) stopped.",
+                )
         else:
             if self.logger:
                 self.logger.error(f"Failed to stop miner {miner.id} ({miner.name}).")

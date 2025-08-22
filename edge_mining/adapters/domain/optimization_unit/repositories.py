@@ -140,7 +140,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
         """Add an optimization unit to the SQLite database."""
         self.logger.debug(f"Adding optimization unit {optimization_unit.id} to SQLite.")
         sql = """
-            INSERT INTO optimization_units (id, name, description, is_enabled, policy_id, target_miner_ids, energy_source_id, home_forecast_provider_id, performance_tracker_id, notifier_ids)
+            INSERT INTO optimization_units (id, name, description, is_enabled, policy_id, target_miner_ids,
+            energy_source_id, home_forecast_provider_id, performance_tracker_id, notifier_ids)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         conn = self._db.get_connection()
@@ -244,7 +245,8 @@ class SqliteOptimizationUnitRepository(EnergyOptimizationUnitRepository):
         self.logger.debug(f"Updating optimization unit {optimization_unit.id} in SQLite.")
         sql = """
             UPDATE optimization_units
-            SET name = ?, description = ?, is_enabled = ?, policy_id = ?, target_miner_ids = ?, energy_source_id = ?, home_forecast_provider_id = ?, performance_tracker_id = ?, notifier_ids = ?
+            SET name = ?, description = ?, is_enabled = ?, policy_id = ?, target_miner_ids = ?, energy_source_id = ?,
+            home_forecast_provider_id = ?, performance_tracker_id = ?, notifier_ids = ?
             WHERE id = ?
         """
         conn = self._db.get_connection()

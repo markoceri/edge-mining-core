@@ -85,7 +85,7 @@ class TerminalLogger(LoggerPort):
             try:
                 msg = json.dumps(msg, indent=4)
             except Exception:
-                pass
+                msg = msg
         else:
             msg = pformat(msg)
 

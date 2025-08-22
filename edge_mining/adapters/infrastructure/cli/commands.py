@@ -5,19 +5,14 @@ from uuid import UUID
 
 import click
 
-from edge_mining.domain.common import EntityId, Watts
-from edge_mining.domain.miner.value_objects import HashRate
-
-from edge_mining.adapters.domain.optimization_unit.cli.commands import (
-    list_optimization_units,
-)
 from edge_mining.adapters.domain.miner.cli.commands import list_miners
-
-from edge_mining.application.interfaces import OptimizationServiceInterface
-from edge_mining.shared.infrastructure import Services
-
+from edge_mining.adapters.domain.optimization_unit.cli.commands import list_optimization_units
 from edge_mining.adapters.infrastructure.cli.setup import cli
 from edge_mining.adapters.infrastructure.cli.utils import run_evaluation
+from edge_mining.application.interfaces import OptimizationServiceInterface
+from edge_mining.domain.common import EntityId, Watts
+from edge_mining.domain.miner.value_objects import HashRate
+from edge_mining.shared.infrastructure import Services
 
 
 @cli.command("run-evaluation")

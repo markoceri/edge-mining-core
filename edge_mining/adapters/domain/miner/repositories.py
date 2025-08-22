@@ -155,7 +155,8 @@ class SqliteMinerRepository(MinerRepository):
         self.logger.debug(f"Adding miner {miner.id} to SQLite.")
 
         sql = """
-            INSERT INTO miners (id, name, status, active, hash_rate, hash_rate_max, power_consumption, power_consumption_max, controller_id)
+            INSERT INTO miners (id, name, status, active, hash_rate, hash_rate_max, power_consumption,
+            power_consumption_max, controller_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         conn = self._db.get_connection()
@@ -237,7 +238,8 @@ class SqliteMinerRepository(MinerRepository):
 
         sql = """
             UPDATE miners
-            SET name = ?, status = ?, active = ?, hash_rate = ?, hash_rate_max = ?, power_consumption = ?, power_consumption_max = ?, controller_id = ?
+            SET name = ?, status = ?, active = ?, hash_rate = ?, hash_rate_max = ?, power_consumption = ?,
+            power_consumption_max = ?, controller_id = ?
             WHERE id = ?
         """
         conn = self._db.get_connection()

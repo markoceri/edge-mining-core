@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import click
 
+from edge_mining.adapters.infrastructure.cli.utils import print_configuration, process_filters
 from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     handle_add_external_service,
     select_external_service,
@@ -14,17 +15,10 @@ from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.shared.adapter_configs.miner import MinerControllerDummyConfig
-from edge_mining.shared.adapter_maps.miner import (
-    MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP,
-)
+from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import MinerControllerConfig
 from edge_mining.shared.logging.port import LoggerPort
-
-from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters,
-    print_configuration,
-)
 
 
 def handle_add_miner(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> None:
@@ -283,7 +277,7 @@ def delete_single_miner(
         return True
 
 
-def assing_controller_to_miner(
+def assign_controller_to_miner(
     selected_miner: Miner,
     configuration_service: ConfigurationServiceInterface,
     logger: LoggerPort,
@@ -310,7 +304,8 @@ def assing_controller_to_miner(
         )
         click.echo(
             click.style(
-                f"Controller Miner '{controller.name}' successfully assignet to miner '{updated_miner.name}' (ID: {updated_miner.id}).",
+                f"Controller Miner '{controller.name}' successfully assigned "
+                f"to miner '{updated_miner.name}' (ID: {updated_miner.id}).",
                 fg="green",
             )
         )
@@ -440,7 +435,7 @@ def manage_single_miner_menu(
             continue
 
         elif choice == "4":
-            updated_miner = assing_controller_to_miner(
+            updated_miner = assign_controller_to_miner(
                 selected_miner=miner,
                 configuration_service=configuration_service,
                 logger=logger,

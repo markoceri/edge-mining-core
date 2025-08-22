@@ -4,13 +4,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, Union
 
-from pydantic import (
-    BaseModel,
-    Field,
-    field_serializer,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
 
 from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 
@@ -158,7 +152,7 @@ class OptimizationPolicySchema(BaseModel):
     metadata: Optional[MetadataSchema] = Field(
         default_factory=lambda: MetadataSchema(
             author="Edge Mining User",
-            version="1",
+            version=1,
             created=datetime.now().strftime("%Y-%m-%d"),
             last_modified=datetime.now().strftime("%Y-%m-%d"),
         )
