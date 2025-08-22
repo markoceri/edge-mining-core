@@ -1,5 +1,7 @@
 """Job scheduler for running optimization tasks at regular intervals."""
 
+import asyncio
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from edge_mining.application.interfaces import OptimizationServiceInterface
@@ -28,7 +30,7 @@ class AutomationScheduler(SchedulerPort):
         """Wrapper to call the optimization service's run method."""
         self.logger.info(f"Scheduler triggered. Running job: {self._job_id}.")
         try:
-            self.optimization_service.run_all_enabled_units()
+            asyncio.run(self.optimization_service.run_all_enabled_units())
         except Exception as e:
             self.logger.error(f"Error during scheduled job: {self._job_id}. {e}")
             # Consider sending a critical notification here

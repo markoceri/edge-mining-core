@@ -1,6 +1,7 @@
 """Utility functions for CLI commands."""
 
-from typing import Any, Optional, Union, List, Dict
+import asyncio
+from typing import Any, Dict, List, Optional, Union
 
 import click
 
@@ -15,7 +16,7 @@ def run_evaluation(optimization_service: OptimizationServiceInterface):
 
     click.echo("Manually running evaluation cycle...")
     try:
-        optimization_service.run_all_enabled_units()
+        asyncio.run(optimization_service.run_all_enabled_units())
         click.echo("Evaluation cycle finished.")
     except Exception as e:
         click.echo(f"Error during evaluation: {e}", err=True)

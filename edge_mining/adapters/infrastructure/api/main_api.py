@@ -85,7 +85,7 @@ async def trigger_evaluation(
     """Manually run all enabled optimization units."""
     logger.info("API run all enabled optimization units...")
     try:
-        optimization_service.run_all_enabled_units()
+        await optimization_service.run_all_enabled_units()
         return {"message": "All optimization units run successfully."}
     except Exception as e:
         logger.error("Error during API run optimization units.")
