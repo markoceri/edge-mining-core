@@ -27,3 +27,12 @@ STATE_SERVICE_MAP: Dict[str, TurnService] = {
     "false": TurnService.TURN_OFF,
     "0": TurnService.TURN_OFF,
 }
+
+SWITCH_STATE_MAP: Dict[str, bool] = {
+    "on": True,
+    "true": True,
+    "1": True,
+    "off": False,
+    "false": False,
+    "0": False,
+}

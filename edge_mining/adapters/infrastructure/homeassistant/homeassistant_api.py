@@ -12,11 +12,17 @@ https://github.com/home-assistant/developers.home-assistant/pull/2150
 """
 
 import math  # For isnan
+import time
 from typing import Optional, Tuple
 
-from homeassistant_api import Client, Domain, Entity, State
+from homeassistant_api import Client, Domain, Entity, Service, State
 
-from edge_mining.adapters.infrastructure.homeassistant.utils import STATE_SERVICE_MAP, SwitchDomain, TurnService
+from edge_mining.adapters.infrastructure.homeassistant.utils import (
+    STATE_SERVICE_MAP,
+    SWITCH_STATE_MAP,
+    SwitchDomain,
+    TurnService,
+)
 from edge_mining.domain.common import Percentage, WattHours, Watts
 from edge_mining.shared.adapter_configs.external_services import (
     ExternalServiceHomeAssistantConfig,
@@ -158,19 +164,38 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
                 return False
 
             # Call the service to change the state
-            action = getattr(domain, turn_service.value)
-            changed_state: State = action(entity_id=entity_id)
+            service: Service = getattr(domain, turn_service.value)
+            changed_state: State = service.trigger(entity_id=entity_id)
 
             if self.logger:
                 self.logger.debug(f"Set HA entity '{entity_id}' to state '{state}' via service '{turn_service}'.")
 
-            if changed_state.state.lower() != state:
-                if self.logger:
-                    self.logger.error(
-                        f"Failed to set Home Assistant entity '{entity_id}' to state '{state}'. "
-                        f"Current state is '{changed_state.state}'."
-                    )
-                return False
+            # Check service response, if any
+            if changed_state and changed_state.state:
+                if changed_state.state.lower() != state:
+                    if self.logger:
+                        self.logger.error(
+                            f"Failed to set Home Assistant entity '{entity_id}' to state '{state}'. "
+                            f"Current state is '{changed_state.state}'."
+                        )
+                    return False
+            else:
+                # if not state returned, get the entity state again to verify but, due to async nature of HA,
+                # we may not get the updated state immediately and this check may fail
+                # even if the command was successful, so we need to wait a bit to get the updated state
+                time.sleep(1)  # Wait a moment for the state to update
+                current_state_str, _ = self.get_entity_state(entity_id)
+                current_state_str = current_state_str.lower() if current_state_str else None
+                current_state_value = SWITCH_STATE_MAP.get(current_state_str, None)
+                desired_state_value = SWITCH_STATE_MAP.get(state, None)
+
+                if current_state_value and current_state_value != desired_state_value:
+                    if self.logger:
+                        self.logger.error(
+                            f"Failed to set Home Assistant entity '{entity_id}' to state '{state}'. "
+                            f"Current state is '{current_state_value}'."
+                        )
+                    return False
 
             return True
         except Exception as e:
