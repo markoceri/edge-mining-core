@@ -17,13 +17,17 @@ from edge_mining.adapters.domain.forecast.home_assistant_api import (
     HomeAssistantForecastProviderFactory,
 )
 from edge_mining.adapters.domain.home_load.dummy import DummyHomeForecastProvider
-from edge_mining.adapters.domain.miner.dummy import DummyMinerController
+from edge_mining.adapters.domain.miner.controllers.dummy import DummyMinerController
+from edge_mining.adapters.domain.miner.controllers.generic_socket_home_assistant_api import (
+    GenericSocketHomeAssistantAPIMinerControllerAdapterFactory,
+)
 from edge_mining.adapters.domain.notification.dummy import DummyNotifier
 from edge_mining.adapters.domain.notification.telegram import TelegramNotifierFactory
 from edge_mining.adapters.domain.performance.dummy import DummyMiningPerformanceTracker
 from edge_mining.adapters.infrastructure.homeassistant.homeassistant_api import (
     ServiceHomeAssistantAPIFactory,
 )
+from edge_mining.adapters.infrastructure.rule_engine.common import RuleEngineType
 from edge_mining.adapters.infrastructure.rule_engine.factory import RuleEngineFactory
 from edge_mining.application.interfaces import AdapterServiceInterface
 from edge_mining.domain.common import EntityId
@@ -67,7 +71,6 @@ from edge_mining.shared.interfaces.factories import (
     ForecastAdapterFactory,
 )
 from edge_mining.shared.logging.port import LoggerPort
-from edge_mining.adapters.infrastructure.rule_engine.common import RuleEngineType
 
 
 class AdapterService(AdapterServiceInterface):
@@ -267,6 +270,15 @@ class AdapterService(AdapterServiceInterface):
             # If the cached instance is valid, we return it
             return cached_instance
 
+        # Retrieve the external service associated to the miner controller
+        if miner_controller.external_service_id:
+            external_service = self.get_external_service(miner_controller.external_service_id)
+            if not external_service:
+                raise ValueError(
+                    f"Unable to load external service {miner_controller.external_service_id} "
+                    f"for miner controller {miner_controller.name}"
+                )
+
         try:
             if miner_controller.adapter_type == MinerControllerAdapter.DUMMY:
                 if miner.power_consumption_max is None or miner.hash_rate_max is None:
@@ -278,6 +290,17 @@ class AdapterService(AdapterServiceInterface):
                     power_max=miner.power_consumption_max,
                     hashrate_max=miner.hash_rate_max,
                     logger=self.logger,
+                )
+            elif miner_controller.adapter_type == MinerControllerAdapter.GENERIC_SOCKET_HOME_ASSISTANT_API:
+                # --- Generic Socket Home Assistant API Controller ---
+                miner_controller_factory = GenericSocketHomeAssistantAPIMinerControllerAdapterFactory()
+
+                miner_controller_factory.from_miner(miner)
+
+                instance = miner_controller_factory.create(
+                    config=miner_controller.config,
+                    logger=self.logger,
+                    external_service=external_service,
                 )
             else:
                 raise ValueError(f"Unsupported miner controller adapter type: {miner_controller.adapter_type}")

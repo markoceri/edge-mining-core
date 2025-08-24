@@ -14,8 +14,9 @@ https://github.com/home-assistant/developers.home-assistant/pull/2150
 import math  # For isnan
 from typing import Optional, Tuple
 
-from homeassistant_api import Client
+from homeassistant_api import Client, Domain
 
+from edge_mining.adapters.infrastructure.homeassistant.utils import STATE_SERVICE_MAP, SwitchDomain, TurnService
 from edge_mining.domain.common import Percentage, WattHours, Watts
 from edge_mining.shared.adapter_configs.external_services import (
     ExternalServiceHomeAssistantConfig,
@@ -44,6 +45,9 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
 
         if not api_url or not token:
             raise ValueError("Home Assistant URL and Token are required.")
+
+        # Remove final slash if present
+        api_url = api_url.rstrip("/")
 
         self.api_url = f"{api_url}/api"
         self.token = token
@@ -107,6 +111,63 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             if self.logger:
                 self.logger.error(f"Unexpected error getting Home Assistant entity '{entity_id}': {e}")
             return None, None
+
+    def set_entity_state(self, entity_id: Optional[str], state: str) -> bool:
+        """Sets the state of an entity."""
+        if not entity_id:
+            return False
+        if not self.client:
+            if self.logger:
+                self.logger.error("Home Assistant client is not initialized.")
+            return False
+
+        try:
+            # Home Assistant does not allow setting state directly via the API for most entities.
+            # Instead, a common method is typically call a service.
+
+            # Get the entity domain (e.g., 'switch', 'light') from the entity_id
+            domain_str = entity_id.split(".")[0]
+
+            switchable_domains = [s.value for s in SwitchDomain]
+            if domain_str not in switchable_domains:
+                if self.logger:
+                    self.logger.error(f"Setting state for domain '{domain_str}' is not supported.")
+                return False
+
+            state = state.lower()
+            if state not in STATE_SERVICE_MAP:
+                if self.logger:
+                    self.logger.error(
+                        f"Invalid state '{state}' for entity '{entity_id}'. "
+                        f"Must be one of {list(STATE_SERVICE_MAP.keys())}."
+                    )
+                return False
+
+            # Get the domain object
+            domain: Domain = self.client.get_domain(domain_str)
+            if not domain:
+                if self.logger:
+                    self.logger.error(f"Home Assistant domain '{domain_str}' not found.")
+                return False
+
+            turn_service: TurnService = STATE_SERVICE_MAP[state]
+
+            if turn_service.value not in domain.services:
+                if self.logger:
+                    self.logger.error(f"Service '{turn_service.value}' not available for domain '{domain_str}'.")
+                return False
+
+            # Call the service to change the state
+            action = getattr(domain, turn_service.value)
+            action(entity_id=entity_id)
+
+            if self.logger:
+                self.logger.debug(f"Set HA entity '{entity_id}' to state '{state}' via service '{turn_service}'.")
+            return True
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Unexpected error setting Home Assistant entity '{entity_id}': {e}")
+            return False
 
     def parse_power(
         self,
@@ -195,6 +256,31 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
             if self.logger:
                 self.logger.error(
                     f"Could not parse percentage value for entity '{entity_id_for_log}' from state='{state}': {e}"
+                )
+            return None
+
+    def parse_bool(self, state: Optional[str], entity_id_for_log: str) -> Optional[bool]:
+        """Parses state string to boolean, handling errors."""
+        if state is None:
+            return None
+        try:
+            state_lower = state.lower()
+            if state_lower in ["on", "true", "1"]:
+                return True
+            elif state_lower in ["off", "false", "0"]:
+                return False
+            elif state_lower in ["unavailable", "unknown"]:
+                return None
+            else:
+                if self.logger:
+                    self.logger.warning(
+                        f"Could not parse boolean value for entity '{entity_id_for_log}' from state='{state}'."
+                    )
+                return None
+        except Exception as e:
+            if self.logger:
+                self.logger.error(
+                    f"Unexpected error parsing boolean value for entity '{entity_id_for_log}' from state='{state}': {e}"
                 )
             return None
 
