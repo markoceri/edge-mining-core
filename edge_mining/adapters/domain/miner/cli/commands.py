@@ -363,9 +363,7 @@ def get_miner_status(
     return selected_miner
 
 
-def start_miner(
-    selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort
-) -> None:
+def start_miner(selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort) -> None:
     """Start a specific Miner."""
     try:
         await miner_action_service.start_miner(selected_miner.id)
@@ -377,9 +375,7 @@ def start_miner(
         click.echo(click.style(f"Error starting miner: {e}", fg="red"), err=True)
 
 
-def stop_miner(
-    selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort
-) -> None:
+def stop_miner(selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort) -> None:
     """Stop a specific Miner."""
     try:
         await miner_action_service.stop_miner(selected_miner.id)
