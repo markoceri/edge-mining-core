@@ -156,7 +156,7 @@ class MinerSchema(BaseModel):
 class MinerCreateSchema(BaseModel):
     """Schema for creating a new miner."""
 
-    name: str = Field(..., min_length=1, max_length=255, description="Miner name")
+    name: str = Field(default="", description="Miner name")
     hash_rate_max: Optional[HashRateSchema] = Field(default=None, description="Maximum hash rate")
     power_consumption_max: Optional[float] = Field(default=None, ge=0, description="Maximum power consumption in Watts")
     controller_id: Optional[str] = Field(default=None, description="ID of the associated controller")
@@ -210,7 +210,7 @@ class MinerCreateSchema(BaseModel):
 class MinerUpdateSchema(BaseModel):
     """Schema for updating an existing miner."""
 
-    name: Optional[str] = Field(default=None, max_length=255, description="Miner name")
+    name: str = Field(default="", description="Miner name")
     hash_rate_max: Optional[HashRateSchema] = Field(default=None, description="Maximum hash rate")
     power_consumption_max: Optional[float] = Field(default=None, ge=0, description="Maximum power consumption in Watts")
     active: Optional[bool] = Field(default=None, description="Whether the miner is active")
@@ -229,12 +229,11 @@ class MinerUpdateSchema(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_name(cls, v: str) -> str:
         """Validate miner name."""
-        if v is not None:
-            v = v.strip()
-            if not v:
-                raise ValueError("Name cannot be empty")
+        v = v.strip()
+        if not v:
+            v = ""
         return v
 
     class Config:
@@ -289,7 +288,7 @@ class MinerControllerSchema(BaseModel):
         return v
 
     @classmethod
-    def from_model(cls, controller: "MinerController") -> "MinerControllerSchema":
+    def from_model(cls, controller: MinerController) -> "MinerControllerSchema":
         """Create MinerControllerSchema from a MinerController domain model instance."""
         return cls(
             id=str(controller.id),
@@ -309,7 +308,7 @@ class MinerControllerSchema(BaseModel):
         """Serialize external_service_id field."""
         return str(value) if value is not None else None
 
-    def to_model(self) -> "MinerController":
+    def to_model(self) -> MinerController:
         """Convert MinerControllerSchema to MinerController domain model instance."""
         configuration: Optional[MinerControllerConfig] = cast(
             MinerControllerConfig, MinerControllerConfig.from_dict(self.config) if self.config else {}
@@ -338,7 +337,7 @@ class MinerControllerSchema(BaseModel):
 class MinerControllerCreateSchema(BaseModel):
     """Schema for creating a new miner controller."""
 
-    name: str = Field(..., description="Controller name")
+    name: str = Field(default="", description="Controller name")
     adapter_type: MinerControllerAdapter = Field(
         default=MinerControllerAdapter.DUMMY, description="Type of controller adapter"
     )
@@ -351,7 +350,7 @@ class MinerControllerCreateSchema(BaseModel):
         """Validate controller name."""
         v = v.strip()
         if not v:
-            raise ValueError("Name cannot be empty")
+            v = ""
         return v
 
     @field_validator("external_service_id")
@@ -365,7 +364,7 @@ class MinerControllerCreateSchema(BaseModel):
                 raise ValueError("external_service_id must be a valid UUID string") from exc
         return v
 
-    def to_model(self) -> "MinerController":
+    def to_model(self) -> MinerController:
         """Convert MinerControllerCreateSchema to a MinerController domain model instance."""
         configuration: Optional[MinerControllerConfig] = cast(
             MinerControllerConfig, MinerControllerConfig.from_dict(self.config) if self.config else None
@@ -393,18 +392,17 @@ class MinerControllerCreateSchema(BaseModel):
 class MinerControllerUpdateSchema(BaseModel):
     """Schema for updating an existing miner controller."""
 
-    name: Optional[str] = Field(default=None, description="Controller name")
+    name: str = Field(default="", description="Controller name")
     config: Optional[dict] = Field(default=None, description="Controller configuration")
     external_service_id: Optional[str] = Field(default=None, description="ID of external service")
 
     @field_validator("name")
     @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_name(cls, v: str) -> str:
         """Validate controller name."""
-        if v is not None:
-            v = v.strip()
-            if not v:
-                raise ValueError("Name cannot be empty")
+        v = v.strip()
+        if not v:
+            v = ""
         return v
 
     @field_validator("external_service_id")

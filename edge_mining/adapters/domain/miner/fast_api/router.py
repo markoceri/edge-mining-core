@@ -30,6 +30,7 @@ from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.common import MinerControllerAdapter
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.exceptions import (
+    MinerControllerAlreadyExistsError,
     MinerControllerConfigurationError,
     MinerControllerNotFoundError,
     MinerNotFoundError,
@@ -379,7 +380,7 @@ async def add_miner_controller(
         controller_to_add = controller_schema.to_model()
 
         if controller_to_add.config is None:
-            raise MinerControllerConfigurationError("Miner controller configuration must be set")
+            raise MinerControllerConfigurationError("Miner controller configuration should be set")
 
         new_controller = config_service.add_miner_controller(
             name=controller_to_add.name,
@@ -391,6 +392,8 @@ async def add_miner_controller(
         response = MinerControllerSchema.from_model(new_controller)
 
         return response
+    except MinerControllerAlreadyExistsError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except MinerControllerConfigurationError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
@@ -469,7 +472,7 @@ async def update_miner_controller(
     controller_update: MinerControllerUpdateSchema,
     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
 ) -> MinerControllerSchema:
-    """Update a miner controller's details."""
+    """Update an existing miner controller"""
     try:
         controller = config_service.get_miner_controller(controller_id)
 
