@@ -1,14 +1,13 @@
 """API Router for miner domain"""
 
 import uuid
-from typing import Annotated, List, Optional, Union, cast
+from typing import Annotated, Any, Dict, List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from edge_mining.adapters.domain.miner.schemas import (
     MINER_CONTROLLER_CONFIG_SCHEMA_MAP,
     MinerControllerCreateSchema,
-    MinerControllerDummyConfigSchema,
     MinerControllerSchema,
     MinerControllerUpdateSchema,
     MinerCreateSchema,
@@ -408,12 +407,13 @@ async def get_miner_controller_types() -> List[MinerControllerAdapter]:
 
 
 @router.get(
-    "/miner-controllers/types/{adapter_type}/config-schema", response_model=Union[MinerControllerDummyConfigSchema]
+    "/miner-controllers/types/{adapter_type}/config-schema",
+    response_model=Dict[str, Any],
 )
 async def get_miner_controller_config_schema(
     adapter_type: MinerControllerAdapter,
     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
-) -> Union[MinerControllerDummyConfigSchema]:
+) -> Dict[str, Any]:
     """Get the configuration schema for a specific miner controller type."""
     try:
         try:
@@ -435,8 +435,7 @@ async def get_miner_controller_config_schema(
         if miner_controller_config_schema is None:
             raise ValueError(f"No schema found for miner controller config class: {miner_controller_config_type}")
 
-        return miner_controller_config_schema()
-
+        return miner_controller_config_schema.model_json_schema()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
