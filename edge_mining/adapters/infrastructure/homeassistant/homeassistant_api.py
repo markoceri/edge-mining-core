@@ -14,7 +14,7 @@ https://github.com/home-assistant/developers.home-assistant/pull/2150
 import math  # For isnan
 from typing import Optional, Tuple
 
-from homeassistant_api import Client, Domain
+from homeassistant_api import Client, Domain, Entity, State
 
 from edge_mining.adapters.infrastructure.homeassistant.utils import STATE_SERVICE_MAP, SwitchDomain, TurnService
 from edge_mining.domain.common import Percentage, WattHours, Watts
@@ -159,10 +159,19 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
 
             # Call the service to change the state
             action = getattr(domain, turn_service.value)
-            action(entity_id=entity_id)
+            changed_state: State = action(entity_id=entity_id)
 
             if self.logger:
                 self.logger.debug(f"Set HA entity '{entity_id}' to state '{state}' via service '{turn_service}'.")
+
+            if changed_state.state.lower() != state:
+                if self.logger:
+                    self.logger.error(
+                        f"Failed to set Home Assistant entity '{entity_id}' to state '{state}'. "
+                        f"Current state is '{changed_state.state}'."
+                    )
+                return False
+
             return True
         except Exception as e:
             if self.logger:
