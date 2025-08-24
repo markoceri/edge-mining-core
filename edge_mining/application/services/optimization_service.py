@@ -12,6 +12,7 @@ from typing import List, Optional
 
 from edge_mining.application.interfaces import (
     AdapterServiceInterface,
+    OptimizationServiceInterface,
     SunFactoryInterface,
 )
 from edge_mining.domain.common import EntityId
@@ -37,8 +38,6 @@ from edge_mining.domain.policy.exceptions import PolicyError
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.value_objects import DecisionalContext, Sun
 from edge_mining.shared.logging.port import LoggerPort
-
-from edge_mining.application.interfaces import OptimizationServiceInterface
 
 
 class OptimizationService(OptimizationServiceInterface):
@@ -218,7 +217,7 @@ class OptimizationService(OptimizationServiceInterface):
         # --- Energy State ---
         try:
             energy_state: Optional[EnergyStateSnapshot] = None
-            energy_state = energy_monitor.get_current_energy_state()
+            energy_state = await energy_monitor.get_current_energy_state()
             if not energy_state:
                 if self.logger:
                     self.logger.error(
@@ -251,7 +250,7 @@ class OptimizationService(OptimizationServiceInterface):
                 # For now, assuming the resolver provides a ready-to-use adapter.
                 # (the configuration has already done outside of the edge mining application)
 
-                forecast_data = forecast_provider.get_forecast()
+                forecast_data = await forecast_provider.get_forecast()
             except Exception as e:
                 if self.logger:
                     self.logger.warning(
@@ -400,9 +399,9 @@ class OptimizationService(OptimizationServiceInterface):
         # Get current status and make decision
         try:
             # Update miner status using controller
-            current_status = miner_controller.get_miner_status()
-            current_hashrate = miner_controller.get_miner_hashrate()
-            current_power = miner_controller.get_miner_power()
+            current_status = await miner_controller.get_miner_status()
+            current_hashrate = await miner_controller.get_miner_hashrate()
+            current_power = await miner_controller.get_miner_power()
 
             # Update the domain model
             miner.update_status(
@@ -499,7 +498,7 @@ class OptimizationService(OptimizationServiceInterface):
         if decision == MiningDecision.START_MINING and current_status != MinerStatus.ON:
             if self.logger:
                 self.logger.info(f"Executing START for miner {miner_id} via {type(controller).__name__}")
-            success = controller.start_miner()
+            success = await controller.start_miner()
             action_taken = True
             if success:
                 await self._notify_unit(
@@ -517,7 +516,7 @@ class OptimizationService(OptimizationServiceInterface):
         elif decision == MiningDecision.STOP_MINING and current_status == MinerStatus.ON:
             if self.logger:
                 self.logger.info(f"Executing STOP for miner {miner_id} via {type(controller).__name__}")
-            success = controller.stop_miner()
+            success = await controller.stop_miner()
             action_taken = True
             if success:
                 await self._notify_unit(

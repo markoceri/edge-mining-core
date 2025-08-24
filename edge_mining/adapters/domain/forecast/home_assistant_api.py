@@ -19,12 +19,12 @@ from edge_mining.domain.forecast.value_objects import (
     ForecastInterval,
     ForecastPowerPoint,
 )
-from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.adapter_configs.forecast import (
     ForecastProviderHomeAssistantConfig,
 )
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.ports import ExternalServicePort
+from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.interfaces.factories import ForecastAdapterFactory
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -322,7 +322,7 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
                 f"Remaining='{unit_forecast_energy_remaining_today}'"
             )
 
-    def get_forecast(self) -> Optional[Forecast]:
+    async def get_forecast(self) -> Optional[Forecast]:
         """Fetches the energy production forecast."""
         if self.logger:
             self.logger.debug("Fetching forecast energy state from Home Assistant...")
@@ -330,7 +330,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Actual Power h ---
         if self.entity_forecast_power_actual_h:
-            state_forecast_power_actual_h, _ = self.home_assistant.get_entity_state(self.entity_forecast_power_actual_h)
+            state_forecast_power_actual_h, _ = await self.home_assistant.get_entity_state(
+                self.entity_forecast_power_actual_h
+            )
             power_actual_h = self.home_assistant.parse_power(
                 state_forecast_power_actual_h,
                 self.unit_forecast_power_actual_h,
@@ -341,7 +343,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Next Power 1h ---
         if self.entity_forecast_power_next_1h:
-            state_forecast_power_next_1h, _ = self.home_assistant.get_entity_state(self.entity_forecast_power_next_1h)
+            state_forecast_power_next_1h, _ = await self.home_assistant.get_entity_state(
+                self.entity_forecast_power_next_1h
+            )
             power_next_1h = self.home_assistant.parse_power(
                 state_forecast_power_next_1h,
                 self.unit_forecast_power_next_1h,
@@ -352,7 +356,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Next Power 12h ---
         if self.entity_forecast_power_next_12h:
-            state_forecast_power_next_12h, _ = self.home_assistant.get_entity_state(self.entity_forecast_power_next_12h)
+            state_forecast_power_next_12h, _ = await self.home_assistant.get_entity_state(
+                self.entity_forecast_power_next_12h
+            )
             power_next_12h = self.home_assistant.parse_power(
                 state_forecast_power_next_12h,
                 self.unit_forecast_power_next_12h,
@@ -363,7 +369,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Next Power 24h ---
         if self.entity_forecast_power_next_24h:
-            state_forecast_power_next_24h, _ = self.home_assistant.get_entity_state(self.entity_forecast_power_next_24h)
+            state_forecast_power_next_24h, _ = await self.home_assistant.get_entity_state(
+                self.entity_forecast_power_next_24h
+            )
             power_next_24h = self.home_assistant.parse_power(
                 state_forecast_power_next_24h,
                 self.unit_forecast_power_next_24h,
@@ -374,7 +382,7 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Actual Energy h ---
         if self.entity_forecast_energy_actual_h:
-            state_forecast_energy_actual_h, _ = self.home_assistant.get_entity_state(
+            state_forecast_energy_actual_h, _ = await self.home_assistant.get_entity_state(
                 self.entity_forecast_energy_actual_h
             )
             energy_actual_h = self.home_assistant.parse_energy(
@@ -387,7 +395,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Next Energy 1h ---
         if self.entity_forecast_energy_next_1h:
-            state_forecast_energy_next_1h, _ = self.home_assistant.get_entity_state(self.entity_forecast_energy_next_1h)
+            state_forecast_energy_next_1h, _ = await self.home_assistant.get_entity_state(
+                self.entity_forecast_energy_next_1h
+            )
             energy_next_1h = self.home_assistant.parse_energy(
                 state_forecast_energy_next_1h,
                 self.unit_forecast_energy_next_1h,
@@ -398,7 +408,9 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Today Energy ---
         if self.entity_forecast_energy_today:
-            state_forecast_energy_today, _ = self.home_assistant.get_entity_state(self.entity_forecast_energy_today)
+            state_forecast_energy_today, _ = await self.home_assistant.get_entity_state(
+                self.entity_forecast_energy_today
+            )
             energy_today = self.home_assistant.parse_energy(
                 state_forecast_energy_today,
                 self.unit_forecast_energy_today,
@@ -409,7 +421,7 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Tomorrow Energy ---
         if self.entity_forecast_energy_tomorrow:
-            state_forecast_energy_tomorrow, _ = self.home_assistant.get_entity_state(
+            state_forecast_energy_tomorrow, _ = await self.home_assistant.get_entity_state(
                 self.entity_forecast_energy_tomorrow
             )
             energy_tomorrow = self.home_assistant.parse_energy(
@@ -422,7 +434,7 @@ class HomeAssistantForecastProvider(ForecastProviderPort):
 
         # --- Remaining Energy Today ---
         if self.entity_forecast_energy_remaining_today:
-            state_forecast_energy_remaining_today, _ = self.home_assistant.get_entity_state(
+            state_forecast_energy_remaining_today, _ = await self.home_assistant.get_entity_state(
                 self.entity_forecast_energy_remaining_today
             )
             energy_remaining_today = self.home_assistant.parse_energy(

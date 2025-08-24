@@ -14,7 +14,7 @@ https://github.com/home-assistant/developers.home-assistant/pull/2150
 import math  # For isnan
 from typing import Optional, Tuple
 
-from homeassistant_api import Client, Domain
+from homeassistant_api import Client, Domain, Entity
 
 from edge_mining.adapters.infrastructure.homeassistant.utils import STATE_SERVICE_MAP, SwitchDomain, TurnService
 from edge_mining.domain.common import Percentage, WattHours, Watts
@@ -63,7 +63,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
 
         # Initialize Home Assistant client
         try:
-            self.client = Client(self.api_url, self.token)
+            self.client = Client(self.api_url, self.token, use_async=True)
 
             # Test connection during initialization (optional but recommended)
             self.client.get_config()
@@ -82,7 +82,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
         # The Client does not have a disconnect method, but we can clear the client
         self.client = None
 
-    def get_entity_state(self, entity_id: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    async def get_entity_state(self, entity_id: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
         """Safely retrieves the state and unit of an entity."""
         if not entity_id:
             return None, None
@@ -91,7 +91,9 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
                 self.logger.error("Home Assistant client is not initialized.")
             return None, None
         try:
-            entity = self.client.get_entity(entity_id=entity_id)
+            entity: Optional[Entity] = await self.client.async_get_entity(
+                entity_id=entity_id,
+            )
             if not entity:
                 if self.logger:
                     self.logger.warning(f"Home Assistant entity '{entity_id}' not found.")
@@ -112,7 +114,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
                 self.logger.error(f"Unexpected error getting Home Assistant entity '{entity_id}': {e}")
             return None, None
 
-    def set_entity_state(self, entity_id: Optional[str], state: str) -> bool:
+    async def set_entity_state(self, entity_id: Optional[str], state: str) -> bool:
         """Sets the state of an entity."""
         if not entity_id:
             return False
@@ -144,7 +146,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
                 return False
 
             # Get the domain object
-            domain: Domain = self.client.get_domain(domain_str)
+            domain: Optional[Domain] = await self.client.async_get_domain(domain_str)
             if not domain:
                 if self.logger:
                     self.logger.error(f"Home Assistant domain '{domain_str}' not found.")
@@ -159,7 +161,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
 
             # Call the service to change the state
             action = getattr(domain, turn_service.value)
-            action(entity_id=entity_id)
+            await action(entity_id=entity_id)
 
             if self.logger:
                 self.logger.debug(f"Set HA entity '{entity_id}' to state '{state}' via service '{turn_service}'.")

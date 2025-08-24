@@ -7,7 +7,7 @@ import random
 from datetime import datetime
 from typing import Optional
 
-from edge_mining.domain.common import Percentage, WattHours, Watts, Timestamp
+from edge_mining.domain.common import Percentage, Timestamp, WattHours, Watts
 from edge_mining.domain.energy.common import EnergyMonitorAdapter
 from edge_mining.domain.energy.entities import EnergySource
 from edge_mining.domain.energy.ports import EnergyMonitorPort
@@ -19,9 +19,9 @@ from edge_mining.domain.energy.value_objects import (
     GridState,
     LoadState,
 )
-from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.adapter_configs.energy import EnergyMonitorDummySolarConfig
 from edge_mining.shared.external_services.ports import ExternalServicePort
+from edge_mining.shared.interfaces.config import Configuration
 from edge_mining.shared.interfaces.factories import EnergyMonitorAdapterFactory
 from edge_mining.shared.logging.port import LoggerPort
 
@@ -59,7 +59,7 @@ class DummySolarEnergyMonitor(EnergyMonitorPort):
                 self.storage.nominal_capacity * (self.current_soc / 100.0)
             )  # Calculate remaining capacity
 
-    def get_current_energy_state(self) -> Optional[EnergyStateSnapshot]:
+    async def get_current_energy_state(self) -> Optional[EnergyStateSnapshot]:
         now = datetime.now()
         hour = now.hour
 

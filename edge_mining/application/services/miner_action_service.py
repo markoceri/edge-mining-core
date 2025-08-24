@@ -59,15 +59,15 @@ class MinerActionService(MinerActionServiceInterface):
             raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
-        current_status = miner_controller.get_miner_status()
-        current_hashrate = miner_controller.get_miner_hashrate()
+        current_status = await miner_controller.get_miner_status()
+        current_hashrate = await miner_controller.get_miner_hashrate()
         current_power = miner_controller.get_miner_power()
         miner.update_status(current_status, current_hashrate, current_power)
 
         # Persist the observed state
         self.miner_repo.update(miner)
 
-        success = miner_controller.start_miner()
+        success = await miner_controller.start_miner()
 
         if success:
             if self.logger:
@@ -105,15 +105,15 @@ class MinerActionService(MinerActionServiceInterface):
             raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
-        current_status = miner_controller.get_miner_status()
-        current_hashrate = miner_controller.get_miner_hashrate()
-        current_power = miner_controller.get_miner_power()
+        current_status = await miner_controller.get_miner_status()
+        current_hashrate = await miner_controller.get_miner_hashrate()
+        current_power = await miner_controller.get_miner_power()
         miner.update_status(current_status, current_hashrate, current_power)
 
         # Persist the observed state
         self.miner_repo.update(miner)
 
-        success = miner_controller.stop_miner()
+        success = await miner_controller.stop_miner()
 
         if success:
             if self.logger:
@@ -134,7 +134,7 @@ class MinerActionService(MinerActionServiceInterface):
 
         return success
 
-    def get_miner_consumption(self, miner_id: EntityId) -> Optional[Watts]:
+    async def get_miner_consumption(self, miner_id: EntityId) -> Optional[Watts]:
         """Gets the current power consumption of the specified miner."""
         if self.logger:
             self.logger.info(f"Getting power consumption for miner {miner_id}")
@@ -151,8 +151,8 @@ class MinerActionService(MinerActionServiceInterface):
             raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
-        current_status = miner_controller.get_miner_status()
-        current_power = miner_controller.get_miner_power()
+        current_status = await miner_controller.get_miner_status()
+        current_power = await miner_controller.get_miner_power()
         miner.update_status(new_status=current_status, power=current_power)
 
         # Persist the observed state
@@ -160,7 +160,7 @@ class MinerActionService(MinerActionServiceInterface):
 
         return current_power
 
-    def get_miner_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
+    async def get_miner_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
         """Gets the current hash rate of the specified miner."""
         if self.logger:
             self.logger.info(f"Getting hash rate for miner {miner_id}")
@@ -177,8 +177,8 @@ class MinerActionService(MinerActionServiceInterface):
             raise MinerControllerConfigurationError(f"Miner controller for miner {miner_id} is not configured.")
 
         # Update miner status using controller
-        current_status = miner_controller.get_miner_status()
-        current_hashrate = miner_controller.get_miner_hashrate()
+        current_status = await miner_controller.get_miner_status()
+        current_hashrate = await miner_controller.get_miner_hashrate()
         miner.update_status(new_status=current_status, hash_rate=current_hashrate)
 
         # Persist the observed state

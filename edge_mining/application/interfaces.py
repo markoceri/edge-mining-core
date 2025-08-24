@@ -121,11 +121,11 @@ class MinerActionServiceInterface(ABC):
         """Stop a specific miner."""
 
     @abstractmethod
-    def get_miner_consumption(self, miner_id: EntityId) -> Optional[Watts]:
+    async def get_miner_consumption(self, miner_id: EntityId) -> Optional[Watts]:
         """Gets the current power consumption of the specified miner."""
 
     @abstractmethod
-    def get_miner_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
+    async def get_miner_hashrate(self, miner_id: EntityId) -> Optional[HashRate]:
         """Gets the current hash rate of the specified miner."""
 
 
