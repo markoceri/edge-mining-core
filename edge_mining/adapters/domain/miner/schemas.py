@@ -9,7 +9,10 @@ from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.shared.adapter_configs.miner import MinerControllerDummyConfig
+from edge_mining.shared.adapter_configs.miner import (
+    MinerControllerDummyConfig,
+    MinerControllerGenericSocketHomeAssistantAPIConfig,
+)
 from edge_mining.shared.interfaces.config import MinerControllerConfig
 
 
@@ -464,11 +467,45 @@ class MinerControllerDummyConfigSchema(BaseModel):
 
         use_enum_values = True
         validate_assignment = True
-        json_encoders = {
-            uuid.UUID: str,
-        }
 
 
-MINER_CONTROLLER_CONFIG_SCHEMA_MAP: Dict[type[MinerControllerConfig], Union[type[MinerControllerDummyConfigSchema]]] = {
+class MinerControllerGenericSocketHomeAssistantAPIConfigSchema(BaseModel):
+    """Schema for MinerControllerGenericSocketHomeAssistantAPIConfig."""
+
+    entity_switch: str = Field(..., description="Home Assistant switch entity for the miner")
+    entity_power: str = Field(..., description="Home Assistant power sensor entity for the miner")
+    unit_power: str = Field(default="W", description="Power unit of the sensor")
+
+    @field_validator("entity_switch", "entity_power")
+    @classmethod
+    def validate_entity_id(cls, v: str) -> str:
+        """Validate that the value is a plausible Home Assistant entity ID."""
+        v = v.strip()
+        if not v or "." not in v:
+            raise ValueError("Entity ID must be a non-empty string containing a dot (e.g., 'domain.object_id')")
+        return v
+
+    def to_model(self) -> MinerControllerGenericSocketHomeAssistantAPIConfig:
+        """
+        Convert schema to MinerControllerGenericSocketHomeAssistantAPIConfig adapter configuration model instance.
+        """
+        return MinerControllerGenericSocketHomeAssistantAPIConfig(
+            entity_switch=self.entity_switch,
+            entity_power=self.entity_power,
+            unit_power=self.unit_power,
+        )
+
+    class Config:
+        """Pydantic configuration."""
+
+        use_enum_values = True
+        validate_assignment = True
+
+
+MINER_CONTROLLER_CONFIG_SCHEMA_MAP: Dict[
+    type[MinerControllerConfig],
+    Union[type[MinerControllerDummyConfigSchema], type[MinerControllerGenericSocketHomeAssistantAPIConfigSchema]],
+] = {
     MinerControllerDummyConfig: MinerControllerDummyConfigSchema,
+    MinerControllerGenericSocketHomeAssistantAPIConfig: MinerControllerGenericSocketHomeAssistantAPIConfigSchema,
 }
