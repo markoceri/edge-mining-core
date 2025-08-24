@@ -10,7 +10,7 @@ from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     print_external_service_details,
     select_external_service,
 )
-from edge_mining.application.interfaces import ConfigurationServiceInterface
+from edge_mining.application.interfaces import ConfigurationServiceInterface, MinerActionServiceInterface
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.entities import Miner, MinerController
@@ -324,7 +324,78 @@ def assign_controller_to_miner(
     return updated_miner
 
 
-def handle_manage_miner(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
+def get_miner_status(
+    selected_miner: Miner,
+    configuration_service: ConfigurationServiceInterface,
+    logger: LoggerPort,
+) -> Optional[Miner]:
+    """Get the status of a specific Miner."""
+    try:
+        miner = configuration_service.get_miner(selected_miner.id)
+
+        if not miner:
+            click.echo(click.style("Miner not found.", fg="red"))
+            return None
+
+        click.echo("")
+        click.echo("| Name: " + click.style(miner.name, fg="blue"))
+        click.echo("| ID: " + click.style(miner.id, fg="yellow"))
+        click.echo(
+            "| Status: "
+            + click.style(
+                miner.status.name,
+                fg="green" if miner.status == MinerStatus.ON else "red",
+            )
+        )
+        click.echo(
+            "| HashRate: " + str(miner.hash_rate.value)
+            if miner.hash_rate
+            else "N/A" + " " + miner.hash_rate.unit
+            if miner.hash_rate
+            else "N/A"
+        )
+        click.echo("| Power Consumption: " + str(miner.power_consumption) + " W")
+        click.echo("| Active: " + click.style(miner.active, fg="green" if miner.active else "red"))
+    except Exception as e:
+        logger.error(f"Error getting miner status: {e}")
+        click.echo(click.style(f"Error getting miner status: {e}", fg="red"), err=True)
+        return None
+    return selected_miner
+
+
+def start_miner(
+    selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort
+) -> None:
+    """Start a specific Miner."""
+    try:
+        await miner_action_service.start_miner(selected_miner.id)
+        click.echo(
+            click.style(f"Start command sent to miner '{selected_miner.name}' (ID: {selected_miner.id}).", fg="green")
+        )
+    except Exception as e:
+        logger.error(f"Error starting miner: {e}")
+        click.echo(click.style(f"Error starting miner: {e}", fg="red"), err=True)
+
+
+def stop_miner(
+    selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort
+) -> None:
+    """Stop a specific Miner."""
+    try:
+        await miner_action_service.stop_miner(selected_miner.id)
+        click.echo(
+            click.style(f"Stop command sent to miner '{selected_miner.name}' (ID: {selected_miner.id}).", fg="green")
+        )
+    except Exception as e:
+        logger.error(f"Error stopping miner: {e}")
+        click.echo(click.style(f"Error stopping miner: {e}", fg="red"), err=True)
+
+
+def handle_manage_miner(
+    configuration_service: ConfigurationServiceInterface,
+    miner_action_service: MinerActionServiceInterface,
+    logger: LoggerPort,
+) -> str:
     """Menu to manage a miner."""
     selected_miner = select_miner(configuration_service, logger)
 
@@ -335,6 +406,7 @@ def handle_manage_miner(configuration_service: ConfigurationServiceInterface, lo
     choice = manage_single_miner_menu(
         miner=selected_miner,
         configuration_service=configuration_service,
+        miner_action_service=miner_action_service,
         logger=logger,
     )
 
@@ -382,6 +454,7 @@ def print_miner_details(
 def manage_single_miner_menu(
     miner: Miner,
     configuration_service: ConfigurationServiceInterface,
+    miner_action_service: MinerActionServiceInterface,
     logger: LoggerPort,
 ) -> str:
     """Menu for managing a specific Miner."""
@@ -395,6 +468,10 @@ def manage_single_miner_menu(
         click.echo("3. Update Miner")
         click.echo("4. Set Miner Controller")
         click.echo("5. Delete Miner")
+        click.echo("")
+        click.echo("6. Get Miner Status")
+        click.echo("7. Start Miner")
+        click.echo("8. Stop Miner")
         click.echo("")
         click.echo("b. Back to miner menu")
         click.echo("q. Close application")
@@ -455,6 +532,33 @@ def manage_single_miner_menu(
             )
             if delete_status:
                 return "b"  # Return to menu if deletion was successful
+
+        elif choice == "6":
+            updated_miner = get_miner_status(
+                selected_miner=miner,
+                configuration_service=configuration_service,
+                logger=logger,
+            )
+            miner = updated_miner or miner  # Update miner if it was successfully updated
+            continue
+
+        elif choice == "7":
+            start_miner(
+                selected_miner=miner,
+                miner_action_service=miner_action_service,
+                logger=logger,
+            )
+            click.pause("Press any key to return to the menu...")
+            continue
+
+        elif choice == "8":
+            stop_miner(
+                selected_miner=miner,
+                miner_action_service=miner_action_service,
+                logger=logger,
+            )
+            click.pause("Press any key to return to the menu...")
+            continue
 
         elif choice == "b":
             break
@@ -930,7 +1034,11 @@ def handle_manage_miner_controller(configuration_service: ConfigurationServiceIn
     return choice
 
 
-def miner_menu(configuration_service: ConfigurationServiceInterface, logger: LoggerPort) -> str:
+def miner_menu(
+    configuration_service: ConfigurationServiceInterface,
+    miner_action_service: MinerActionServiceInterface,
+    logger: LoggerPort,
+) -> str:
     """Menu for managing Miners."""
     while True:
         click.echo("\n" + click.style("--- MINER ---", fg="blue", bold=True))
@@ -958,7 +1066,11 @@ def miner_menu(configuration_service: ConfigurationServiceInterface, logger: Log
             handle_list_miners(configuration_service=configuration_service, logger=logger)
 
         elif choice == "3":
-            sub_choice = handle_manage_miner(configuration_service=configuration_service, logger=logger)
+            sub_choice = handle_manage_miner(
+                configuration_service=configuration_service,
+                miner_action_service=miner_action_service,
+                logger=logger,
+            )
             if sub_choice == "q":
                 break
 
