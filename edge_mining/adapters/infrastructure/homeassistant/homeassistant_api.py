@@ -91,7 +91,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
                 self.logger.error("Home Assistant client is not initialized.")
             return None, None
         try:
-            entity = self.client.get_entity(entity_id=entity_id)
+            entity: Optional[Entity] = self.client.get_entity(entity_id=entity_id)
             if not entity:
                 if self.logger:
                     self.logger.warning(f"Home Assistant entity '{entity_id}' not found.")
