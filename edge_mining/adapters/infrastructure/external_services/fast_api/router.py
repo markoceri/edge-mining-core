@@ -183,7 +183,7 @@ async def delete_external_service(
 ) -> ExternalServiceSchema:
     """Remove an external service."""
     try:
-        deleted_service = config_service.delete_external_service(service_id)
+        deleted_service = config_service.remove_external_service(service_id)
 
         response = ExternalServiceSchema.from_model(deleted_service)
 
