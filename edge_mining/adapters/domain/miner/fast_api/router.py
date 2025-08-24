@@ -494,4 +494,21 @@ async def update_miner_controller(
         raise HTTPException(status_code=404, detail="Miner controller not found") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.delete("/miner-controllers/{controller_id}", response_model=MinerControllerSchema)
+async def remove_miner_controller(
+    controller_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> MinerControllerSchema:
+    """Remove a miner controller."""
+    try:
+        deleted_controller = config_service.remove_miner_controller(controller_id)
+
+        response = MinerControllerSchema.from_model(deleted_controller)
+
+        return response
+    except MinerControllerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner controller not found") from e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
