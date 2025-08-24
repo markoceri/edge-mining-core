@@ -4,6 +4,10 @@ from typing import List, Optional, Union
 
 import click
 
+from edge_mining.adapters.infrastructure.cli.utils import (
+    print_configuration,
+    process_filters,
+)
 from edge_mining.application.interfaces import ConfigurationServiceInterface
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.energy.entities import EnergyMonitor
@@ -19,18 +23,12 @@ from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import ExternalServiceConfig
 from edge_mining.shared.logging.port import LoggerPort
 
-from edge_mining.adapters.infrastructure.cli.utils import (
-    process_filters,
-    print_configuration,
-)
-
 
 def select_external_service_type() -> Optional[ExternalServiceAdapter]:
     """Prompt user to select an external service adapter type."""
     click.echo("Select an External Service Type:")
     for idx, es_type in enumerate(ExternalServiceAdapter):
-        if es_type is not ExternalServiceAdapter.UNKNOWN:
-            click.echo(f"{idx}. {es_type.name}")
+        click.echo(f"{idx}. {es_type.name}")
 
     click.echo("")
     choice: str = click.prompt("Choose an external service", type=str, default="")

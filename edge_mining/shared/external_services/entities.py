@@ -16,5 +16,5 @@ class ExternalService(Entity):
     """Entity for an external source"""
 
     name: str = ""
-    adapter_type: ExternalServiceAdapter = ExternalServiceAdapter.UNKNOWN
+    adapter_type: ExternalServiceAdapter = ExternalServiceAdapter.HOME_ASSISTANT_API
     config: Optional[ExternalServiceConfig] = None

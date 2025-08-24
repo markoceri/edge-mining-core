@@ -55,6 +55,7 @@ from edge_mining.shared.adapter_maps.energy import (
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP,
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP,
 )
+from edge_mining.shared.adapter_maps.external_services import EXTERNAL_SERVICE_CONFIG_TYPE_MAP
 from edge_mining.shared.adapter_maps.forecast import FORECAST_PROVIDER_TYPE_EXTERNAL_SERVICE_MAP
 from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_CONFIG_TYPE_MAP
 from edge_mining.shared.adapter_maps.notification import NOTIFIER_TYPE_EXTERNAL_SERVICE_MAP
@@ -259,6 +260,18 @@ class ConfigurationService(ConfigurationServiceInterface):
 
         self.logger.debug(f"External Service {external_service.id} ({external_service.name}) is valid.")
         return True
+
+    def get_external_service_config_by_type(
+        self, adapter_type: ExternalServiceAdapter
+    ) -> Optional[type[ExternalServiceConfig]]:
+        """Get the configuration class for a specific external service adapter type."""
+        self.logger.debug(f"Getting configuration for external service adapter {adapter_type}")
+        if adapter_type not in EXTERNAL_SERVICE_CONFIG_TYPE_MAP:
+            raise ExternalServiceConfigurationError(
+                f"Adapter type {adapter_type} is not supported for external service configuration."
+            )
+
+        return EXTERNAL_SERVICE_CONFIG_TYPE_MAP.get(adapter_type, None)
 
     # --- Energy Source Management ---
     def create_energy_source(

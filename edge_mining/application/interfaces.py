@@ -498,6 +498,12 @@ class ConfigurationServiceInterface(ABC):
     def check_external_service(self, external_service: ExternalService) -> bool:
         """Check if an external service is valid and can be used."""
 
+    @abstractmethod
+    def get_external_service_config_by_type(
+        self, adapter_type: ExternalServiceAdapter
+    ) -> Optional[type[ExternalServiceConfig]]:
+        """Get the configuration class for a specific external service adapter type."""
+
     # --- Energy Source Management ---
     @abstractmethod
     def create_energy_source(
