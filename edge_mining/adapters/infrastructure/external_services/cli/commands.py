@@ -58,7 +58,7 @@ def handle_external_service_configuration(
     adapter_type: ExternalServiceAdapter,
 ) -> Optional[ExternalServiceConfig]:
     """Prompt user for configuration based on the selected external service adapter type."""
-    if adapter_type == ExternalServiceAdapter.HOME_ASSISTANT_API:
+    if adapter_type.value == ExternalServiceAdapter.HOME_ASSISTANT_API.value:
         return handle_external_service_home_assistant_api_config()
     else:
         click.echo(
