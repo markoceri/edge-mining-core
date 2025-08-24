@@ -493,7 +493,7 @@ class SqliteMinerControllerRepository(MinerControllerRepository):
         """Get a miner controller by ID from the SQLite database."""
         self.logger.debug(f"Getting miner controller {miner_controller_id} from SQLite.")
 
-        sql = "SELECT * FROM miner_controllers WHERE id = ?"
+        sql = "SELECT * FROM miner_controllers WHERE id = ?;"
         conn = self._db.get_connection()
         try:
             cursor = conn.cursor()
