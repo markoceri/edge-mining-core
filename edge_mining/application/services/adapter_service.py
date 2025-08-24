@@ -280,6 +280,8 @@ class AdapterService(AdapterServiceInterface):
                 )
 
         try:
+            instance: Optional[MinerControlPort] = None
+
             if miner_controller.adapter_type == MinerControllerAdapter.DUMMY:
                 if miner.power_consumption_max is None or miner.hash_rate_max is None:
                     raise ValueError(
