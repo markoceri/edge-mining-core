@@ -51,6 +51,7 @@ from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.user.common import UserId
 from edge_mining.domain.user.entities import SystemSettings
 from edge_mining.shared.adapter_maps.energy import (
+    ENERGY_MONITOR_CONFIG_TYPE_MAP,
     ENERGY_MONITOR_TYPE_EXTERNAL_SERVICE_MAP,
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_CONFIG_MAP,
     ENERGY_SOURCE_TYPE_FORECAST_PROVIDER_TYPE_MAP,
@@ -600,6 +601,17 @@ class ConfigurationService(ConfigurationServiceInterface):
 
         self.logger.debug(f"Energy monitor {energy_monitor.id} ({energy_monitor.name}) is valid.")
         return True
+
+    def get_energy_monitor_config_by_type(
+        self, adapter_type: EnergyMonitorAdapter
+    ) -> Optional[type[EnergyMonitorConfig]]:
+        """Get the configuration class for a specific energy monitor adapter type."""
+        self.logger.debug(f"Getting configuration for energy monitor adapter {adapter_type}")
+        if adapter_type not in ENERGY_MONITOR_CONFIG_TYPE_MAP:
+            raise EnergyMonitorConfigurationError(
+                f"Adapter type {adapter_type} is not supported for energy monitor configuration."
+            )
+        return ENERGY_MONITOR_CONFIG_TYPE_MAP.get(adapter_type, None)
 
     # --- Forecast Provider Management ---
     def create_forecast_provider(
