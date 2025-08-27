@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import routers after DI setup functions are defined
+from edge_mining.adapters.domain.energy.fast_api.router import router as energy_router
 from edge_mining.adapters.domain.miner.fast_api.router import router as miner_router
 from edge_mining.adapters.domain.policy.fast_api.router import router as policy_router
 
@@ -65,6 +65,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(energy_router, prefix="/api/v1", tags=["energy"])
 app.include_router(miner_router, prefix="/api/v1", tags=["mining"])
 app.include_router(policy_router, prefix="/api/v1", tags=["optimization_rules"])
 # Add more routers here (e.g., for configuration)
