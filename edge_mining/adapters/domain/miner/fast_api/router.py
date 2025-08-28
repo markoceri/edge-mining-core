@@ -1,14 +1,13 @@
 """API Router for miner domain"""
 
 import uuid
-from typing import Annotated, List, Optional, Union, cast
+from typing import Annotated, Any, Dict, List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from edge_mining.adapters.domain.miner.schemas import (
     MINER_CONTROLLER_CONFIG_SCHEMA_MAP,
     MinerControllerCreateSchema,
-    MinerControllerDummyConfigSchema,
     MinerControllerSchema,
     MinerControllerUpdateSchema,
     MinerCreateSchema,
@@ -31,6 +30,7 @@ from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.common import MinerControllerAdapter
 from edge_mining.domain.miner.entities import Miner
 from edge_mining.domain.miner.exceptions import (
+    MinerControllerAlreadyExistsError,
     MinerControllerConfigurationError,
     MinerControllerNotFoundError,
     MinerNotFoundError,
@@ -380,7 +380,7 @@ async def add_miner_controller(
         controller_to_add = controller_schema.to_model()
 
         if controller_to_add.config is None:
-            raise MinerControllerConfigurationError("Miner controller configuration must be set")
+            raise MinerControllerConfigurationError("Miner controller configuration should be set")
 
         new_controller = config_service.add_miner_controller(
             name=controller_to_add.name,
@@ -392,6 +392,8 @@ async def add_miner_controller(
         response = MinerControllerSchema.from_model(new_controller)
 
         return response
+    except MinerControllerAlreadyExistsError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except MinerControllerConfigurationError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
@@ -408,12 +410,13 @@ async def get_miner_controller_types() -> List[MinerControllerAdapter]:
 
 
 @router.get(
-    "/miner-controllers/types/{adapter_type}/config-schema", response_model=Union[MinerControllerDummyConfigSchema]
+    "/miner-controllers/types/{adapter_type}/config-schema",
+    response_model=Dict[str, Any],
 )
 async def get_miner_controller_config_schema(
     adapter_type: MinerControllerAdapter,
     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
-) -> Union[MinerControllerDummyConfigSchema]:
+) -> Dict[str, Any]:
     """Get the configuration schema for a specific miner controller type."""
     try:
         try:
@@ -435,8 +438,7 @@ async def get_miner_controller_config_schema(
         if miner_controller_config_schema is None:
             raise ValueError(f"No schema found for miner controller config class: {miner_controller_config_type}")
 
-        return miner_controller_config_schema()
-
+        return miner_controller_config_schema.model_json_schema()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
@@ -470,7 +472,7 @@ async def update_miner_controller(
     controller_update: MinerControllerUpdateSchema,
     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
 ) -> MinerControllerSchema:
-    """Update a miner controller's details."""
+    """Update an existing miner controller"""
     try:
         controller = config_service.get_miner_controller(controller_id)
 
@@ -494,4 +496,21 @@ async def update_miner_controller(
         raise HTTPException(status_code=404, detail="Miner controller not found") from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.delete("/miner-controllers/{controller_id}", response_model=MinerControllerSchema)
+async def remove_miner_controller(
+    controller_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> MinerControllerSchema:
+    """Remove a miner controller."""
+    try:
+        deleted_controller = config_service.remove_miner_controller(controller_id)
+
+        response = MinerControllerSchema.from_model(deleted_controller)
+
+        return response
+    except MinerControllerNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Miner controller not found") from e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

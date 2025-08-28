@@ -36,3 +36,32 @@ class MinerControllerDummyConfig(MinerControllerConfig):
     def from_dict(cls, data: dict):
         """Create a configuration object from a dictionary"""
         return cls(**data)
+
+
+@dataclass(frozen=True)
+class MinerControllerGenericSocketHomeAssistantAPIConfig(MinerControllerConfig):
+    """
+    Miner controller configuration. It encapsulate the configuration parameters
+    to control a miner via Home Assistant's entities of a smart socket.
+    """
+
+    entity_switch: str = field(default="switch.miner_socket")
+    entity_power: str = field(default="sensor.miner_power")
+    unit_power: str = field(default="W")
+
+    def is_valid(self, adapter_type: MinerControllerAdapter) -> bool:
+        """
+        Check if the configuration is valid for the given adapter type.
+        For Generic Socket Home Assistant API Miner Controller,
+        it is valid if the adapter type matches.
+        """
+        return adapter_type == MinerControllerAdapter.GENERIC_SOCKET_HOME_ASSISTANT_API
+
+    def to_dict(self) -> dict:
+        """Converts the configuration object into a serializable dictionary"""
+        return {**asdict(self)}
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """Create a configuration object from a dictionary"""
+        return cls(**data)

@@ -7,6 +7,7 @@ import click
 from edge_mining.adapters.infrastructure.cli.utils import print_configuration, process_filters
 from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     handle_add_external_service,
+    print_external_service_details,
     select_external_service,
 )
 from edge_mining.application.interfaces import ConfigurationServiceInterface
@@ -14,7 +15,10 @@ from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
 from edge_mining.domain.miner.entities import Miner, MinerController
 from edge_mining.domain.miner.value_objects import HashRate
-from edge_mining.shared.adapter_configs.miner import MinerControllerDummyConfig
+from edge_mining.shared.adapter_configs.miner import (
+    MinerControllerDummyConfig,
+    MinerControllerGenericSocketHomeAssistantAPIConfig,
+)
 from edge_mining.shared.adapter_maps.miner import MINER_CONTROLLER_TYPE_EXTERNAL_SERVICE_MAP
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.interfaces.config import MinerControllerConfig
@@ -367,7 +371,7 @@ def print_miner_details(
         controller = configuration_service.get_miner_controller(miner.controller_id)
         if controller:
             click.echo("\nCONTROLLER DETAILS:")
-            print_miner_controller_details(controller, configuration_service, False)
+            print_miner_controller_details(controller, configuration_service, False, True)
         else:
             # If the controller is not found, we can still show the ID
             click.echo("| Controller ID: " + click.style(str(miner.controller_id), fg="red") + " (not found)")
@@ -509,6 +513,33 @@ def handle_miner_controller_dummy_config(
     )
 
 
+def handle_miner_controller_generic_socket_home_assistant_api_config(miner: Optional[Miner]) -> MinerControllerConfig:
+    """Handle configuration for the Generic Socket Home Assistant API Miner Controller."""
+    click.echo(click.style("\n--- Generic Socket Home Assistant API Miner Controller Configuration ---", fg="yellow"))
+
+    entity_switch: str = click.prompt(
+        "Entity ID for the switch (eg. switch.miner_socket)",
+        type=str,
+        default="switch.miner_socket",
+    )
+    entity_power: str = click.prompt(
+        "Entity ID for the power sensor (eg. sensor.miner_power)",
+        type=str,
+        default="sensor.miner_power",
+    )
+    unit_power: str = click.prompt(
+        "Unit of power measurement (eg. W, kW)",
+        type=str,
+        default="W",
+    )
+
+    return MinerControllerGenericSocketHomeAssistantAPIConfig(
+        entity_switch=entity_switch,
+        entity_power=entity_power,
+        unit_power=unit_power,
+    )
+
+
 def handle_miner_controller_configuration(
     adapter_type: MinerControllerAdapter, miner: Optional[Miner]
 ) -> Optional[MinerControllerConfig]:
@@ -516,6 +547,8 @@ def handle_miner_controller_configuration(
     config: Optional[MinerControllerConfig] = None
     if adapter_type.value == MinerControllerAdapter.DUMMY.value:
         config = handle_miner_controller_dummy_config(miner)
+    elif adapter_type.value == MinerControllerAdapter.GENERIC_SOCKET_HOME_ASSISTANT_API.value:
+        config = handle_miner_controller_generic_socket_home_assistant_api_config(miner)
     else:
         click.echo(click.style("Unsupported controller type selected. Aborting.", fg="red"))
     return config
@@ -648,17 +681,34 @@ def print_miner_controller_details(
     controller: MinerController,
     configuration_service: ConfigurationServiceInterface,
     show_miner_list: bool = False,
+    show_external_service: bool = False,
 ) -> None:
     """Print details of a selected Miner Controller."""
     click.echo("")
     click.echo("| Name: " + click.style(controller.name, fg="blue"))
     click.echo("| ID: " + click.style(controller.id, fg="yellow"))
-    click.echo("| Adapter Type: " + controller.adapter_type.name)
-    click.echo(
-        "| External Service ID:" + (str(controller.external_service_id) if controller.external_service_id else "None")
-    )
+    click.echo("| Adapter Type: " + click.style(controller.adapter_type.name, fg="green"))
     print_miner_controller_config(controller)
     click.echo("")
+
+    if show_external_service:
+        if controller.external_service_id:
+            external_service = configuration_service.get_external_service(controller.external_service_id)
+            if external_service:
+                click.echo("EXTERNAL SERVICE DETAILS:")
+                print_external_service_details(
+                    service=external_service,
+                    configuration_service=configuration_service,
+                    show_config=False,
+                    show_linked_instances=False,
+                )
+            else:
+                click.echo(
+                    "| External service: " + click.style(str(controller.external_service_id), fg="red") + " (not found)"
+                )
+        else:
+            click.echo("| External service: None")
+        click.echo("")
 
     if show_miner_list:
         miners = configuration_service.list_miners_by_controller(controller.id)
@@ -761,7 +811,9 @@ def manage_single_miner_controller_menu(
     while True:
         click.echo("\n" + click.style("--- MANAGE MINER CONTROLLER ---", fg="blue", bold=True))
 
-        print_miner_controller_details(controller, configuration_service, show_miner_list=True)
+        print_miner_controller_details(
+            controller, configuration_service, show_miner_list=True, show_external_service=True
+        )
 
         click.echo("1. Update Controller")
         click.echo("2. Delete Controller")

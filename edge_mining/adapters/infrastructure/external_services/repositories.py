@@ -219,7 +219,9 @@ class SqliteExternalServiceRepository(ExternalServiceRepository):
         conn = self._db.get_connection()
         try:
             # Serialize config to JSON for storage
-            config_json = json.dumps(external_service.config)
+            config_json: str = ""
+            if external_service.config:
+                config_json = json.dumps(external_service.config.to_dict())
 
             with conn:
                 cursor = conn.cursor()
