@@ -605,6 +605,12 @@ class ConfigurationServiceInterface(ABC):
     def check_energy_monitor(self, energy_monitor: EnergyMonitor) -> bool:
         """Check if an energy monitor is valid and can be used."""
 
+    @abstractmethod
+    def get_energy_monitor_config_by_type(
+        self, adapter_type: EnergyMonitorAdapter
+    ) -> Optional[type[EnergyMonitorConfig]]:
+        """Get the configuration class for a specific energy monitor adapter type."""
+
     # --- Forecast Provider Management ---
     @abstractmethod
     def create_forecast_provider(
