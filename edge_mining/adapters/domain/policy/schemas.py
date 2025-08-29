@@ -10,7 +10,7 @@ from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.exceptions import PolicyError
+from edge_mining.domain.policy.exceptions import UnsupportedConditionError
 
 
 class RuleConditionSchema(BaseModel):
@@ -413,10 +413,10 @@ def convert_conditions_to_schema(conditions: dict) -> Union[LogicalGroupSchema, 
             return RuleConditionSchema(**rule_condition_data)
         else:
             # It's an unknown format, raise an error
-            raise PolicyError(f"Invalid conditions format: {conditions}")
+            raise UnsupportedConditionError(f"Invalid conditions format: {conditions}")
     else:
         # If conditions is not a dict, raise an error
-        raise PolicyError(f"Expected conditions to be a dict, got {type(conditions)}")
+        raise UnsupportedConditionError(f"Expected conditions to be a dict, got {type(conditions)}")
 
 
 # Update forward references
