@@ -1618,7 +1618,7 @@ class ConfigurationService(ConfigurationServiceInterface):
                 return rule
         raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
 
-    def enable_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> None:
+    def enable_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
         """Set a rule as enabled."""
         self.logger.info(f"Setting rule {rule_id} of policy {policy_id} as active.")
 
@@ -1640,6 +1640,33 @@ class ConfigurationService(ConfigurationServiceInterface):
         # Set the rule as enabled
         rule.enabled = True
         self.policy_repo.update(policy)  # Persist change for each policy
+
+        return rule
+
+    def disable_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
+        """Set a rule as disabled."""
+        self.logger.info(f"Setting rule {rule_id} of policy {policy_id} as disabled.")
+
+        policy = self.policy_repo.get_by_id(policy_id)
+
+        if not policy:
+            raise PolicyError(f"Policy with ID {policy_id} not found.")
+
+        # Find the rule in the policy's start or stop rules
+        rule = None
+        for r in policy.start_rules + policy.stop_rules:
+            if str(r.id) == str(rule_id):
+                rule = r
+                break
+
+        if not rule:
+            raise RuleNotFoundError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+
+        # Set the rule as disabled
+        rule.enabled = False
+        self.policy_repo.update(policy)  # Persist change for each policy
+
+        return rule
 
     def delete_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
         """Delete a policy from the system."""
