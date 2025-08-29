@@ -26,7 +26,7 @@ from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.services import RuleEngine
-from edge_mining.domain.policy.value_objects import Sun
+from edge_mining.domain.policy.value_objects import DecisionalContext, Sun
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
 from edge_mining.shared.external_services.entities import ExternalService
 from edge_mining.shared.external_services.ports import ExternalServicePort
@@ -87,7 +87,7 @@ class AdapterServiceInterface(ABC):
 
     @abstractmethod
     def clear_all_adapters(self):
-        """Clear adapter chache"""
+        """Clear adapter cache"""
 
     @abstractmethod
     def remove_adapter(self, entity_id: EntityId):
@@ -95,11 +95,11 @@ class AdapterServiceInterface(ABC):
 
     @abstractmethod
     def clear_all_services(self):
-        """Clear external services chache"""
+        """Clear external services cache"""
 
     @abstractmethod
-    def remove_service(self, external_service_id: EntityId):
-        """Remove a specific external seervice from the cache."""
+    def test_rules(self, rules: List[AutomationRule], decisional_context: DecisionalContext) -> bool:
+        """Test a specific automation rule against a given context."""
 
 
 class OptimizationServiceInterface(ABC):
@@ -108,6 +108,10 @@ class OptimizationServiceInterface(ABC):
     @abstractmethod
     async def run_all_enabled_units(self):
         """Run the optimization process for all enabled units."""
+
+    @abstractmethod
+    def test_rule(self, rule: AutomationRule, context: DecisionalContext):
+        """Test a specific automation rule against a given context."""
 
 
 class MinerActionServiceInterface(ABC):

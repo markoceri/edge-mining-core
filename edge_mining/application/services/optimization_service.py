@@ -12,6 +12,7 @@ from typing import List, Optional
 
 from edge_mining.application.interfaces import (
     AdapterServiceInterface,
+    OptimizationServiceInterface,
     SunFactoryInterface,
 )
 from edge_mining.domain.common import EntityId
@@ -33,12 +34,11 @@ from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRep
 from edge_mining.domain.performance.ports import MiningPerformanceTrackerPort
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import MiningDecision
-from edge_mining.domain.policy.exceptions import PolicyError
+from edge_mining.domain.policy.entities import AutomationRule
+from edge_mining.domain.policy.exceptions import PolicyError, RuleEngineError, RuleEvaluationError, RuleLoadError
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.policy.value_objects import DecisionalContext, Sun
 from edge_mining.shared.logging.port import LoggerPort
-
-from edge_mining.application.interfaces import OptimizationServiceInterface
 
 
 class OptimizationService(OptimizationServiceInterface):
@@ -81,6 +81,33 @@ class OptimizationService(OptimizationServiceInterface):
             except Exception as e:
                 if self.logger:
                     self.logger.error(f"Failed to send notification via {type(notifier).__name__}: {e}")
+
+    def test_rules(self, rules: List[AutomationRule], decisional_context: DecisionalContext) -> bool:
+        """Test a specific automation rule against a given context."""
+        # Create the rule engine instance
+        rule_engine = self.adapter_service.get_rule_engine()
+        if not rule_engine:
+            if self.logger:
+                self.logger.error("Rule engine not available. Cannot process policy.")
+            raise RuleEngineError("Rule engine not available. Cannot process policy.")
+
+        if not rules:
+            if self.logger:
+                self.logger.error("No rules provided for testing.")
+            raise RuleLoadError("No rules provided for testing.")
+
+        # Check if at least one rule is enabled
+        active_rules = any([rule.enabled for rule in rules])
+        if not active_rules:
+            if self.logger:
+                self.logger.error("At least one rule must be enabled.")
+            raise RuleEvaluationError("At least one rule must be enabled.")
+
+        # Load rules into rule engine
+        rule_engine.load_rules(rules)
+
+        # Evaluate the rules in the rule engine
+        return rule_engine.evaluate(decisional_context)
 
     async def run_all_enabled_units(self):
         """Run the optimization process for all enabled units."""
