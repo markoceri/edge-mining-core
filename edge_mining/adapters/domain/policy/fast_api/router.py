@@ -4,301 +4,388 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from edge_mining.adapters.domain.policy.fast_api.schemas import (
+from edge_mining.adapters.domain.policy.schemas import (
     AutomationRuleCreateSchema,
-    AutomationRuleResponseSchema,
+    AutomationRuleSchema,
+    AutomationRuleUpdateSchema,
     OptimizationPolicyCreateSchema,
-    OptimizationPolicyResponseSchema,
-    RuleTypeSchema,
+    OptimizationPolicySchema,
+    OptimizationPolicyUpdateSchema,
 )
 
-# Import the dependency injection function defined in main_api.py
+# Import dependency injection setup functions
 from edge_mining.adapters.infrastructure.api.setup import get_config_service
-from edge_mining.application.services.configuration_service import ConfigurationService
+from edge_mining.application.interfaces import ConfigurationServiceInterface
 from edge_mining.domain.common import EntityId
+from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.exceptions import PolicyNotFoundError
+from edge_mining.domain.policy.exceptions import (
+    PolicyConfigurationError,
+    PolicyError,
+    PolicyNotFoundError,
+    RuleNotFoundError,
+)
 
 router = APIRouter()
 
 
-@router.get("/policies", response_model=List[OptimizationPolicyResponseSchema])
+@router.get("/policies", response_model=List[OptimizationPolicySchema])
 async def get_policies_list(
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Get a list of all configured policies."""
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> List[OptimizationPolicySchema]:
+    """Get a list of all optimization policies"""
     try:
         policies = config_service.list_policies()
 
-        response: List[OptimizationPolicyResponseSchema] = []
+        # Convert policies to schema
+        policy_schemas: List[OptimizationPolicySchema] = []
+
+        # TODO: Here we are losing metadata information. Consider adding it to the schema if needed.
         for policy in policies:
-            response.append(
-                OptimizationPolicyResponseSchema(
-                    id=policy.id,
-                    name=policy.name,
-                    description=policy.description,
-                    target_miner_ids=policy.target_miner_ids,
-                    is_active=policy.is_active,
-                )
-            )
+            policy_schemas.append(OptimizationPolicySchema.from_model(policy))
 
-        return response
+        return policy_schemas
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.get("/policies/active", response_model=OptimizationPolicyResponseSchema)
-async def get_active_policy(
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Get the currently active optimization policy."""
+@router.post("/policies", response_model=OptimizationPolicySchema)
+async def add_policy(
+    policy_schema: OptimizationPolicyCreateSchema,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> OptimizationPolicySchema:
+    """Add a new optimization policy"""
     try:
-        active_policy = config_service.get_active_policy()
-        if active_policy is None:
-            raise HTTPException(status_code=404, detail="No active policy found")
+        policy_to_add: OptimizationPolicy = policy_schema.to_model()
 
-        response = OptimizationPolicyResponseSchema(
-            id=str(active_policy.id),
-            name=active_policy.name,
-            description=active_policy.description,
-            is_active=active_policy.is_active,
-            target_miner_ids=active_policy.target_miner_ids,
+        # Create policy using configuration service
+        new_policy = config_service.create_policy(
+            name=policy_to_add.name,
+            description=policy_to_add.description or "",
         )
 
-        return response
+        if policy_to_add.start_rules:
+            for rule in policy_to_add.start_rules:
+                config_service.add_rule_to_policy(
+                    policy_id=new_policy.id,
+                    rule_type=RuleType.START,
+                    name=rule.name,
+                    priority=rule.priority,
+                    conditions=rule.conditions,
+                    description=rule.description or "",
+                )
+        if policy_to_add.stop_rules:
+            for rule in policy_to_add.stop_rules:
+                config_service.add_rule_to_policy(
+                    policy_id=new_policy.id,
+                    rule_type=RuleType.STOP,
+                    name=rule.name,
+                    priority=rule.priority,
+                    conditions=rule.conditions,
+                    description=rule.description or "",
+                )
+
+        return OptimizationPolicySchema.from_model(new_policy)
+
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except PolicyConfigurationError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.get("/policies/{policy_id}", response_model=OptimizationPolicyResponseSchema)
-async def get_policy_details(
+@router.get("/policies/{policy_id}", response_model=OptimizationPolicySchema)
+async def get_policy(
     policy_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Get details for a specific optimization policy."""
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> OptimizationPolicySchema:
+    """Get a specific optimization policy"""
     try:
         policy = config_service.get_policy(policy_id)
-        if policy is None:
-            raise HTTPException(status_code=404, detail="Optimization policy not found")
-
-        response = OptimizationPolicyResponseSchema(
-            id=policy.id,
-            name=policy.name,
-            description=policy.description,
-            target_miner_ids=policy.target_miner_ids,
-            is_active=policy.is_active,
-        )
-
-        return response
-    except PolicyNotFoundError as e:  # Catch specific domain errors if needed
+        if not policy:
+            raise PolicyNotFoundError()
+        return OptimizationPolicySchema.from_model(policy)
+    except PolicyNotFoundError as e:
         raise HTTPException(status_code=404, detail="Policy not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.post("/policies", response_model=OptimizationPolicyResponseSchema)
-async def add_policy(
-    policy: OptimizationPolicyCreateSchema,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Add a new optimization policy."""
+@router.put("/policies/{policy_id}", response_model=OptimizationPolicySchema)
+async def update_policy(
+    policy_id: EntityId,
+    policy_update: OptimizationPolicyUpdateSchema,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> OptimizationPolicySchema:
+    """Update an existing optimization policy"""
     try:
-        new_policy = config_service.create_policy(
-            name=policy.name,
-            description=policy.description,
-            target_miner_ids=policy.target_miner_ids,
+        # Get existing policy
+        existing_policy = config_service.get_policy(policy_id)
+        if not existing_policy:
+            raise HTTPException(status_code=404, detail="Policy not found")
+
+        # Update policy fields
+        updated_policy = config_service.update_policy(
+            policy_id=policy_id,
+            name=policy_update.name or existing_policy.name,
+            description=policy_update.description or existing_policy.description or "",
         )
 
-        response = OptimizationPolicyResponseSchema(
-            id=new_policy.id,
-            name=new_policy.name,
-            description=new_policy.description,
-            target_miner_ids=policy.target_miner_ids,
-            is_active=new_policy.is_active,
-        )
+        return OptimizationPolicySchema.from_model(updated_policy)
 
-        return response
+    except PolicyNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Policy not found") from e
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.post("/policies/{policy_id}/rules", response_model=AutomationRuleCreateSchema)
+@router.delete("/policies/{policy_id}", response_model=OptimizationPolicySchema)
+async def delete_policy(
+    policy_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> OptimizationPolicySchema:
+    """Delete an optimization policy"""
+    try:
+        # Get policy before deletion
+        policy = config_service.get_policy(policy_id)
+        if not policy:
+            raise HTTPException(status_code=404, detail="Policy not found")
+
+        # Delete policy
+        config_service.delete_policy(policy_id)
+
+        return OptimizationPolicySchema.from_model(policy)
+
+    except PolicyNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Policy not found") from e
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
+
+
+@router.get("/policies/{policy_id}/check", response_model=bool)
+async def check_policy(
+    policy_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> bool:
+    """Check if a policy is valid and can be used."""
+    try:
+        return config_service.check_policy(policy_id)
+    except PolicyNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Policy not found") from e
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
+
+
+# Policy rule management endpoints
+@router.post("/policies/{policy_id}/rules", response_model=AutomationRuleSchema)
 async def add_rule_to_policy(
     policy_id: EntityId,
-    rule: AutomationRuleCreateSchema,
-    rule_type: RuleTypeSchema,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Add a new rule to an existing optimization policy."""
+    rule_schema: AutomationRuleCreateSchema,
+    rule_type: RuleType,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> AutomationRuleSchema:
+    """Add a new rule to an existing optimization policy"""
     try:
-        if rule_type == RuleTypeSchema.start:
-            rule_type = RuleType.START
-        elif rule_type == RuleTypeSchema.stop:
-            rule_type = RuleType.STOP
+        rule_to_add: AutomationRule = rule_schema.to_model()
 
-        new_rule: AutomationRule = config_service.add_rule_to_policy(
+        new_rule = config_service.add_rule_to_policy(
             policy_id=policy_id,
             rule_type=rule_type,
-            name=rule.name,
-            conditions=rule.conditions,
-            action=rule.action,
+            name=rule_to_add.name,
+            priority=rule_to_add.priority,
+            conditions=rule_to_add.conditions,
+            description=rule_to_add.description or "",
         )
 
-        response = AutomationRuleResponseSchema(
-            id=str(new_rule.id),
-            name=new_rule.name,
-            conditions=new_rule.conditions,
-            action=new_rule.action,
-        )
+        return AutomationRuleSchema.from_model(new_rule)
 
-        return response
     except PolicyNotFoundError as e:
         raise HTTPException(status_code=404, detail="Policy not found") from e
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.get(
-    "/policies/{policy_id}/rules/type/{rule_type}",
-    response_model=List[AutomationRuleResponseSchema],
-)
+@router.get("/policies/{policy_id}/types/{rule_type}", response_model=List[AutomationRuleSchema])
 async def get_policy_rules(
     policy_id: EntityId,
-    rule_type: RuleTypeSchema,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Get all rules type for a specific optimization policy."""
+    rule_type: RuleType,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> List[AutomationRuleSchema]:
+    """Get all rules of a specific type for a policy"""
     try:
-        if rule_type == RuleTypeSchema.start:
-            rule_type = RuleType.START
-        elif rule_type == RuleTypeSchema.stop:
-            rule_type = RuleType.STOP
-
-        rules: List[AutomationRule] = config_service.get_policy_rules(policy_id, rule_type)
-
-        response: List[AutomationRuleResponseSchema] = []
+        rules = config_service.get_policy_rules(policy_id, rule_type)
+        automation_rule_schemas: List[AutomationRuleSchema] = []
         for rule in rules:
-            response.append(
-                AutomationRuleResponseSchema(
-                    id=str(rule.id),
-                    name=rule.name,
-                    conditions=rule.conditions,
-                    action=rule.action.value,
-                )
-            )
-
-        return response
+            automation_rule_schemas.append(AutomationRuleSchema.from_model(rule))
+        return automation_rule_schemas
     except PolicyNotFoundError as e:
         raise HTTPException(status_code=404, detail="Policy not found") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.get(
-    "/policies/{policy_id}/rules/{rule_id}",
-    response_model=AutomationRuleResponseSchema,
-)
+@router.get("/policies/{policy_id}/rules/{rule_id}", response_model=AutomationRuleSchema)
 async def get_policy_rule(
     policy_id: EntityId,
     rule_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Get a specific rule for a specific optimization policy."""
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> AutomationRuleSchema:
+    """Get a specific rule for a policy"""
     try:
-        rule: AutomationRule = config_service.get_policy_rule(policy_id, rule_id)
-
-        if rule is None:
-            raise HTTPException(status_code=404, detail="Rule not found")
-
-        response = AutomationRuleResponseSchema(
-            id=str(rule.id),
-            name=rule.name,
-            conditions=rule.conditions,
-            action=rule.action,
-        )
-
-        return response
+        rule = config_service.get_policy_rule(policy_id, rule_id)
+        if not rule:
+            raise RuleNotFoundError()
+        return AutomationRuleSchema.from_model(rule)
     except PolicyNotFoundError as e:
         raise HTTPException(status_code=404, detail="Policy not found") from e
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Rule not found") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.put(
-    "/policies/{policy_id}/rules/{rule_id}",
-    response_model=AutomationRuleResponseSchema,
-)
+@router.get("/policies/{policy_id}/rules/{rule_id}/enable", response_model=AutomationRuleSchema)
+async def enable_policy_rule(
+    policy_id: EntityId,
+    rule_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> AutomationRuleSchema:
+    """Enable a specific rule for a policy"""
+    try:
+        rule: AutomationRule = config_service.enable_policy_rule(policy_id, rule_id)
+
+        return AutomationRuleSchema.from_model(rule)
+    except PolicyNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Policy not found") from e
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Rule not found") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
+
+
+@router.get("/policies/{policy_id}/rules/{rule_id}/disable", response_model=AutomationRuleSchema)
+async def disable_policy_rule(
+    policy_id: EntityId,
+    rule_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> AutomationRuleSchema:
+    """Disable a specific rule for a policy"""
+    try:
+        rule: AutomationRule = config_service.disable_policy_rule(policy_id, rule_id)
+
+        return AutomationRuleSchema.from_model(rule)
+    except PolicyNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Policy not found") from e
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Rule not found") from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
+
+
+@router.put("/policies/{policy_id}/rules/{rule_id}", response_model=AutomationRuleSchema)
 async def update_policy_rule(
     policy_id: EntityId,
-    rule_id: str,
-    rule: AutomationRuleResponseSchema,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Update a specific rule for a specific optimization policy."""
+    rule_id: EntityId,
+    rule_schema: AutomationRuleUpdateSchema,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> AutomationRuleSchema:
+    """Update a specific rule for a policy"""
     try:
-        updated_rule: AutomationRule = config_service.update_policy_rule(
+        # Get existing rule
+        existing_rule = config_service.get_policy_rule(policy_id, rule_id)
+        if not existing_rule:
+            raise RuleNotFoundError()
+
+        conditions: dict = existing_rule.conditions
+        if rule_schema.conditions is not None:
+            conditions = rule_schema.conditions.to_model()
+
+        updated_rule = config_service.update_policy_rule(
             policy_id=policy_id,
             rule_id=rule_id,
-            name=rule.name,
-            conditions=rule.conditions,
-            action=rule.action,
+            name=rule_schema.name or existing_rule.name,
+            priority=rule_schema.priority if rule_schema.priority is not None else existing_rule.priority,
+            enabled=rule_schema.enabled if rule_schema.enabled is not None else existing_rule.enabled,
+            conditions=conditions,
+            description=rule_schema.description or existing_rule.description,
         )
 
-        response = AutomationRuleResponseSchema(
-            id=str(updated_rule.id),
-            name=updated_rule.name,
-            conditions=updated_rule.conditions,
-            action=updated_rule.action,
-        )
+        return AutomationRuleSchema.from_model(updated_rule)
 
-        return response
     except PolicyNotFoundError as e:
         raise HTTPException(status_code=404, detail="Policy not found") from e
+    except RuleNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Rule not found") from e
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.delete("/policies/{policy_id}/rules/{rule_id}")
+@router.delete("/policies/{policy_id}/rules/{rule_id}", response_model=AutomationRuleSchema)
 async def delete_policy_rule(
     policy_id: EntityId,
-    rule_id: str,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Delete a specific rule for a specific optimization policy."""
+    rule_id: EntityId,
+    config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+) -> AutomationRuleSchema:
+    """Delete a specific rule from a policy"""
     try:
-        config_service.delete_policy_rule(policy_id, rule_id)
-        return {"detail": "Rule deleted successfully"}
+        # Get rule before deletion
+        rule = config_service.get_policy_rule(policy_id, rule_id)
+        if not rule:
+            raise HTTPException(status_code=404, detail="Rule not found")
+
+        deleted_rule = config_service.delete_policy_rule(policy_id, rule_id)
+        return AutomationRuleSchema.from_model(deleted_rule)
+
     except PolicyNotFoundError as e:
         raise HTTPException(status_code=404, detail="Policy not found") from e
+    except PolicyError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.put("/policies/{policy_id}/activate")
-async def set_active_policy(
-    policy_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Set a specific optimization policy as active."""
-    try:
-        config_service.set_active_policy(policy_id)
-        return {"detail": "Policy activated successfully"}
-    except PolicyNotFoundError as e:
-        raise HTTPException(status_code=404, detail="Policy not found") from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+# Policy activation endpoints (if supported by ConfigurationServiceInterface)
+# Note: These endpoints might need to be removed if methods don't exist in interface
+# @router.post("/policies/{policy_id}/activate")
+# async def activate_policy(
+#     policy_id: EntityId,
+#     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+# ):
+#     """Set a specific optimization policy as active"""
+#     try:
+#         config_service.set_active_policy(policy_id)
+#         return {"detail": "Policy activated successfully"}
+#     except PolicyNotFoundError as e:
+#         raise HTTPException(status_code=404, detail="Policy not found") from e
+#     except PolicyError as e:
+#         raise HTTPException(status_code=400, detail=str(e)) from e
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
 
 
-@router.delete("/policies/{policy_id}")
-async def delete_policy(
-    policy_id: EntityId,
-    config_service: Annotated[ConfigurationService, Depends(get_config_service)],
-):
-    """Delete a specific optimization policy."""
-    try:
-        deleted_policy = config_service.delete_policy(policy_id)
-
-        return {"detail": f"Policy '{deleted_policy.name}' deleted successfully"}
-    except PolicyNotFoundError as e:
-        raise HTTPException(status_code=404, detail="Policy not found") from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+# @router.get("/policies/active", response_model=OptimizationPolicySchema)
+# async def get_active_policy(
+#     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
+# ) -> OptimizationPolicySchema:
+#     """Get the currently active optimization policy"""
+#     try:
+#         policy = config_service.get_active_policy()
+#         if not policy:
+#             raise HTTPException(status_code=404, detail="No active policy found")
+#         return optimization_policy_from_model(policy)
+#     except PolicyNotFoundError as e:
+#         raise HTTPException(status_code=404, detail="No active policy found") from e
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
