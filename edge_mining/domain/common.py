@@ -34,7 +34,7 @@ class Entity:
 class AggregateRoot:
     """Base class for aggregate roots."""
 
-    id: EntityId = field(default_factory=EntityId(uuid.uuid4()))
+    id: EntityId = field(default_factory=lambda: EntityId(uuid.uuid4()))
 
 
 class AdapterType(Enum):
