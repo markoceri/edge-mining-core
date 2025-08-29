@@ -83,15 +83,6 @@ class LogicalGroupSchema(BaseModel):
             raise ValueError("Logical group must be a non-empty list")
         return v
 
-    @model_validator(mode="after")
-    def validate_single_operator(self) -> "LogicalGroupSchema":
-        """Ensure exactly one logical operator is specified."""
-        operators = [self.all_of, self.any_of, self.not_]
-        non_none_count = sum(1 for op in operators if op is not None)
-        if non_none_count != 1:
-            raise ValueError("Exactly one logical operator (all_of, any_of, not_) must be specified")
-        return self
-
     def to_model(self) -> dict:
         """Convert schema to dict for domain model."""
         return self.model_dump(exclude_none=True, exclude_unset=True)
@@ -130,6 +121,18 @@ class AutomationRuleSchema(BaseModel):
         if not v or not isinstance(v, str) or len(v.strip()) == 0:
             raise ValueError("Rule name must be a non-empty string")
         return v.strip()
+
+    @field_validator("conditions")
+    def validate_conditions(
+        cls, v: Union[LogicalGroupSchema, RuleConditionSchema]
+    ) -> Union[LogicalGroupSchema, RuleConditionSchema]:
+        """Ensure exactly one logical operator is specified."""
+        if isinstance(v, LogicalGroupSchema):
+            operators = [v.all_of, v.any_of, v.not_]
+            non_none_count = sum(1 for op in operators if op is not None)
+            if non_none_count != 1:
+                raise ValueError("Exactly one logical operator (all_of, any_of, not_) must be specified")
+        return v
 
     @field_serializer("id")
     def serialize_id(self, rule_id: str) -> str:
