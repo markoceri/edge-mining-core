@@ -4,21 +4,11 @@ import unittest
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-try:
-    from edge_mining.adapters.domain.policy.schemas import (
-        LogicalGroupSchema,
-        RuleConditionSchema,
-    )
-    from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
-    from edge_mining.adapters.infrastructure.rule_engine.custom.helpers import (
-        RuleEvaluator,
-    )
-    from edge_mining.domain.policy.value_objects import DecisionalContext
-
-    print("All imports successful")
-except ImportError as e:
-    print(f"Import error: {e}")
-    raise
+from edge_mining.adapters.domain.policy.schemas import LogicalGroupSchema, RuleConditionSchema
+from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
+from edge_mining.adapters.infrastructure.rule_engine.custom.helpers import RuleEvaluator
+from edge_mining.domain.policy.exceptions import UnsupportedConditionError
+from edge_mining.domain.policy.value_objects import DecisionalContext
 
 
 class TestRuleEvaluator(unittest.TestCase):
@@ -119,14 +109,14 @@ class TestRuleEvaluator(unittest.TestCase):
         """Test that invalid dict format raises ValueError."""
         conditions_dict = {"invalid_key": "invalid_value"}
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(UnsupportedConditionError) as cm:
             RuleEvaluator._convert_conditions_to_schema(conditions_dict)
 
         self.assertIn("Invalid conditions format", str(cm.exception))
 
     def test_convert_conditions_to_schema_non_dict(self):
         """Test that non-dict input raises ValueError."""
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaises(UnsupportedConditionError) as cm:
             RuleEvaluator._convert_conditions_to_schema("not_a_dict")
 
         self.assertIn("Expected conditions to be a dict", str(cm.exception))
@@ -555,4 +545,7 @@ class TestRuleEvaluator(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    unittest.main()
+    unittest.main()
+    unittest.main()
     unittest.main()
