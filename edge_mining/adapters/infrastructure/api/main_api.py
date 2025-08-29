@@ -68,7 +68,7 @@ app.add_middleware(
 # Include routers
 app.include_router(energy_router, prefix="/api/v1", tags=["energy"])
 app.include_router(miner_router, prefix="/api/v1", tags=["mining"])
-app.include_router(policy_router, prefix="/api/v1", tags=["optimization_rules"])
+app.include_router(policy_router, prefix="/api/v1", tags=["policy"])
 app.include_router(external_services_router, prefix="/api/v1", tags=["external_services"])
 # Add more routers here (e.g., for configuration)
 
