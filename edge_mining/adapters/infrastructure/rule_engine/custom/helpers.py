@@ -6,6 +6,7 @@ from typing import Any, Union
 from edge_mining.adapters.domain.policy.schemas import (
     LogicalGroupSchema,
     RuleConditionSchema,
+    convert_conditions_to_schema,
 )
 from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
 from edge_mining.domain.policy.value_objects import DecisionalContext
@@ -37,22 +38,7 @@ class RuleEvaluator:
         conditions: dict,
     ) -> Union[LogicalGroupSchema, RuleConditionSchema]:
         try:
-            if isinstance(conditions, dict):
-                # Check if conditions are a logical group or a single rule condition
-                conditions_dict_keys = set(conditions.keys())
-
-                if any(key in conditions_dict_keys for key in LogicalGroupSchema.model_fields.keys()):
-                    # It's a logical group
-                    return LogicalGroupSchema(**conditions)
-                elif conditions_dict_keys == RuleConditionSchema.model_fields.keys():
-                    # It's a single rule condition
-                    return RuleConditionSchema(**conditions)
-                else:
-                    # It's an unknown format, raise an error
-                    raise ValueError(f"Invalid conditions format in RuleEvaluator: {conditions}")
-            else:
-                # If conditions is not a dict, raise an error
-                raise ValueError(f"Expected conditions to be a dict, got {type(conditions)}")
+            return convert_conditions_to_schema(conditions)
         except Exception as e:
             print(f"Error converting conditions to schema: {e}")
             raise
