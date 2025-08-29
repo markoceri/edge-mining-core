@@ -14,6 +14,7 @@ class PolicyNotFoundError(PolicyError):
 
     pass
 
+
 class PolicyAlreadyExistsError(PolicyError):
     """Optimization policy already exists."""
 
