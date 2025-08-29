@@ -293,52 +293,6 @@ class OptimizationPolicySchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class OptimizationPolicyCreateSchema(BaseModel):
-    """Schema for creating a new optimization policy."""
-
-    name: str = Field(..., description="Policy name")
-    description: Optional[str] = Field(None, description="Policy description")
-    start_rules: List[AutomationRuleSchema] = Field(default_factory=list, description="Rules for starting mining")
-    stop_rules: List[AutomationRuleSchema] = Field(default_factory=list, description="Rules for stopping mining")
-
-    @field_validator("name")
-    @classmethod
-    def validate_name(cls, v: str) -> str:
-        """Validate policy name."""
-        if not v or not isinstance(v, str) or len(v.strip()) == 0:
-            raise ValueError("Policy name must be a non-empty string")
-        return v.strip()
-
-    def to_model(self) -> OptimizationPolicy:
-        """Convert schema to OptimizationPolicy domain aggregate root."""
-        return OptimizationPolicy(
-            id=EntityId(uuid.uuid4()),
-            name=self.name,
-            description=self.description,
-            start_rules=[rule.to_model() for rule in self.start_rules],
-            stop_rules=[rule.to_model() for rule in self.stop_rules],
-        )
-
-
-class OptimizationPolicyUpdateSchema(BaseModel):
-    """Schema for updating an existing optimization policy."""
-
-    name: Optional[str] = Field(None, description="Policy name")
-    description: Optional[str] = Field(None, description="Policy description")
-    start_rules: Optional[List[AutomationRuleSchema]] = Field(None, description="Rules for starting mining")
-    stop_rules: Optional[List[AutomationRuleSchema]] = Field(None, description="Rules for stopping mining")
-
-    @field_validator("name")
-    @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
-        """Validate policy name."""
-        if v is not None:
-            if not isinstance(v, str) or len(v.strip()) == 0:
-                raise ValueError("Policy name must be a non-empty string")
-            return v.strip()
-        return v
-
-
 class AutomationRuleCreateSchema(BaseModel):
     """Schema for creating a new automation rule."""
 
@@ -376,6 +330,42 @@ class AutomationRuleCreateSchema(BaseModel):
             enabled=self.enabled,
             conditions=conditions_dict,
         )
+
+
+class OptimizationPolicyCreateSchema(BaseModel):
+    """Schema for creating a new optimization policy."""
+
+    name: str = Field(..., description="Policy name")
+    description: Optional[str] = Field(None, description="Policy description")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate policy name."""
+        if not v or not isinstance(v, str) or len(v.strip()) == 0:
+            raise ValueError("Policy name must be a non-empty string")
+        return v.strip()
+
+    def to_model(self) -> OptimizationPolicy:
+        """Convert schema to OptimizationPolicy domain aggregate root."""
+        return OptimizationPolicy(id=EntityId(uuid.uuid4()), name=self.name, description=self.description)
+
+
+class OptimizationPolicyUpdateSchema(BaseModel):
+    """Schema for updating an existing optimization policy."""
+
+    name: Optional[str] = Field(None, description="Policy name")
+    description: Optional[str] = Field(None, description="Policy description")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate policy name."""
+        if v is not None:
+            if not isinstance(v, str) or len(v.strip()) == 0:
+                raise ValueError("Policy name must be a non-empty string")
+            return v.strip()
+        return v
 
 
 class AutomationRuleUpdateSchema(BaseModel):
