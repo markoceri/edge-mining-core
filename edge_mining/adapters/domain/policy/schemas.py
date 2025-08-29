@@ -404,22 +404,26 @@ class AutomationRuleUpdateSchema(BaseModel):
 def convert_conditions_to_schema(conditions: dict) -> Union[LogicalGroupSchema, RuleConditionSchema]:
     """Recursively convert conditions dict to appropriate schema."""
     # Check if conditions are a logical group or a single rule condition
-    conditions_dict_keys = set(conditions.keys())
-    logical_group_keys = set(LogicalGroupSchema.model_fields.keys())
-    rule_condition_keys = set(RuleConditionSchema.model_fields.keys())
+    if isinstance(conditions, dict):
+        conditions_dict_keys = set(conditions.keys())
+        logical_group_keys = set(LogicalGroupSchema.model_fields.keys())
+        rule_condition_keys = set(RuleConditionSchema.model_fields.keys())
 
-    # Check if any key from conditions matches LogicalGroupSchema keys
-    if conditions_dict_keys.intersection(logical_group_keys):
-        # It's a logical group - create instance with only the matching fields
-        logical_group_data = {k: v for k, v in conditions.items() if k in logical_group_keys}
-        return LogicalGroupSchema(**logical_group_data)
-    elif conditions_dict_keys.intersection(rule_condition_keys):
-        # It's a single rule condition - create instance with only the matching fields
-        rule_condition_data = {k: v for k, v in conditions.items() if k in rule_condition_keys}
-        return RuleConditionSchema(**rule_condition_data)
+        # Check if any key from conditions matches LogicalGroupSchema keys
+        if conditions_dict_keys.intersection(logical_group_keys):
+            # It's a logical group - create instance with only the matching fields
+            logical_group_data = {k: v for k, v in conditions.items() if k in logical_group_keys and v is not None}
+            return LogicalGroupSchema(**logical_group_data)
+        elif conditions_dict_keys.intersection(rule_condition_keys):
+            # It's a single rule condition - create instance with only the matching fields
+            rule_condition_data = {k: v for k, v in conditions.items() if k in rule_condition_keys}
+            return RuleConditionSchema(**rule_condition_data)
+        else:
+            # It's an unknown format, raise an error
+            raise PolicyError(f"Invalid conditions format: {conditions}")
     else:
-        # It's an unknown format, raise an error
-        raise PolicyError(f"Invalid conditions format: {conditions}")
+        # If conditions is not a dict, raise an error
+        raise PolicyError(f"Expected conditions to be a dict, got {type(conditions)}")
 
 
 # Update forward references

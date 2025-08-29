@@ -9,18 +9,12 @@ import sqlite3
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import yaml
 from pydantic import ValidationError
 
-from edge_mining.adapters.domain.policy.schemas import (
-    AutomationRuleSchema,
-    LogicalGroupSchema,
-    MetadataSchema,
-    OptimizationPolicySchema,
-    RuleConditionSchema,
-)
+from edge_mining.adapters.domain.policy.schemas import AutomationRuleSchema, MetadataSchema, OptimizationPolicySchema
 from edge_mining.adapters.domain.policy.yaml.utils import CustomDumper
 from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRepository
 from edge_mining.domain.common import EntityId
@@ -402,7 +396,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
         for rule_schema in rule_schemas:
             try:
                 # rule_schema.model_validate()  # Validate the rule schema
-                rule = self._schema_to_automation_rule(rule_schema)
+                rule = rule_schema.to_model()  # Convert to domain model
                 rules.append(rule)
             except ValidationError as e:
                 if self.logger:
@@ -412,19 +406,6 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
 
         # Sort by priority (highest first)
         return sorted(rules, key=lambda r: r.priority, reverse=True)
-
-    def _schema_to_automation_rule(self, rule_schema: AutomationRuleSchema) -> AutomationRule:
-        """Convert a rule schema to an AutomationRule entity."""
-
-        # Create AutomationRule with YAML rule support
-        return AutomationRule(
-            id=EntityId(cast(uuid.UUID, rule_schema.id)),
-            name=rule_schema.name,
-            description=rule_schema.description or "",
-            priority=rule_schema.priority,
-            enabled=rule_schema.enabled,
-            conditions=rule_schema.conditions.model_dump(),
-        )
 
     def _save_policy_to_file(
         self,
@@ -473,69 +454,12 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
     def _policy_to_schema(self, policy: OptimizationPolicy) -> OptimizationPolicySchema:
         """Convert an OptimizationPolicy to OptimizationPolicySchema for YAML serialization."""
         try:
-            # Convert start rules to schema format
-            start_rules_schema = []
-            for rule in policy.start_rules:
-                rule_schema = self._automation_rule_to_schema(rule)
-                start_rules_schema.append(rule_schema)
-
-            # Convert stop rules to schema format
-            stop_rules_schema = []
-            for rule in policy.stop_rules:
-                rule_schema = self._automation_rule_to_schema(rule)
-                stop_rules_schema.append(rule_schema)
-
             # Create OptimizationPolicySchema instance
-            return OptimizationPolicySchema(
-                id=str(policy.id),  # Convert EntityId to string
-                name=policy.name,
-                description=policy.description,
-                start_rules=start_rules_schema,
-                stop_rules=stop_rules_schema,
-            )
+            return OptimizationPolicySchema.from_model(policy)
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Error converting policy '{policy.name}' to schema: {e}")
             raise PolicyError(f"Failed to convert policy to schema: {e}") from e
-
-    def _automation_rule_to_schema(self, rule: AutomationRule) -> AutomationRuleSchema:
-        """Convert an AutomationRule to a AutomationRuleSchema for YAML serialization."""
-        try:
-            return AutomationRuleSchema(
-                id=str(rule.id),  # Convert UUID to string for YAML
-                name=rule.name,
-                description=rule.description,
-                priority=rule.priority,
-                enabled=rule.enabled,
-                conditions=self._convert_conditions_to_schema(rule.conditions),  # Convert conditions to schema
-            )
-        except Exception as e:
-            if self.logger:
-                self.logger.error(f"Error converting rule '{rule.name}' to schema: {e}")
-            raise PolicyError(f"Failed to convert rule to schema: {e}") from e
-
-    def _convert_conditions_to_schema(self, conditions: dict) -> Union[LogicalGroupSchema, RuleConditionSchema]:
-        try:
-            if isinstance(conditions, dict):
-                # Check if conditions are a logical group or a single rule condition
-                conditions_dict_keys = set(conditions.keys())
-
-                if conditions_dict_keys == LogicalGroupSchema.model_fields.keys():
-                    # It's a logical group
-                    return LogicalGroupSchema(**conditions)
-                elif conditions_dict_keys == RuleConditionSchema.model_fields.keys():
-                    # It's a single rule condition
-                    return RuleConditionSchema(**conditions)
-                else:
-                    # It's an unknown format, raise an error
-                    raise PolicyError(f"Invalid conditions format: {conditions}")
-            else:
-                # If conditions is not a dict, raise an error
-                raise PolicyError(f"Expected conditions to be a dict, got {type(conditions)}")
-        except Exception as e:
-            if self.logger:
-                self.logger.error(f"Error converting conditions to schema: {e}")
-            raise PolicyError(f"Failed to convert conditions to schema: {e}") from e
 
     # Repository interface implementation
 
