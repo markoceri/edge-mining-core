@@ -15,7 +15,7 @@ import math  # For isnan
 import time
 from typing import Optional, Tuple
 
-from homeassistant_api import Client, Domain, Entity, Service, State
+from homeassistant_api import Client, Domain, Entity, Service
 
 from edge_mining.adapters.infrastructure.homeassistant.utils import (
     STATE_SERVICE_MAP,
@@ -150,7 +150,7 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
                 return False
 
             # Get the domain object
-            domain: Domain = self.client.get_domain(domain_str)
+            domain: Optional[Domain] = self.client.get_domain(domain_str)
             if not domain:
                 if self.logger:
                     self.logger.error(f"Home Assistant domain '{domain_str}' not found.")
@@ -165,37 +165,32 @@ class ServiceHomeAssistantAPI(ExternalServicePort):
 
             # Call the service to change the state
             service: Service = getattr(domain, turn_service.value)
-            changed_state: State = service.trigger(entity_id=entity_id)
+            service.trigger(entity_id=entity_id)
 
             if self.logger:
-                self.logger.debug(f"Set HA entity '{entity_id}' to state '{state}' via service '{turn_service}'.")
+                self.logger.debug(
+                    f"Request to set HA entity '{entity_id}' to state '{state}' via service '{turn_service}'."
+                )
 
-            # Check service response, if any
-            if changed_state and changed_state.state:
-                if changed_state.state.lower() != state:
-                    if self.logger:
-                        self.logger.error(
-                            f"Failed to set Home Assistant entity '{entity_id}' to state '{state}'. "
-                            f"Current state is '{changed_state.state}'."
-                        )
-                    return False
-            else:
-                # if not state returned, get the entity state again to verify but, due to async nature of HA,
-                # we may not get the updated state immediately and this check may fail
-                # even if the command was successful, so we need to wait a bit to get the updated state
-                time.sleep(1)  # Wait a moment for the state to update
-                current_state_str, _ = self.get_entity_state(entity_id)
-                current_state_str = current_state_str.lower() if current_state_str else None
-                current_state_value = SWITCH_STATE_MAP.get(current_state_str, None)
-                desired_state_value = SWITCH_STATE_MAP.get(state, None)
+            # Due to async nature of HA, we may not get the updated state immediately and this check may fail
+            # even if the command was successful, so we need to wait a bit to get the updated state
+            time.sleep(1)  # Wait a moment for the state to update
+            current_state_str, _ = self.get_entity_state(entity_id)
+            current_state_str = current_state_str.lower() if current_state_str else ""
+            current_state_value: Optional[bool] = SWITCH_STATE_MAP.get(current_state_str, None)
+            desired_state_value: Optional[bool] = SWITCH_STATE_MAP.get(state, None)
 
-                if current_state_value and current_state_value != desired_state_value:
+            if current_state_value is not None and desired_state_value is not None:
+                if current_state_value != desired_state_value:
                     if self.logger:
                         self.logger.error(
                             f"Failed to set Home Assistant entity '{entity_id}' to state '{state}'. "
                             f"Current state is '{current_state_value}'."
                         )
                     return False
+
+            if self.logger:
+                self.logger.debug(f"Successfully set HA entity '{entity_id}' to state '{state}'.")
 
             return True
         except Exception as e:

@@ -7,4 +7,3 @@ class ExternalServiceAdapter(Enum):
     """Types of external service adapter."""
 
     HOME_ASSISTANT_API = "home_assistant_api"
-    UNKNOWN = "unknown"
