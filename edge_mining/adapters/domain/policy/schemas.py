@@ -4,9 +4,13 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 from edge_mining.adapters.infrastructure.rule_engine.common import OperatorType
+from edge_mining.domain.common import EntityId
+from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
+from edge_mining.domain.policy.entities import AutomationRule
+from edge_mining.domain.policy.exceptions import PolicyError
 
 
 class RuleConditionSchema(BaseModel):
@@ -51,6 +55,10 @@ class RuleConditionSchema(BaseModel):
         """Serialize operator as string value."""
         return operator.value
 
+    def to_model(self) -> dict:
+        """Convert schema to dict for domain model."""
+        return self.model_dump()
+
 
 class LogicalGroupSchema(BaseModel):
     """Logical grouping of conditions (AND/OR)."""
@@ -84,13 +92,17 @@ class LogicalGroupSchema(BaseModel):
             raise ValueError("Exactly one logical operator (all_of, any_of, not_) must be specified")
         return self
 
+    def to_model(self) -> dict:
+        """Convert schema to dict for domain model."""
+        return self.model_dump(exclude_none=True, exclude_unset=True)
+
 
 class AutomationRuleSchema(BaseModel):
     """Schema for a single automation rule."""
 
-    id: Optional[str] = Field(
-        None,
-        description="Unique identifier for the rule (optional, can be auto-generated)",
+    id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique identifier for the rule (auto-generated if not provided)",
     )
     name: str = Field(..., description="Unique name for the rule")
     description: Optional[str] = Field(None, description="Human-readable description")
@@ -105,15 +117,10 @@ class AutomationRuleSchema(BaseModel):
 
     @field_validator("id")
     @classmethod
-    def validate_id(cls, v: Optional[str]) -> Optional[str]:
-        """Validate rule ID and auto-generate if not provided."""
-        if v is None or (isinstance(v, str) and len(v.strip()) == 0):
-            # Auto-generate ID using UUID4
+    def validate_id(cls, v: str) -> str:
+        """Validate rule ID."""
+        if not v or not isinstance(v, str) or len(v.strip()) == 0:
             return str(uuid.uuid4())
-
-        if not isinstance(v, str) or len(v.strip()) == 0:
-            raise ValueError("Rule ID must be a non-empty string")
-
         return v.strip()
 
     @field_validator("name")
@@ -123,6 +130,49 @@ class AutomationRuleSchema(BaseModel):
         if not v or not isinstance(v, str) or len(v.strip()) == 0:
             raise ValueError("Rule name must be a non-empty string")
         return v.strip()
+
+    @field_serializer("id")
+    def serialize_id(self, rule_id: str) -> str:
+        """Serialize rule ID as string."""
+        return str(rule_id)
+
+    @field_serializer("conditions")
+    def serialize_conditions(self, conditions: Union[LogicalGroupSchema, RuleConditionSchema]) -> dict:
+        """Serialize conditions."""
+        if isinstance(conditions, LogicalGroupSchema):
+            return conditions.model_dump(exclude_none=True, exclude_unset=True)
+        else:
+            return conditions.model_dump()
+
+    def to_model(self) -> AutomationRule:
+        """Convert schema to AutomationRule domain entity."""
+        # Convert conditions to dict for domain model
+        conditions_dict = {}
+        if isinstance(self.conditions, (LogicalGroupSchema, RuleConditionSchema)):
+            conditions_dict = self.conditions.to_model()
+
+        return AutomationRule(
+            id=EntityId(uuid.UUID(self.id)),
+            name=self.name,
+            description=self.description or "",
+            priority=self.priority,
+            enabled=self.enabled,
+            conditions=conditions_dict,
+        )
+
+    @classmethod
+    def from_model(cls, rule: AutomationRule) -> "AutomationRuleSchema":
+        """Convert domain model to schema."""
+        return cls(
+            id=str(rule.id),
+            name=rule.name,
+            description=rule.description,
+            conditions=convert_conditions_to_schema(rule.conditions),
+            priority=rule.priority,
+            enabled=rule.enabled,
+        )
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MetadataSchema(BaseModel):
@@ -137,9 +187,9 @@ class MetadataSchema(BaseModel):
 class OptimizationPolicySchema(BaseModel):
     """Schema for an optimization policy."""
 
-    id: Optional[str] = Field(
-        None,
-        description="Unique identifier for the policy (optional, can be auto-generated)",
+    id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique identifier for the policy (auto-generated if not provided)",
     )
     name: str = Field(..., description="Policy name")
     description: Optional[str] = Field(None, description="Policy description")
@@ -166,9 +216,22 @@ class OptimizationPolicySchema(BaseModel):
             raise ValueError("Policy name must be a non-empty string")
         return v.strip()
 
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str) -> str:
+        """Validate policy ID."""
+        if not v or not isinstance(v, str) or len(v.strip()) == 0:
+            return str(uuid.uuid4())
+        return v.strip()
+
+    @field_serializer("id")
+    def serialize_id(self, policy_id: str) -> str:
+        """Serialize policy ID as string."""
+        return str(policy_id)
+
     @field_validator("start_rules", "stop_rules")
     @classmethod
-    def validate_rule_ids_unique(cls, v: List["OptimizationPolicySchema"]) -> List["OptimizationPolicySchema"]:
+    def validate_rule_ids_unique(cls, v: List[AutomationRuleSchema]) -> List[AutomationRuleSchema]:
         """Ensure rule ids are unique within each rule type."""
         if not v:
             return v
@@ -190,6 +253,173 @@ class OptimizationPolicySchema(BaseModel):
             raise ValueError(f"Duplicate rule ids found across start and stop rules: {duplicates}")
 
         return self
+
+    def to_model(self) -> OptimizationPolicy:
+        """Convert schema to OptimizationPolicy domain aggregate root."""
+        return OptimizationPolicy(
+            id=EntityId(uuid.UUID(self.id)),
+            name=self.name,
+            description=self.description,
+            start_rules=[rule.to_model() for rule in self.start_rules],
+            stop_rules=[rule.to_model() for rule in self.stop_rules],
+        )
+
+    @classmethod
+    def from_model(
+        cls, policy: OptimizationPolicy, metadata: Optional[MetadataSchema] = None
+    ) -> "OptimizationPolicySchema":
+        """Create schema from OptimizationPolicy domain aggregate root."""
+        start_rules: List[AutomationRuleSchema] = [AutomationRuleSchema.from_model(rule) for rule in policy.start_rules]
+        stop_rules: List[AutomationRuleSchema] = [AutomationRuleSchema.from_model(rule) for rule in policy.stop_rules]
+
+        return cls(
+            id=str(policy.id),
+            name=policy.name,
+            description=policy.description,
+            start_rules=start_rules,
+            stop_rules=stop_rules,
+            metadata=metadata
+            or MetadataSchema(
+                author="Edge Mining User",
+                version=1,
+                created=datetime.now().strftime("%Y-%m-%d"),
+                last_modified=datetime.now().strftime("%Y-%m-%d"),
+            ),
+        )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OptimizationPolicyCreateSchema(BaseModel):
+    """Schema for creating a new optimization policy."""
+
+    name: str = Field(..., description="Policy name")
+    description: Optional[str] = Field(None, description="Policy description")
+    start_rules: List[AutomationRuleSchema] = Field(default_factory=list, description="Rules for starting mining")
+    stop_rules: List[AutomationRuleSchema] = Field(default_factory=list, description="Rules for stopping mining")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate policy name."""
+        if not v or not isinstance(v, str) or len(v.strip()) == 0:
+            raise ValueError("Policy name must be a non-empty string")
+        return v.strip()
+
+    def to_model(self) -> OptimizationPolicy:
+        """Convert schema to OptimizationPolicy domain aggregate root."""
+        return OptimizationPolicy(
+            id=EntityId(uuid.uuid4()),
+            name=self.name,
+            description=self.description,
+            start_rules=[rule.to_model() for rule in self.start_rules],
+            stop_rules=[rule.to_model() for rule in self.stop_rules],
+        )
+
+
+class OptimizationPolicyUpdateSchema(BaseModel):
+    """Schema for updating an existing optimization policy."""
+
+    name: Optional[str] = Field(None, description="Policy name")
+    description: Optional[str] = Field(None, description="Policy description")
+    start_rules: Optional[List[AutomationRuleSchema]] = Field(None, description="Rules for starting mining")
+    stop_rules: Optional[List[AutomationRuleSchema]] = Field(None, description="Rules for stopping mining")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate policy name."""
+        if v is not None:
+            if not isinstance(v, str) or len(v.strip()) == 0:
+                raise ValueError("Policy name must be a non-empty string")
+            return v.strip()
+        return v
+
+
+class AutomationRuleCreateSchema(BaseModel):
+    """Schema for creating a new automation rule."""
+
+    name: str = Field(..., description="Unique name for the rule")
+    description: Optional[str] = Field(None, description="Human-readable description")
+    conditions: Union[LogicalGroupSchema, RuleConditionSchema] = Field(
+        ..., description="Conditions that must be met for the rule to trigger"
+    )
+    priority: int = Field(
+        default=0,
+        description="Rule priority (higher numbers = higher priority)",
+    )
+    enabled: bool = Field(default=True, description="Whether the rule is active")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate rule name."""
+        if not v or not isinstance(v, str) or len(v.strip()) == 0:
+            raise ValueError("Rule name must be a non-empty string")
+        return v.strip()
+
+    def to_model(self) -> AutomationRule:
+        """Convert create schema to AutomationRule domain entity."""
+        # Convert conditions to dict for domain model
+        conditions_dict = {}
+        if isinstance(self.conditions, (LogicalGroupSchema, RuleConditionSchema)):
+            conditions_dict = self.conditions.to_model()
+
+        return AutomationRule(
+            id=EntityId(uuid.uuid4()),  # Generate new ID for create
+            name=self.name,
+            description=self.description or "",
+            priority=self.priority,
+            enabled=self.enabled,
+            conditions=conditions_dict,
+        )
+
+
+class AutomationRuleUpdateSchema(BaseModel):
+    """Schema for updating an existing automation rule."""
+
+    name: Optional[str] = Field(None, description="Unique name for the rule")
+    description: Optional[str] = Field(None, description="Human-readable description")
+    conditions: Optional[Union[LogicalGroupSchema, RuleConditionSchema]] = Field(
+        None, description="Conditions that must be met for the rule to trigger"
+    )
+    priority: Optional[int] = Field(
+        None,
+        description="Rule priority (higher numbers = higher priority)",
+    )
+    enabled: Optional[bool] = Field(None, description="Whether the rule is active")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate rule name."""
+        if v is not None:
+            if not isinstance(v, str) or len(v.strip()) == 0:
+                raise ValueError("Rule name must be a non-empty string")
+            return v.strip()
+        return v
+
+
+# Helper methods for converting from domain models to schemas
+def convert_conditions_to_schema(conditions: dict) -> Union[LogicalGroupSchema, RuleConditionSchema]:
+    """Recursively convert conditions dict to appropriate schema."""
+    # Check if conditions are a logical group or a single rule condition
+    conditions_dict_keys = set(conditions.keys())
+    logical_group_keys = set(LogicalGroupSchema.model_fields.keys())
+    rule_condition_keys = set(RuleConditionSchema.model_fields.keys())
+
+    # Check if any key from conditions matches LogicalGroupSchema keys
+    if conditions_dict_keys.intersection(logical_group_keys):
+        # It's a logical group - create instance with only the matching fields
+        logical_group_data = {k: v for k, v in conditions.items() if k in logical_group_keys}
+        return LogicalGroupSchema(**logical_group_data)
+    elif conditions_dict_keys.intersection(rule_condition_keys):
+        # It's a single rule condition - create instance with only the matching fields
+        rule_condition_data = {k: v for k, v in conditions.items() if k in rule_condition_keys}
+        return RuleConditionSchema(**rule_condition_data)
+    else:
+        # It's an unknown format, raise an error
+        raise PolicyError(f"Invalid conditions format: {conditions}")
 
 
 # Update forward references
