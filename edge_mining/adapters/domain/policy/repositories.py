@@ -26,6 +26,7 @@ from edge_mining.adapters.infrastructure.persistence.sqlite import BaseSqliteRep
 from edge_mining.domain.common import EntityId
 from edge_mining.domain.policy.aggregate_roots import AutomationRule, OptimizationPolicy
 from edge_mining.domain.policy.exceptions import (
+    PolicyAlreadyExistsError,
     PolicyConfigurationError,
     PolicyError,
     PolicyNotFoundError,
@@ -546,7 +547,7 @@ class YamlOptimizationPolicyRepository(OptimizationPolicyRepository):
         file_path = self._get_policy_file_path(policy.id)
 
         if file_path.exists():
-            raise PolicyError(f"Policy with ID {policy.id} already exists")
+            raise PolicyAlreadyExistsError(f"Policy with ID {policy.id} already exists")
 
         self._save_policy_to_file(policy)
 
