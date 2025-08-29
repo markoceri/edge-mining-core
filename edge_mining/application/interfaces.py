@@ -22,8 +22,9 @@ from edge_mining.domain.notification.entities import Notifier
 from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
 from edge_mining.domain.performance.ports import MiningPerformanceTrackerPort
-from edge_mining.domain.policy.aggregate_roots import AutomationRule, OptimizationPolicy
+from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
+from edge_mining.domain.policy.entities import AutomationRule
 from edge_mining.domain.policy.services import RuleEngine
 from edge_mining.domain.policy.value_objects import Sun
 from edge_mining.shared.external_services.common import ExternalServiceAdapter
