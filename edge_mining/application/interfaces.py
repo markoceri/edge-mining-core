@@ -110,8 +110,12 @@ class OptimizationServiceInterface(ABC):
         """Run the optimization process for all enabled units."""
 
     @abstractmethod
-    def test_rule(self, rule: AutomationRule, context: DecisionalContext):
+    def test_rules(self, rules: List[AutomationRule], context: DecisionalContext) -> bool:
         """Test a specific automation rule against a given context."""
+
+    @abstractmethod
+    def get_decisional_context(self, optimization_unit_id: EntityId) -> Optional[DecisionalContext]:
+        """Get the decisional context for a specific optimization unit."""
 
 
 class MinerActionServiceInterface(ABC):
@@ -683,4 +687,7 @@ class SunFactoryInterface(ABC):
 
     @abstractmethod
     def create_sun_for_date(self, for_date: datetime = datetime.now()) -> Sun:
+        """Create a Sun object for a specific date."""
+        """Create a Sun object for a specific date."""
+        """Create a Sun object for a specific date."""
         """Create a Sun object for a specific date."""

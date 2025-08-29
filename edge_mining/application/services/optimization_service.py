@@ -30,6 +30,7 @@ from edge_mining.domain.miner.ports import MinerControlPort, MinerRepository
 from edge_mining.domain.miner.value_objects import HashRate
 from edge_mining.domain.notification.ports import NotificationPort
 from edge_mining.domain.optimization_unit.aggregate_roots import EnergyOptimizationUnit
+from edge_mining.domain.optimization_unit.exceptions import OptimizationUnitNotFoundError
 from edge_mining.domain.optimization_unit.ports import EnergyOptimizationUnitRepository
 from edge_mining.domain.performance.ports import MiningPerformanceTrackerPort
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
@@ -108,6 +109,205 @@ class OptimizationService(OptimizationServiceInterface):
 
         # Evaluate the rules in the rule engine
         return rule_engine.evaluate(decisional_context)
+
+    def get_decisional_context(self, optimization_unit_id: EntityId) -> Optional[DecisionalContext]:
+        """Get the decisional context for a specific optimization unit."""
+        optimization_unit = self.optimization_unit_repo.get_by_id(optimization_unit_id)
+        if not optimization_unit:
+            if self.logger:
+                self.logger.error(f"Optimization unit ID {optimization_unit_id} not found.")
+            raise OptimizationUnitNotFoundError(f"Optimization unit ID {optimization_unit_id} not found.")
+
+        # --- Energy Source  ---
+        energy_source: Optional[EnergySource] = None
+        if optimization_unit.energy_source_id:
+            energy_source = self.energy_source_repo.get_by_id(optimization_unit.energy_source_id)
+        if not energy_source:
+            if self.logger:
+                self.logger.error(
+                    f"Energy source for optimization unit '{optimization_unit.name}' "
+                    f"(Config ID: {optimization_unit.energy_source_id}) not found "
+                    f"or failed to initialize. Skipping optimization unit."
+                )
+
+        # --- Energy Monitor ---
+        energy_monitor: Optional[EnergyMonitorPort] = None
+        if energy_source and energy_source.energy_monitor_id:
+            energy_monitor = self.adapter_service.get_energy_monitor(energy_source)
+            if not energy_monitor:
+                if self.logger:
+                    self.logger.error(
+                        f"Energy monitor for energy source '{energy_source.name}' "
+                        f"(Config ID: {energy_source.energy_monitor_id}) not found. "
+                        f"Skipping optimization unit."
+                    )
+
+        # --- Forecast Provider ---
+        forecast_provider: Optional[ForecastProviderPort] = None
+        if energy_source and energy_source.forecast_provider_id:
+            forecast_provider = self.adapter_service.get_forecast_provider(energy_source)
+            # Forecast is optional, so log a warning if it's missing but continue
+            if not forecast_provider:
+                if self.logger:
+                    self.logger.warning(
+                        f"Forecast provider for energy source '{energy_source.name}' "
+                        f"(Config ID: {energy_source.forecast_provider_id}) not found. "
+                        f"Skipping optimization unit."
+                    )
+
+        # --- Home Forecast Provider ---
+        home_forecast_provider: Optional[HomeForecastProviderPort] = None
+        if optimization_unit.home_forecast_provider_id:
+            home_forecast_provider = self.adapter_service.get_home_load_forecast_provider(
+                optimization_unit.home_forecast_provider_id
+            )
+        # Home forecast provider is optional, so log a warning if it's missing but
+        # continue
+        if not home_forecast_provider:
+            if self.logger:
+                self.logger.warning(
+                    f"Home forecast provider for "
+                    f"optimization unit '{optimization_unit.name}' "
+                    f"(Config ID: {optimization_unit.home_forecast_provider_id}) "
+                    "not found. Skipping forecast provider."
+                )
+
+        # --- Mining Performance Tracker ---
+        mining_performance_tracker: Optional[MiningPerformanceTrackerPort] = None
+        if optimization_unit.performance_tracker_id:
+            mining_performance_tracker = self.adapter_service.get_mining_performance_tracker(
+                optimization_unit.performance_tracker_id
+            )
+        # Mining performance tracker is optional, so log a warning if it's missing
+        # but continue
+        if not mining_performance_tracker:
+            if self.logger:
+                self.logger.warning(
+                    f"Mining performance tracker for optimization unit "
+                    f"'{optimization_unit.name}' "
+                    f"(Config ID: {optimization_unit.performance_tracker_id}) not found. "
+                    f"Skipping mining performance tracker."
+                )
+
+        # --- Energy State ---
+        if energy_monitor:
+            try:
+                energy_state: Optional[EnergyStateSnapshot] = None
+                energy_state = energy_monitor.get_current_energy_state()
+                if not energy_state:
+                    if self.logger:
+                        self.logger.error(
+                            f"Could not retrieve energy state for optimization unit '{optimization_unit.name}'. "
+                            "Skipping."
+                        )
+            except Exception as e:
+                if self.logger:
+                    self.logger.error(
+                        f"Error getting energy state for optimization unit '{optimization_unit.name}': {e}"
+                    )
+
+        # --- Solar Forecast ---
+        forecast_data: Optional[Forecast] = None
+        if forecast_provider:
+            try:
+                forecast_data = forecast_provider.get_forecast()
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(
+                        f"Error getting solar forecast for optimization unit '{optimization_unit.name}': {e}"
+                    )
+
+        # --- Home Load Forecast ---
+        home_load_forecast: Optional[ConsumptionForecast] = None
+        if home_forecast_provider:
+            try:
+                # TODO: Provide parameters if needed
+                home_load_forecast = home_forecast_provider.get_home_consumption_forecast()
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(
+                        f"Error getting home load forecast for optimization unit '{optimization_unit.name}': {e}"
+                    )
+        else:
+            if self.logger:
+                self.logger.info(
+                    f"No home load forecast provider configured for optimization unit '{optimization_unit.name}'."
+                )
+
+        # --- Target Miners ---
+        # Process each target miner in this optimization unit
+        if not optimization_unit.target_miner_ids:
+            if self.logger:
+                self.logger.info(f"No target miners configured for optimization unit '{optimization_unit.name}'.")
+
+        # --- Mining Performance Tracker ---
+        tracker_current_hashrate: Optional[HashRate] = None
+        if optimization_unit.target_miner_ids and mining_performance_tracker:
+            try:
+                # TODO: Provide parameters if needed
+                miner_ids = optimization_unit.target_miner_ids
+                tracker_current_hashrate = mining_performance_tracker.get_current_hashrate(miner_ids=miner_ids)
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(
+                        f"Error getting mining performance tracker "
+                        f"for optimization unit '{optimization_unit.name}': {e}"
+                    )
+                tracker_current_hashrate = None
+
+            # If the Optimization unit has only one miner, use it
+            miner: Optional[Miner] = None
+            if len(miner_ids) == 1:
+                miner_id = miner_ids[0]
+                # --- Miner ---
+                miner = self.miner_repo.get_by_id(miner_id)
+                if not miner:
+                    if self.logger:
+                        self.logger.error(
+                            f"Miner {miner_id} in optimization unit '{optimization_unit.name}' not found in repository."
+                        )
+                # --- Miner Controller ---
+                miner_controller: Optional[MinerControlPort] = None
+                if miner and miner.controller_id:
+                    miner_controller = self.adapter_service.get_miner_controller(miner)
+                    if not miner_controller:
+                        if self.logger:
+                            self.logger.error(
+                                f"Controller for miner {miner_id} "
+                                f"(Config ID: {miner.controller_id}) not found/initialized. "
+                                f"Using default."
+                            )
+                    if miner_controller:
+                        # Update miner status using controller
+                        current_status = miner_controller.get_miner_status()
+                        current_hashrate = miner_controller.get_miner_hashrate()
+                        current_power = miner_controller.get_miner_power()
+
+                        # Update the domain model
+                        miner.update_status(
+                            new_status=current_status,
+                            hash_rate=current_hashrate,
+                            power=current_power,
+                        )
+
+        # Creates the Sun object for the current date.
+        sun: Sun = self.sun_factory.create_sun_for_date()
+
+        # Create the decisional context without the miner yet,
+        # as we will add it later after fetching the miner status.
+        # This allows us to have a single context for the unit.
+        # The context will be updated for each miner in the unit.
+        context = DecisionalContext(
+            energy_source=energy_source,
+            energy_state=energy_state,
+            forecast=forecast_data,
+            home_load_forecast=home_load_forecast,
+            tracker_current_hashrate=tracker_current_hashrate,
+            sun=sun,
+            miner=miner,
+        )
+
+        return context
 
     async def run_all_enabled_units(self):
         """Run the optimization process for all enabled units."""
@@ -568,6 +768,12 @@ class OptimizationService(OptimizationServiceInterface):
             # We might want to update the expected state in the miner entity here,
             # and then the next iteration will confirm with get_miner_status.
             miner = self.miner_repo.get_by_id(miner_id)
+            if miner:
+                if decision == MiningDecision.START_MINING:
+                    miner.turn_on()
+                elif decision == MiningDecision.STOP_MINING:
+                    miner.turn_off()
+                self.miner_repo.update(miner)  # If the repo needs to track the state
             if miner:
                 if decision == MiningDecision.START_MINING:
                     miner.turn_on()
