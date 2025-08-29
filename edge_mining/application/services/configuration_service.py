@@ -46,7 +46,13 @@ from edge_mining.domain.performance.ports import MiningPerformanceTrackerReposit
 from edge_mining.domain.policy.aggregate_roots import OptimizationPolicy
 from edge_mining.domain.policy.common import RuleType
 from edge_mining.domain.policy.entities import AutomationRule
-from edge_mining.domain.policy.exceptions import PolicyConfigurationError, PolicyError, PolicyNotFoundError
+from edge_mining.domain.policy.exceptions import (
+    PolicyAlreadyExistsError,
+    PolicyConfigurationError,
+    PolicyError,
+    PolicyNotFoundError,
+    RuleNotFoundError,
+)
 from edge_mining.domain.policy.ports import OptimizationPolicyRepository
 from edge_mining.domain.user.common import UserId
 from edge_mining.domain.user.entities import SystemSettings
@@ -1480,6 +1486,11 @@ class ConfigurationService(ConfigurationServiceInterface):
 
         policy = OptimizationPolicy(name=name, description=description)
 
+        # Check if policy with the same id already exists
+        existing_policy = self.policy_repo.get_by_id(policy.id)
+        if existing_policy:
+            raise PolicyAlreadyExistsError(f"Policy with id '{policy.id}' already exists.")
+
         self.policy_repo.add(policy)
 
         return policy
@@ -1550,7 +1561,7 @@ class ConfigurationService(ConfigurationServiceInterface):
             if rule.id == rule_id:
                 return rule
 
-        raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+        raise RuleNotFoundError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
 
     def update_policy_rule(
         self,
@@ -1614,7 +1625,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         policy = self.policy_repo.get_by_id(policy_id)
 
         if not policy:
-            raise PolicyError(f"Policy with ID {policy_id} not found.")
+            raise PolicyNotFoundError(f"Policy with ID {policy_id} not found.")
 
         # Find the rule in the policy's start or stop rules
         rule = None
@@ -1624,7 +1635,7 @@ class ConfigurationService(ConfigurationServiceInterface):
                 break
 
         if not rule:
-            raise PolicyError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
+            raise RuleNotFoundError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
 
         # Set the rule as enabled
         rule.enabled = True
@@ -1652,7 +1663,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         policy = self.policy_repo.get_by_id(policy_id)
 
         if not policy:
-            raise PolicyError(f"Policy with ID {policy_id} not found.")
+            raise PolicyNotFoundError(f"Policy with ID {policy_id} not found.")
 
         # Check if start rules contain at least one rule to stop the miner
         if not policy.start_rules or len(policy.start_rules) == 0:
