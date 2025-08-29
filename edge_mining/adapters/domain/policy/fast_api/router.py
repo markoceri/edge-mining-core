@@ -354,38 +354,3 @@ async def delete_policy_rule(
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
-
-
-# Policy activation endpoints (if supported by ConfigurationServiceInterface)
-# Note: These endpoints might need to be removed if methods don't exist in interface
-# @router.post("/policies/{policy_id}/activate")
-# async def activate_policy(
-#     policy_id: EntityId,
-#     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
-# ):
-#     """Set a specific optimization policy as active"""
-#     try:
-#         config_service.set_active_policy(policy_id)
-#         return {"detail": "Policy activated successfully"}
-#     except PolicyNotFoundError as e:
-#         raise HTTPException(status_code=404, detail="Policy not found") from e
-#     except PolicyError as e:
-#         raise HTTPException(status_code=400, detail=str(e)) from e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
-
-
-# @router.get("/policies/active", response_model=OptimizationPolicySchema)
-# async def get_active_policy(
-#     config_service: Annotated[ConfigurationServiceInterface, Depends(get_config_service)],
-# ) -> OptimizationPolicySchema:
-#     """Get the currently active optimization policy"""
-#     try:
-#         policy = config_service.get_active_policy()
-#         if not policy:
-#             raise HTTPException(status_code=404, detail="No active policy found")
-#         return optimization_policy_from_model(policy)
-#     except PolicyNotFoundError as e:
-#         raise HTTPException(status_code=404, detail="No active policy found") from e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}") from e
