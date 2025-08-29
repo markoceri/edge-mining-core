@@ -324,6 +324,14 @@ class ConfigurationServiceInterface(ABC):
         """Delete a rule from a policy."""
 
     @abstractmethod
+    def enable_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
+        """Set a rule as enabled."""
+
+    @abstractmethod
+    def disable_policy_rule(self, policy_id: EntityId, rule_id: EntityId) -> AutomationRule:
+        """Set a rule as disabled."""
+
+    @abstractmethod
     def delete_policy(self, policy_id: EntityId) -> Optional[OptimizationPolicy]:
         """Delete a policy from the system."""
 
