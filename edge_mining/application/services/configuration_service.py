@@ -1558,7 +1558,7 @@ class ConfigurationService(ConfigurationServiceInterface):
             raise PolicyError(f"Policy with ID {policy_id} not found.")
 
         for rule in policy.start_rules + policy.stop_rules:
-            if rule.id == rule_id:
+            if str(rule.id) == str(rule_id):
                 return rule
 
         raise RuleNotFoundError(f"Rule with ID {rule_id} not found in policy {policy_id}.")
@@ -1630,7 +1630,7 @@ class ConfigurationService(ConfigurationServiceInterface):
         # Find the rule in the policy's start or stop rules
         rule = None
         for r in policy.start_rules + policy.stop_rules:
-            if r.id == rule_id:
+            if str(r.id) == str(rule_id):
                 rule = r
                 break
 
