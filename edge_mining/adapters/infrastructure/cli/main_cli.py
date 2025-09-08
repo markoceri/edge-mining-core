@@ -1,17 +1,15 @@
 """Terminal CLI infrastructure adapter"""
 
+from edge_mining.adapters.infrastructure.cli.commands import (
+    manage_run_evaluation,
+    miner,
+    optimization_unit,
+    policy,
+)
+from edge_mining.adapters.infrastructure.cli.interactive import interactive
+from edge_mining.adapters.infrastructure.cli.setup import cli
 from edge_mining.shared.infrastructure import Services
 from edge_mining.shared.logging.port import LoggerPort
-
-from edge_mining.adapters.infrastructure.cli.setup import cli
-
-from edge_mining.adapters.infrastructure.cli.interactive import interactive
-from edge_mining.adapters.infrastructure.cli.commands import (
-    optimization_unit,
-    miner,
-    policy,
-    manage_run_evaluation,
-)
 
 # Add interactive CLI command
 cli.add_command(interactive, name="interactive")
