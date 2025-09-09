@@ -538,6 +538,8 @@ def manage_single_miner_menu(
                 logger=logger,
             )
             miner = updated_miner or miner  # Update miner if it was successfully updated
+            click.echo("")
+            click.pause("Press any key to return to the menu...")
             continue
 
         elif choice == "7":
@@ -546,6 +548,7 @@ def manage_single_miner_menu(
                 miner_action_service=miner_action_service,
                 logger=logger,
             )
+            click.echo("")
             click.pause("Press any key to return to the menu...")
             continue
 
@@ -555,6 +558,7 @@ def manage_single_miner_menu(
                 miner_action_service=miner_action_service,
                 logger=logger,
             )
+            click.echo("")
             click.pause("Press any key to return to the menu...")
             continue
 
