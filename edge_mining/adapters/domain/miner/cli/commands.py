@@ -10,6 +10,7 @@ from edge_mining.adapters.infrastructure.external_services.cli.commands import (
     print_external_service_details,
     select_external_service,
 )
+from edge_mining.adapters.utils import run_async_func
 from edge_mining.application.interfaces import ConfigurationServiceInterface, MinerActionServiceInterface
 from edge_mining.domain.common import EntityId, Watts
 from edge_mining.domain.miner.common import MinerControllerAdapter, MinerStatus
@@ -367,7 +368,7 @@ def get_miner_status(
 def start_miner(selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort) -> None:
     """Start a specific Miner."""
     try:
-        miner_action_service.start_miner(selected_miner.id)
+        run_async_func(lambda: miner_action_service.start_miner(selected_miner.id, []))
         click.echo(
             click.style(f"Start command sent to miner '{selected_miner.name}' (ID: {selected_miner.id}).", fg="green")
         )
@@ -379,7 +380,7 @@ def start_miner(selected_miner: Miner, miner_action_service: MinerActionServiceI
 def stop_miner(selected_miner: Miner, miner_action_service: MinerActionServiceInterface, logger: LoggerPort) -> None:
     """Stop a specific Miner."""
     try:
-        miner_action_service.stop_miner(selected_miner.id)
+        run_async_func(lambda: miner_action_service.stop_miner(selected_miner.id, []))
         click.echo(
             click.style(f"Stop command sent to miner '{selected_miner.name}' (ID: {selected_miner.id}).", fg="green")
         )
